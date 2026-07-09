@@ -1,0 +1,479 @@
+Relevant tutorials:
+
+Triangle/cube
+Texturing
+Instancing
+Texture Array
+Geometry Shader
+Render Pass
+
+Diligent Samples makes reference several times to the UpdateData function, which is a member of IBuffer
+The LSP however tells me no such member function exists, the docs also no longer show any such member existing, but the Samples' READMEs
+still reference it. Looking at the release notes of previous versions of the engine, those for v2.4 (released 2018) show:
+Renamed/moved IBuffer::UpdateData() to IDeviceContext::UpdateBuffer()
+
+So UpdateData is outdated and removed, replaced by UpdateBuffer, a member function of the device context
+
+1. Load glb and one billboarded sprite
+
+https://ogldev.org/www/tutorial27/tutorial27.html
+Reference for billboarding implementation
+
+Geometry shader will be used to face the billboards to the camera
+
+Shader compilation constantly returned:
+
+Diligent Engine: ERROR in Initialize() (ShaderVkImpl.cpp, 199): Failed to compile shader 'vertex shader'
+Diligent Engine: ERROR in CreateDeviceObject() (RenderDeviceBase.hpp, 467): Failed to create Shader 'vertex shader'
+Diligent Engine: ERROR: Failed to parse shader source:
+ERROR: 0:12: '#version' : must occur first in shader
+ERROR: 0:12: '#version' : must be followed by version number
+ERROR: 0:12: '#version' : bad profile name; use es, core, or compatibility
+ERROR: 0:12: '#version' : bad tokens following profile -- expected newline
+
+But #version was indeed on the first line
+
+ezek@localhost:~/Projects/pkmn> od -c assets/shaders/vertex.glsl | head -5
+0000000   #   v   e   r   s   i   o   n  \n
+0000011
+
+Checked if it was some file format error, no, version was the very first directive
+
+Reason was then found in docs:
+
+https://diligentgraphics.github.io/docs/d7/dca/namespaceDiligent.html#aa320c77673b376507c40c9fa2a01e33c
+
+There are 2 enumerated flags indicating GLSL as the shader language, but one allows Diligent to handle versioning based on the hardware,
+and the other simply reads the shader code verbatim
+
+FIX: remove #version
+
+Diligent Engine: Warning: Render target view '0x415C3590' is not bound to the device context. ClearRenderTarget command is more efficient if render target view is bound to the device context. In OpenGL, Metal and WebGPU backends this is required.
+
+Diligent Engine enables applications to use and intermix render target API and render passes API. While the former one is a more implicit way, the latter is a more explicit approach and requires more effort from the application developers. Most importantly, no state transitions are allowed within the render pass. As a result, an application must not use RESOURCE_STATE_TRANSITION_MODE_TRANSITION with any command while a render pass is active.
+
+Render targets are more explicit and also what I'm more used to working with (Vulkan-style API), so use this instead of 'render target'
+
+NEED:
+
+- colour attachment + depth attachment (for 3D)
+- ref for attachments
+- subpass
+
+- framebuffer creation
+
+render pass system is based on:
+https://diligentgraphics.github.io/docs/d1/dc3/DiligentSamples_Tutorials_Tutorial19_RenderPasses_readme.html
+and my original Vulkan system on:
+<TO BE UPLOADED>
+which was based on the vulkan tutorials
+
+comments from Vulkan system:
+----------------------------
+A framebuffer is an object that holds references to image views used as attachments for rendering.
+Each framebuffer corresponds to a specific image in the swap chain
+
+A Render Pass is a collection of rendering commands defining how images are rendered to a framebuffer.
+Specifically, it defines the framebuffer attachments used while rendering,
+the number of colour & depth buffers, how many samples to use for each of them & how their contents should be handled
+---------------------------
+
+Interestingly, in Diligent, you only make one framebuffer, but in Vulkan, you'd define the framebuffer desc and create one for
+all the texture views in the swap chain. Diligent is probably handling that internally when creating what appears to be one framebuffer.
+
+
+Build attempt 3
+------------------------
+
+Diligent Engine: ERROR: Using vertex buffers (DeviceContextVkImpl::Draw) requires buffer 'billboard vertex buffer' to be transitioned to VERTEX_BUFFER state.
+Actual buffer state: UNDEFINED. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
+Diligent Engine: ERROR: Using vertex buffers (DeviceContextVkImpl::Draw) requires buffer 'instance data buffer' to be transitioned to VERTEX_BUFFER state.
+Actual buffer state: COPY_DEST. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
+Diligent Engine: ERROR: Indexed draw call (DeviceContextVkImpl::Draw) requires buffer 'billboard index buffer' to be transitioned to INDEX_BUFFER state.
+Actual buffer state: UNDEFINED. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
+
+
+Buffers under render pass now require explicit transition between states, so do as debug error suggested, make a StateTransitionDesc array and invoke IDeviceContext::TransitionResourceStates()
+This is because no transitions are allowed under a render pass and must be done explicitly before activating one. Instance buffer needs to be transitioned separately,
+as calling its populator function will re-alter the state
+
+Tutorial 19's source code confirms this:
+https://github.com/DiligentGraphics/DiligentSamples/blob/6c0f05552d4eb7a5b3f25049699fadd02e4690b9/Tutorials/Tutorial19_RenderPasses/src/Tutorial19_RenderPasses.cpp
+Lines 525-536
+
+--
+
+Diligent Engine: ERROR in CommitVkVertexBuffers() (DeviceContextVkImpl.cpp, 697): Currently bound pipeline state 'Game Pipeline Shader Object' expects 2 input buffer slots, but only 1 is bound
+
+TODO: To avoid interferance between the demands of both rendering systems, split 3D rendering (GLB) and billboard rendering (sprites) into two separate pipelines,
+both pipelines will have differing layout descs, but use the same render pass
+Eventually, the UI should also get its own pipeline (Note: the plan is to have an XML system for defining UI elements, but then after calculating
+appropriate sizes and parsing the markup, the actual rendering is handled again by the renderer)
+
+
+Diligent Engine: ERROR: No resource is bound to variable 'g_texture' in shader 'fragment shader desc' of PSO 'Map Pipeline State Object'
+
+
+Once this final issue is resolved, the renderer should be able to properly run. Although there is a high likelihood of some initial renderer errors
+Textures from the GLB still need handling (though no textures exist in the current test GLB).
+There is also a likelihood that either things are only partially shown or not shown at all, not because they aren't rendered, but because we lack a camera matrix
+
+Old Vulkan project can be used a ref as to how to handle this. Most errors will initially be related to shaders, Geometry shader for billboard creation and matrix calculation
+also needs to be set and written
+
+When renderer issues are properly resolved, then proper implementation of core game systems such as collision detection, coord system and camera movement (should follow player)
+can begin. The GLB Map will be accomanied by a map JSON defining positions of exits/links to other maps, NPCs and their respective dialogue
+
+When that is handled, create the UI which will also be used to display character dialogue. Game events such as battles can then also be declared.
+
+NOTE: GLSL stores matrices in column-major order
+
+TODO: glTF may be better format here than GLB, since textures can be reused
+
+
+Resolve geometry shader's dependency on the camera's position (vec3), when UBO holds pre-computed mat4
+Need proper camera matrix calculation and view matrix calculation
+
+Sources for shaders, billboard system and matrix calculation:
+
+https://gamedev.stackexchange.com/questions/113147/rotate-billboard-towards-camera
+https://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
+https://ogldev.org/www/tutorial27/tutorial27.html
+
+
+
+REALLY GOOD MATERIAL:
+
+
+When I had finished writing the shaders and was ready for the first proper test, I was expecting for my 3D environment to be rendered... but it wasn't
+First, I simplified my debug by removing the sprites' pipeline temporarily, so i only had to deal with the two shaders of the map loader
+I tried to set all fragment colours in the shaders to be red, in case the texture was somehow incorrectly set, but nothing was rendered.
+Playing around w/ matrices yielded nothing either
+
+Looking over the shaders, the initialistion code and the pipeline creation everything seemes fine?
+The only other possible option was that GLB loading was somehow off
+& it was
+
+GLB Loaded: assets/test.glb
+  Vertex Buffers: 5
+  Index Buffer: valid
+  Textures: 1
+Num vertex attribs is: 8
+Vertex attribute at index: 0 has name: POSITION
+Vertex attribute at index: 0 has buffer ID: 0
+Vertex attribute at index: 1 has name: NORMAL
+Vertex attribute at index: 1 has buffer ID: 0
+Vertex attribute at index: 2 has name: TEXCOORD_0
+Vertex attribute at index: 2 has buffer ID: 0
+Vertex attribute at index: 3 has name: TEXCOORD_1
+Vertex attribute at index: 3 has buffer ID: 2
+Vertex attribute at index: 4 has name: JOINTS_0
+Vertex attribute at index: 4 has buffer ID: 1
+Vertex attribute at index: 5 has name: WEIGHTS_0
+Vertex attribute at index: 5 has buffer ID: 1
+Vertex attribute at index: 6 has name: COLOR_0
+Vertex attribute at index: 6 has buffer ID: 3
+Vertex attribute at index: 7 has name: TANGENT
+Vertex attribute at index: 7 has buffer ID: 4
+
+FROM DILIGENT SAMPLE BASE:
+
+float4x4 GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const;
+
+float4x4 SampleBase::GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const
+{
+    const auto& SCDesc = m_pSwapChain->GetDesc();
+
+    float AspectRatio = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
+    float XScale, YScale;
+    if (SCDesc.PreTransform == SURFACE_TRANSFORM_ROTATE_90 ||
+        SCDesc.PreTransform == SURFACE_TRANSFORM_ROTATE_270 ||
+        SCDesc.PreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90 ||
+        SCDesc.PreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270)
+    {
+        // When the screen is rotated, vertical FOV becomes horizontal FOV
+        XScale = 1.f / std::tan(FOV / 2.f);
+        // Aspect ratio is inversed
+        YScale = XScale * AspectRatio;
+    }
+    else
+    {
+        YScale = 1.f / std::tan(FOV / 2.f);
+        XScale = YScale / AspectRatio;
+    }
+
+    float4x4 Proj;
+    Proj._11 = XScale;
+    Proj._22 = YScale;
+    Proj.SetNearFarClipPlanes(NearPlane, FarPlane, m_pDevice->GetDeviceInfo().NDC.MinZ == -1);
+    return Proj;
+}
+
+TERMS: Aspect ratio refers to the ratio between the viewport's width and height
+       FOV is field of view and determines how much of the rendered environment is visible on the viewport
+
+
+NOTE:
+
+When exporting from blender, it doesnt matter if you keep normals/animation data, it just gets ignored by the engine, since i'm not using it
+HOWEVER, make sure all transforms are applied to all objects before export, otherise the transforms will still be centred around the origin
+and the scene'll render incorrectly (for example, if you move a cube along y by 2m, but dont apply transforms, the GLB will have kept it at the origin)
+
+Mesh [0]: Cube.001 (Primitives: 1)
+  Primitive [0]:
+    IndexCount:   36
+    FirstIndex:   0
+    FirstVertex:  0
+    VertexCount:  24
+    MaterialId:   0
+Mesh [1]: Cube.002 (Primitives: 1)
+  Primitive [0]:
+    IndexCount:   36
+    FirstIndex:   36
+    FirstVertex:  0
+    VertexCount:  24
+    MaterialId:   0
+Mesh [2]: Plane (Primitives: 1)
+  Primitive [0]:
+    IndexCount:   6
+    FirstIndex:   72
+    FirstVertex:  0
+    VertexCount:  4
+    MaterialId:   0
+
+
+
+Crydsch camera proving too problematic, but would be even more problematic to manually program, as time is better focused on other tasks
+still need a quaternion free camera system
+
+github.com/hmazhar/moderngl_camera/blob/master/camera.cpp
+
+Simpler, but uses GLM, not good to mix diligent's math and GLM
+though GLM types have same structure, but also more features and better abstracted functions
+
+SWITCH TO GLM
+
+Example camera system has several issues, but are much easier to fix and adapt
+
+I am making a camera system for a game
+
+m_rotation was for some reason set to NaN values
+
+rotation accumulator:
+-=-=-=-=-=-=-=-=-=-
+[ 0, 0.785398, 0 ]
+Normalised direction vector:
+=-=-=-=-=-=-=-=-=-=-
+[ -nan, -nan, -nan ]
+Pitch quaternion
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0, 1 ]
+Yaw quaternion
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0.382683, 0.92388 ]
+Orientation quaternion (normalised)
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0.382683, 0.92388 ]
+Calculated rotation vector:
+[ -nan, -nan, -nan ]
+Position:
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0 ]
+target Position:
+-=-=-=-=-=-=-=-=-
+[ -nan, -nan, -nan ]
+Camera View Matrix:
+-=-=-=-=-=-=-=-=-
+[ -nan, -nan, -nan, nan ]
+[ -nan, -nan, -nan, nan ]
+[ nan, nan, nan, -nan ]
+
+Set target pos:
+[ 0, 0, 0 ]
+
+[0, 0, 0] - [0, 0, 0] is just 0
+
+un-normalised direction vector:
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0 ]
+Normalised direction vector:
+-=-=-=-=-=-=-=-=-
+[ -nan, -nan, -nan ]
+
+m_direction = glm::normalize(m_targetPos - m_pos); is the issue
+
+Normalised direction vector:
+-=-=-=-=-=-=-=-=-
+[ -nan, -nan, -nan ]
+
+GLM docs state for the glm::normalize() function:
+According to issue 10 GLSL 1.10 specification, if length(x) == 0 then result is undefined and generate an error.
+
+So Nan values generate if direction vector is 0
+
+#include "camera.hpp"
+#include "glm/ext/quaternion_trigonometric.hpp"
+#include <iostream>
+
+/* FIXED ERRORS IN CALCS BASED ON SOURCES:
+ * https://stackoverflow.com/questions/49609654/quaternion-based-first-person-view-camera
+ */
+
+
+// orientation is quat used to calc view matrix
+// distance and cam pos must now be considered
+
+Camera::Camera() {
+    m_direction = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_orientation = glm::quat(0.0f, 0.0f, 0.0f, 0.0f);
+    m_deltaPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_scale = 0.5f;
+    m_moveCamera = false;
+}
+
+Camera::~Camera() {}
+
+glm::mat4 Camera::getViewMatrix() {
+    std::cout << "rotation accumulator:\n[ " << m_rotationAcc[0] << ", " << m_rotationAcc[1] << ", " << m_rotationAcc[2] << " ]" << std::endl;
+
+    // direction and eye are equivalent terms
+
+    m_direction = glm::normalize(m_targetPos - m_pos);
+   // m_direction = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f));
+
+    std::cout << "Normalised direction vector:\n[ " << m_direction[0] << ", " << m_direction[1] << ", " << m_direction[2] << " ]" << std::endl;
+
+    // NOTE: Whether the coord system is Y-up or Z-up, the cross of cam direction and CAMERA_UP is always the pitch axis
+    // TODO: Update to allow adjustments to roll (though I never actually use it, but will be helpful for debug view)
+
+    std::cout << "Executing view matrix gen\n";
+
+    glm::quat pitchQuat = glm::angleAxis(m_rotationAcc.x, CAMERA_RIGHT);
+    glm::quat yawQuat = glm::angleAxis(m_rotationAcc.y, CAMERA_FORWARD);
+    glm::quat rollQuat = glm::angleAxis(m_rotationAcc.z, CAMERA_UP); // ROLL CURRENTLY UNUSED
+
+    std::cout << "Pitch quaternion\n-=-=-=-=-=-=-=-=-\n"
+    << "[ "<< pitchQuat[0] << ", " << pitchQuat[1] << ", " << pitchQuat[2] << ", " << pitchQuat[3] << " ]" << std::endl;
+
+    std::cout << "Yaw quaternion\n-=-=-=-=-=-=-=-=-\n"
+    << "[ "<< yawQuat[0] << ", " << yawQuat[1] << ", " << yawQuat[2] << ", " << yawQuat[3] << " ]" << std::endl;
+
+    m_rotationAcc = glm::vec3(0.0f, 0.0f, 0.0f); // reset accumulator
+
+
+    //direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    //direction.y = sin(glm::radians(pitch));
+    //direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    //cameraFront = glm::normalize(direction);
+
+   // where eye = return cm_add(_cam->target_position, cm_scale(camera_forward(_cam), -_cam->target_distance));
+
+    /* Get rotation matrix from quaternion */
+   m_orientation = glm::normalize(pitchQuat * yawQuat);
+   glm::mat4 rotate = glm::mat4_cast(m_orientation);
+
+   /* Get translation matrix */
+   glm::mat4 translate = glm::mat4(1.0f);
+   translate = glm::translate(translate, -m_direction);
+
+   return glm::mat4(rotate * translate);
+}
+
+void Camera::rotate(const glm::vec3& angles) {
+    m_rotationAcc.x += angles.x;
+    m_rotationAcc.y += angles.y;
+    m_rotationAcc.z += angles.z;
+}
+
+void Camera::setPos(const glm::vec3& pos) {
+    m_pos = pos;
+}
+
+void Camera::setTargetPos(const glm::vec3& pos) {
+    m_targetPos = pos;
+
+    std::cout << "Set target pos:\n[ " << m_targetPos[0] << ", " << m_targetPos[1] << ", " << m_targetPos[2] << " ]" << std::endl;
+}
+
+
+/* This is silly, change so that this takes vec3 of translation vec */
+/*void Camera::Move(CameraDirection dir) {
+    switch (dir) {
+        case UP:
+            m_deltaPos += CAMERA_UP * m_scale;
+            break;
+        case DOWN:
+            m_deltaPos -= CAMERA_UP * m_scale;
+            break;
+        case LEFT:
+            m_deltaPos -= glm::cross(m_direction, CAMERA_UP) * m_scale;
+            break;
+        case RIGHT:
+            m_deltaPos += glm::cross(m_direction, CAMERA_UP) * m_scale;
+            break;
+        case FORWARD:
+            m_deltaPos += m_direction * m_scale;
+            break;
+        case BACK:
+            m_deltaPos -= m_direction * m_scale;
+            break;
+    }
+}*/
+
+
+This mostly fixes it, but why is the matrix now suddenly having the whole 4th row cut?
+
+rotation accumulator:
+[ 0, 0.785398, 0 ]
+Normalised direction vector:
+[ 0, 0, -1 ]
+Executing view matrix gen
+Pitch quaternion
+-=-=-=-=-=-=-=-=-
+[ 0, 0, 0, 1 ]
+Yaw quaternion
+-=-=-=-=-=-=-=-=-
+[ 0, 0.382683, 0, 0.92388 ]
+Camera View Matrix:
+-=-=-=-=-=-=-=-=-
+[ 0.707107, 0, 0.707107, 0.707107 ]
+[ 0, 1, 0, 0 ]
+[ -0.707107, 0, 0.707107, 0.707107 ]
+
+
+game: ./include/glm/./ext/../detail/type_vec4.inl:364: constexpr T& glm::vec<4, T, Q>::operator[](length_type) [with T = float; glm::qualifier Q = glm::packed_highp; length_type = int]: Assertion `(i) >= 0 && (i) < (this->length())' failed.
+
+This doesnt work, also that messes up the matrix, m_direction is the equivalent of camera eye, the camera should not get translated to -3.53553 x & z if it is applied a yaw of 45deg
+The main issue is why the matrix is being cut short
+
+Ah, I see the issue now! Look at your print statement carefully:
+
+```cpp
+"[ " << m_viewMatrix[0][3] << ", " << m_viewMatrix[1][3] << ", " << m_viewMatrix[2][3] << ", " << m_viewMatrix[3][4] << " ]\n";
+```
+
+You're accessing `m_viewMatrix[3][4]` for the last element of the 4th row, but a 4x4 matrix only has indices 0-3. You should be accessing `m_viewMatrix[3][3]`.
+
+The assertion failure is happening because you're trying to access column index 4, which doesn't exist. The matrix itself is fine - it's your printing code that's causing the crash!
+
+Here's the corrected print statement:
+
+```cpp
+std::cout << "Camera View Matrix:\n-=-=-=-=-=-=-=-=-\n" <<
+"[ " << m_viewMatrix[0][0] << ", " << m_viewMatrix[1][0] << ", " << m_viewMatrix[2][0] << ", " << m_viewMatrix[3][0] << " ]\n"
+"[ " << m_viewMatrix[0][1] << ", " << m_viewMatrix[1][1] << ", " << m_viewMatrix[2][1] << ", " << m_viewMatrix[3][1] << " ]\n"
+"[ " << m_viewMatrix[0][2] << ", " << m_viewMatrix[1][2] << ", " << m_viewMatrix[2][2] << ", " << m_viewMatrix[3][2] << " ]\n"
+"[ " << m_viewMatrix[0][3] << ", " << m_viewMatrix[1][3] << ", " << m_viewMatrix[2][3] << ", " << m_viewMatrix[3][3] << " ]\n";  // Fixed: [3][3] not [3][4]
+```
+
+Also, GLM uses column-major order, so the first index is the column and the second is the row. If you want to print it in row-major format (which is what you're trying to do), you should print it as:
+
+```cpp
+std::cout << "Camera View Matrix:\n-=-=-=-=-=-=-=-=-\n" <<
+"[ " << m_viewMatrix[0][0] << ", " << m_viewMatrix[0][1] << ", " << m_viewMatrix[0][2] << ", " << m_viewMatrix[0][3] << " ]\n"
+"[ " << m_viewMatrix[1][0] << ", " << m_viewMatrix[1][1] << ", " << m_viewMatrix[1][2] << ", " << m_viewMatrix[1][3] << " ]\n"
+"[ " << m_viewMatrix[2][0] << ", " << m_viewMatrix[2][1] << ", " << m_viewMatrix[2][2] << ", " << m_viewMatrix[2][3] << " ]\n"
+"[ " << m_viewMatrix[3][0] << ", " << m_viewMatrix[3][1] << ", " << m_viewMatrix[3][2] << ", " << m_viewMatrix[3][3] << " ]\n";
+```
+
+This is why you thought the matrix was "cut short" - you were accessing column 4 for the last element, which is out of bounds and causing the assertion failure. The matrix itself is a proper 4x4 matrix.
