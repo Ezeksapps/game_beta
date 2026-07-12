@@ -1,12 +1,9 @@
 #include "renderer.hpp"
-#include "camera.hpp"
 
 #include <cstdint>
 
 // TODO:
 
-// Fix z-fighting between sprites and 3D map
-// Setup camera system (in separate class) and camera matrix
 // Once renderer complete, associate sprites with an 'Entity'
 // set one entity as the player, others as NPCs (Likely classes extending Entity)
 // Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
@@ -23,19 +20,14 @@
 // Sprite billboards' vertex, index and instance buffers
 // window creation and input handling (needs to be associated to a callback)
 // shaders for both pipelines
+// Camera system
+// sprite billboards' positioning relative to camera
 
-// CURRENT STATUS:
-// Compiles, successfully initialises and renders 3D map with no issues. Sprites render and draw over any map element they are placed on
-
-// X-axis = Red, Y-axis = Green, Z-axis = Blue
-const std::vector<vec3> debugLineVertices = {
-    { -10.0f,  0.0f, 0.0f}, // Start X (White/Red)
-    {  10.0f,  0.0f, 0.0f}, // End X
-    {  0.0f, -10.0f, 0.0f}, // Start Y (White/Green)
-    {  0.0f,  10.0f, 0.0f}, // End Y
-    {  0.0f,  0.0f,-10.0f}, // Start Z (White/Blue)
-    {  0.0f,  0.0f, 10.0f}, // End Z
-};
+/* CURRENT STATUS:
+ * Compiles successfully, renderer and pipelines initialise with no problems.
+ * Map pipeline renders with no issues. Camera system is properly set up and can rotate with yaw or pitch with no issues
+ * Sprite pipeline renders sprite with proper UVs and properly matches the camera's rotation to appear flat. Transparency needs handling though
+ */
 
 struct FrameConstants {
     mat4 projMatrix;
@@ -63,12 +55,26 @@ const std::vector<Vertex> billboardVertices = {
     {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}}
 };
 
-Renderer::Renderer() {
-    m_pCamera = std::make_unique<Camera>();
-    m_pCamera->setPos(vec3(0.0f, 0.0f, 10.0f));
-    m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
+Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
 
-    m_pCamera->rotate(vec3(0.0f, std::numbers::pi_v<float> * 0.25f, 0.0f));
+    m_windowWidth = windowWidth;
+    m_windowHeight = windowHeight;
+    m_pCamera = std::make_unique<Camera>();
+
+    /* Perspective projection matrix */
+    float aspectRatio = static_cast<float>(m_windowWidth) / static_cast<float>(m_windowHeight);
+    float fov = 75.0f * (std::numbers::pi_v<float> / 180); /* TODO: make adjustable? */
+    m_projMatrix = perspective(fov, aspectRatio, /* Z-near */ 0.1f, /* Z-far */ 100.0f);
+
+    /* Camera view matrix */
+    m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
+    m_pCamera->setOffset(vec3(0.0f, -3.0f, 6.0f));
+    /* Only applies effect when in update UBO?
+     If camera is made public member, applying rotation incrementally by running rotate() on every keypress of 'ENTER'
+     will properly do rotation, but any rotation applied in constructor is cleared and never seen
+     target pos and offset are preserved, as is proj matrix
+     */
+
 }
 
 Renderer::~Renderer() {
@@ -169,7 +175,7 @@ void Renderer::createMapPipelineState() {
     /* Defines what kind of primitives will be rendered by this pipeline state */
     PipelineStateObjCreateInfo.GraphicsPipeline.PrimitiveTopology                       = Diligent::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     /* Face culling mode */
-    PipelineStateObjCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode                 = Diligent::CULL_MODE_BACK;
+    PipelineStateObjCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode                 = Diligent::CULL_MODE_NONE;
     /* Enable depth testing */
     PipelineStateObjCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable            = true;
     /* Render pass used by this pipeline */
@@ -393,7 +399,6 @@ void Renderer::createSpritePipelineState() {
     m_pDevice->CreateGraphicsPipelineState(PipelineStateObjCreateInfo, &m_pSpritePipelineStateObj);
 
     /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
-    m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(m_pFrameConstants);
     m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "Constants")->Set(m_pFrameConstants);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
@@ -517,7 +522,7 @@ Sprite Renderer::loadSprite(const std::string& filename) {
 
     Sprite sprite;
     sprite.index = m_numSprites;
-    sprite.pos = vec3(0.0f, 0.0f, 0.5f);
+    sprite.pos = vec3(0.0f, 0.0f, 0.1f);
 
     mat4 transform = translate(mat4(1.0f), vec3(sprite.pos.x, sprite.pos.y, sprite.pos.z));
     m_instanceData.push_back(transform);
@@ -534,13 +539,6 @@ void Renderer::loadGLB(const std::string& filename) {
     modelCreateInfo.FileName = filename.c_str();
 
     m_pGlbModel = std::make_unique<Diligent::GLTF::Model>(m_pDevice, m_pImmediateContext, modelCreateInfo);
-
-    /* DEBUG */
-    std::cout << "GLB Loaded: " << filename << std::endl;
-    std::cout << "  Vertex Buffers: " << m_pGlbModel->GetVertexBufferCount() << std::endl;
-    std::cout << "  Index Buffer: " << (m_pGlbModel->GetIndexBuffer() ? "valid" : "null") << std::endl;
-    std::cout << "  Textures: " << m_pGlbModel->GetTextureCount() << std::endl;
-    /* END DEBUG */
 
     // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
     // TODO: Vertex buffer now no longer needs vector (unless animation node support is added later)
@@ -562,8 +560,6 @@ void Renderer::loadGLB(const std::string& filename) {
        Diligent::ITextureView* pTexView = m_pMapTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
        m_pMapShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(pTexView);
     }
-
-
 
     // vertex buffers, index buffer and textures now loaded, proceed to render GLB scene
 }
@@ -625,80 +621,6 @@ void Renderer::createFrameBuffer() {
     m_pDevice->CreateFramebuffer(frameBufferDesc, &m_pFrameBuffer);
 }
 
-void Renderer::renderDebugAxes() {
-    // 1. Create the debug buffer if it doesn't exist
-    if (!m_pDebugLineBuffer) {
-        Diligent::BufferDesc buffDesc;
-        buffDesc.Name = "Debug Line Vertex Buffer";
-        buffDesc.Usage = Diligent::USAGE_IMMUTABLE;
-        buffDesc.BindFlags = Diligent::BIND_VERTEX_BUFFER;
-        buffDesc.Size = debugLineVertices.size() * sizeof(vec3);
-        Diligent::BufferData buffData{ debugLineVertices.data(), buffDesc.Size };
-        m_pDevice->CreateBuffer(buffDesc, &buffData, &m_pDebugLineBuffer);
-    }
-
-    // 2. Create a separate debug pipeline for lines (only if not created)
-    if (!m_pDebugLinePSO) {
-        Diligent::GraphicsPipelineStateCreateInfo ci;
-        ci.PSODesc.Name = "Debug Line PSO";
-        ci.PSODesc.PipelineType = Diligent::PIPELINE_TYPE_GRAPHICS;
-        ci.GraphicsPipeline.PrimitiveTopology = Diligent::PRIMITIVE_TOPOLOGY_LINE_LIST;
-        ci.GraphicsPipeline.RasterizerDesc.CullMode = Diligent::CULL_MODE_NONE;
-        ci.GraphicsPipeline.DepthStencilDesc.DepthEnable = false; // Draw over everything
-
-        // Create a simple vertex shader that just passes positions through
-        Diligent::ShaderCreateInfo shaderCI;
-        shaderCI.SourceLanguage = Diligent::SHADER_SOURCE_LANGUAGE_GLSL;
-        // Create pShaderSourceFactory (reuse from map pipeline)
-        Diligent::RefCntAutoPtr<Diligent::IShaderSourceInputStreamFactory> pShaderSourceFactory;
-        m_pEngineFactory->CreateDefaultShaderSourceStreamFactory("assets/shaders", &pShaderSourceFactory);
-        shaderCI.pShaderSourceStreamFactory = pShaderSourceFactory;
-
-        Diligent::RefCntAutoPtr<Diligent::IShader> pVS;
-        shaderCI.Desc.ShaderType = Diligent::SHADER_TYPE_VERTEX;
-        shaderCI.EntryPoint = "main";
-        shaderCI.Desc.Name = "Debug VS";
-        shaderCI.FilePath = "debug_vertex.glsl"; // Create this file in Step 3
-        m_pDevice->CreateShader(shaderCI, &pVS);
-
-        Diligent::RefCntAutoPtr<Diligent::IShader> pPS;
-        shaderCI.Desc.ShaderType = Diligent::SHADER_TYPE_PIXEL;
-        shaderCI.EntryPoint = "main";
-        shaderCI.Desc.Name = "Debug PS";
-        shaderCI.FilePath = "debug_fragment.glsl"; // Create this file in Step 3
-        m_pDevice->CreateShader(shaderCI, &pPS);
-
-        ci.pVS = pVS;
-        ci.pPS = pPS;
-
-        // Layout: Just vertex positions (3 floats)
-        Diligent::LayoutElement layoutElems[] = {
-            {0, 0, 3, Diligent::VT_FLOAT32, false}
-        };
-        ci.GraphicsPipeline.InputLayout.LayoutElements = layoutElems;
-        ci.GraphicsPipeline.InputLayout.NumElements = _countof(layoutElems);
-        ci.GraphicsPipeline.pRenderPass = m_pRenderPass;
-
-        ci.PSODesc.ResourceLayout.DefaultVariableType = Diligent::SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-        m_pDevice->CreateGraphicsPipelineState(ci, &m_pDebugLinePSO);
-
-        // Bind the UBO
-        m_pDebugLinePSO->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(m_pFrameConstants);
-         m_pDebugLinePSO->CreateShaderResourceBinding(&m_pDebugShaderResourceBinding, true);
-    }
-
-    // 3. Render the lines
-    m_pImmediateContext->SetVertexBuffers(0, 1, &m_pDebugLineBuffer, nullptr, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetPipelineState(m_pDebugLinePSO);
-    m_pImmediateContext->CommitShaderResources(m_pDebugShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
-
-    // Draw 3 lines = 6 vertices
-    Diligent::DrawAttribs drawAttribs;
-    drawAttribs.NumVertices = 6;
-    drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
-    m_pImmediateContext->Draw(drawAttribs);
-}
-
 void Renderer::renderMap() {
     m_pImmediateContext->SetVertexBuffers(0, m_pMapVertexBuffers.size(), m_pMapVertexBuffers.data(), 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_pMapIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
@@ -710,7 +632,6 @@ void Renderer::renderMap() {
         for (const Diligent::GLTF::Primitive& primitive : mesh.Primitives) {
 
             Diligent::DrawIndexedAttribs drawAttribs;
-           // drawAttribs.NumIndices = m_pMapIndexBuffer->GetDesc().Size / sizeof(uint32_t);
             drawAttribs.NumIndices = primitive.IndexCount;
             drawAttribs.FirstIndexLocation = primitive.FirstIndex;
             drawAttribs.BaseVertex = 0;
@@ -744,21 +665,7 @@ void Renderer::renderSprites() {
 
 void Renderer::updateUniformBuffer() {
 
-    /* Perspective projection matrix */
-    float aspectRatio = static_cast<float>(m_windowWidth) / static_cast<float>(m_windowHeight);
-    float fov = 80.0f * (std::numbers::pi_v<float> / 180); /* Set at 80deg FOV, TODO: make adjustable? */
-    m_projMatrix = perspective(fov, aspectRatio, /* Z-near */ 0.1f, /* Z-far */ 50.0f);
-
-
-
-    // Assign it
     m_viewMatrix = m_pCamera->getViewMatrix();
-
-    std::cout << "Camera View Matrix:\n-=-=-=-=-=-=-=-=-\n" <<
-    "[ " << m_viewMatrix[0][0] << ", " << m_viewMatrix[1][0] << ", " << m_viewMatrix[2][0] << ", " << m_viewMatrix[3][0] << " ]\n"
-    "[ " << m_viewMatrix[0][1] << ", " << m_viewMatrix[1][1] << ", " << m_viewMatrix[2][1] << ", " << m_viewMatrix[3][1] << " ]\n"
-    "[ " << m_viewMatrix[0][2] << ", " << m_viewMatrix[1][2] << ", " << m_viewMatrix[2][2] << ", " << m_viewMatrix[3][2] << " ]\n"
-    "[ " << m_viewMatrix[0][3] << ", " << m_viewMatrix[1][3] << ", " << m_viewMatrix[2][3] << ", " << m_viewMatrix[3][3] << " ]\n";
 
 }
 
@@ -770,8 +677,6 @@ void Renderer::renderFrame() {
      *
      * These will both be done in one subpass
     */
-
-    // > Setting clear val to green will have screen flash?
 
     /* Both render pass attachments need clear values */
     Diligent::OptimizedClearValue clearValues[2];
@@ -803,7 +708,6 @@ void Renderer::renderFrame() {
     }
 
     renderMap();
-    renderDebugAxes();
     renderSprites();
 
     m_pImmediateContext->EndRenderPass();

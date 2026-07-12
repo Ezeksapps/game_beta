@@ -11,7 +11,6 @@
 #include <DiligentTools/TextureLoader/interface/TextureUtilities.h>
 
 #include <DiligentCore/Common/interface/RefCntAutoPtr.hpp> /* CHECK: the advantages given over STL smart pointer don't really matter here */
-//#include <DiligentCore/Common/interface/BasicMath.hpp>
 
 #include <DiligentCore/Graphics/GraphicsEngine/interface/RenderDevice.h>
 #include <DiligentCore/Graphics/GraphicsEngine/interface/RenderPass.h>
@@ -25,12 +24,7 @@
 
 #include <DiligentTools/RenderStateNotation/interface/RenderStateNotationLoader.h>
 
-// TODO: Camera math defines its own vec3 type, change this to match diligent's (or change the name)
-
-
 using namespace glm;
-/* ------------------------------ */
-
 
 struct Sprite {
     vec3 pos; // Position
@@ -41,7 +35,7 @@ class Renderer {
 
 public:
 
-    Renderer();
+    Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight);
     ~Renderer();
 
     bool initRenderer(const Diligent::NativeWindow& window, const Diligent::RENDER_DEVICE_TYPE& deviceType);
@@ -53,6 +47,9 @@ public:
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
+
+    /* Camera instance */
+    std::unique_ptr<Camera>                           m_pCamera;
 
 private:
 
@@ -67,9 +64,10 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IRenderPass>    m_pRenderPass;
     Diligent::RefCntAutoPtr<Diligent::IFramebuffer>   m_pFrameBuffer;
 
+    /* Map file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
 
-    Diligent::RefCntAutoPtr<Diligent::IBuffer> m_pDebugLineBuffer;
+
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pDebugLinePSO;
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
@@ -97,18 +95,10 @@ private:
     /* Pipeline SRBs */
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pMapShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSpriteShaderResourceBinding;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pDebugShaderResourceBinding;
-
-    std::unique_ptr<Camera>  m_pCamera;
 
     /* Matrices */
     mat4 m_projMatrix; // The world space's projection matrix
     mat4 m_viewMatrix; // The camera's matrix
-
-    /* REFERENCE: Vulkan system had two uniform buffers. One for frame constants and one for per-instance transforms
-     * Per-instance transforms are handled here by the instancing system, where they are now a mat4 input for the sprites' VS
-     * The per-frame UBO exists as m_pFrameConstants, which has proj and view (camera) matrices. The matrices are mapped on render
-     */
 
     std::vector<mat4> m_instanceData; // transform matrices for every billboard instance
 
@@ -134,7 +124,6 @@ private:
 
     void renderMap();
     void renderSprites();
-    void renderDebugAxes();
 
     void updateUniformBuffer();
 

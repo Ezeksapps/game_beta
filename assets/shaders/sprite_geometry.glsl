@@ -14,11 +14,14 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 layout(location = 0) in vec2 tex_uv[];
+layout(location = 1) in mat4 modelMatrix[];
 
 out vec2 uv; // may no longer be needed in FS?
 
 void main() {
     /* Generate billboard & calculate matrix based on camera position */
+
+    // TODO: will only use first index in UVs and matrices, even if multiple sprites exist
 
     vec2 base_uv = tex_uv[0];            // Get UV from the vertex
 
@@ -27,10 +30,9 @@ void main() {
     vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
     vec3 cameraUp = vec3(g_viewMatrix[0][1], g_viewMatrix[1][1], g_viewMatrix[2][1]);
 
-    float size = 0.5;
+    mat4 viewProjMatrix = g_projMatrix * g_viewMatrix * modelMatrix[0]; // NOTE: must mul by model matrix for proper position
 
-    // Calculate view-projection matrix
-    mat4 viewProjMatrix = g_projMatrix * g_viewMatrix;
+    float size = 0.5;
 
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
     uv = vec2(0.0, 1.0);

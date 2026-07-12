@@ -1,6 +1,7 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
 #include "common.hpp"
+#include "game.hpp"
 #include "graphics/renderer.hpp"
 
 #include <DiligentCore/Platforms/interface/NativeWindow.h>
@@ -15,14 +16,14 @@
 #include <iostream>
 #include <stdexcept>
 
-GLFWwindow* window;
-Diligent::NativeWindow wnd;
-std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>();
-Diligent::RENDER_DEVICE_TYPE renderBackend;
-
 /* size at which initial window is created */
 const uint32_t WIDTH_INITIAL = 800;
 const uint32_t HEIGHT_INITIAL = 600;
+
+GLFWwindow* window;
+Diligent::NativeWindow wnd;
+std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>(WIDTH_INITIAL, HEIGHT_INITIAL);
+Diligent::RENDER_DEVICE_TYPE renderBackend;
 
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
@@ -33,7 +34,22 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
-        handleInput(key);  // Send raw keycode
+        //handleInput(key);  // Send raw keycode
+        switch (key) {
+            case GLFW_KEY_A:
+                renderer->m_pCamera->rotate(vec3(0.0f, -(std::numbers::pi_v<float> * 0.01), 0.0f));
+                break;
+            case GLFW_KEY_D:
+                renderer->m_pCamera->rotate(vec3(0.0f, (std::numbers::pi_v<float> * 0.01), 0.0f));
+            case GLFW_KEY_W:
+                renderer->m_pCamera->rotate(vec3(-(std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
+                break;
+            case GLFW_KEY_S:
+                renderer->m_pCamera->rotate(vec3((std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -70,9 +86,6 @@ void initWindow() {
 #elif defined (_WIN32)
 #endif
 
-    renderer->m_windowHeight = HEIGHT_INITIAL;
-    renderer->m_windowWidth = WIDTH_INITIAL;
-
     glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 
     glfwShowWindow(window);
@@ -85,8 +98,7 @@ void mainLoop() {
         glfwPollEvents();
 
         renderer->renderFrame();
-        //gameUpdate();
-        //drawFrame();
+        gameUpdate();
     }
 }
 

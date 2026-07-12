@@ -1,26 +1,10 @@
 #pragma once
 
-/* Adapted from https://github.com/hmazhar/moderngl_camera/blob/master/camera.hpp
- * ---------
- * CHANGES:
- * ---------
- * Renamed any reference to a 'heading' to yaw
- * Changed functions to Pascal to Camel case
- * Changed member variables to m_<varname> format
- * Removed ortho camera mode, as it isn't needed
- * Removed unused or unecessary functions
- * Removed any reference to any matrix that isn't the view matrix (this should not handle or know about proj/model matrices)
- * Corrected so that angles are all considered in radians
- * Changed euler angle setters to one unified rotate func (but doesn't consider roll yet)
- * Changed to store full orientation quaternion
- * Removed unecessary movement damping in view matrix calculation
- * Changed so camera's up and right vectors are declared as macros
- * Changed to a Z-up coordinate system
- * Removed yaw and pitch rate limiters
- *
- * NOTE: Some ideas (such as orientation quat, unified rotate and accumulator) were carried over from Crydsch camera
-*/
-
+/* BASED ON:
+ * https://stackoverflow.com/questions/49609654/quaternion-based-first-person-view-camera
+ * https://github.com/Crydsch/camera/blob/main/camera.h
+ * https://github.com/hmazhar/moderngl_camera
+ */
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -30,54 +14,39 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define CAMERA_RIGHT    glm::vec3(1.0f, 0.0f, 0.0f)
-#define CAMERA_FORWARD  glm::vec3(0.0f, 1.0f, 0.0f)
-#define CAMERA_UP       glm::vec3(0.0f, 0.0f, 1.0f)
+#define CAMERA_RIGHT        vec3(1.0f, 0.0f, 0.0f)
+#define CAMERA_UP           vec3(0.0f, 1.0f, 0.0f)
+#define CAMERA_FORWARD      vec3(0.0f, 0.0f, 1.0f) // Camera top-down, treat Z-axis as default forward direction
 
-enum CameraDirection {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT,
-    FORWARD,
-    BACK
-};
+using namespace glm;
 
 class Camera {
 
 public:
+
     Camera();
     ~Camera();
 
-    glm::mat4 getViewMatrix();
-
-    // Given a specific moving direction, the camera will be moved in the appropriate direction
-    // For a spherical camera this will be around the look_at point
-    // For a free camera a delta will be computed for the direction of movement.
-    void Move(CameraDirection dir);
-
-    void rotate(const glm::vec3& angles);
+    mat4 getViewMatrix();
 
     /* ---- SETTERS ---- */
 
-    void setPos(const glm::vec3& pos);
-    void setTargetPos(const glm::vec3& pos);
+    void setPos(const vec3& pos);
+    void setTargetPos(const vec3& pos);
+    void setOffset(const vec3& offset);
+    void rotate(const vec3& angles);
 
+private:
 
-    float m_scale;
-    float m_yaw;
-    float m_pitch;
+    vec3 forward();
+    vec3 up();
+    vec3 right();
+    vec3 eye();
 
-    bool  m_moveCamera;
+    quat m_orientation;
+    vec3 m_targetPos;
+    vec3 m_offset;
 
-    glm::quat m_orientation;
-
-    glm::vec3 m_rotationAcc;
-
-    glm::vec3 m_pos;
-    glm::vec3 m_deltaPos;
-    glm::vec3 m_targetPos;
-    glm::vec3 m_direction;
-
+    vec3 m_rotationAcc;
 };
 
