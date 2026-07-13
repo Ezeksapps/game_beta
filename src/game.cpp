@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "entity/entity.hpp"
 #include <iostream>
 
 void handleInput(GameCmd* input) {
@@ -39,4 +40,13 @@ void handleInput(GameCmd* input) {
 
 void gameUpdate(void) {
     processCmds(handleInput);
+}
+
+void gameInit() {
+    SpriteSheetInfo playerSpriteSheetInfo {
+        .entityEvents = {ANIM_EVENT_WALK},
+        .spriteSheets = {"eevee_walk.png"},
+        .eventPages = {7}
+    };
+    Entity* player = new Entity(playerSpriteSheetInfo);
 }

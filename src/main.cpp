@@ -59,9 +59,6 @@ void initWindow() {
     if (glfwVulkanSupported()) {
         renderBackend = Diligent::RENDER_DEVICE_TYPE_VULKAN;
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // set GLFW to not create an OpenGL Instance for this window
-
-        std::cout << "GLFW detected Vulkan\n";
-        std::cout << "Device type (enum): " << renderBackend << std::endl;
     }
     else { // No Vulkan support (probably pre-2017 hardware), fallback to OpenGL 3.3
         renderBackend = Diligent::RENDER_DEVICE_TYPE_GL;

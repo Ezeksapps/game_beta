@@ -68,7 +68,7 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
 
     /* Camera view matrix */
     m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
-    m_pCamera->setOffset(vec3(0.0f, -3.0f, 6.0f));
+    m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
     /* Only applies effect when in update UBO?
      If camera is made public member, applying rotation incrementally by running rotate() on every keypress of 'ENTER'
      will properly do rotation, but any rotation applied in constructor is cleared and never seen
@@ -288,6 +288,20 @@ void Renderer::createSpritePipelineState() {
     PipelineStateObjCreateInfo.GraphicsPipeline.pRenderPass                             = m_pRenderPass;
     /* initial supbpass to start render pass from */
     PipelineStateObjCreateInfo.GraphicsPipeline.SubpassIndex                            = 0;
+
+    /* NOTE: Weirdly, Blend is applied to a 'render target', even if you're using a render pass system? */
+    // TODO: Transparency might need sorting (grid-like system may mean this isn't necessary though)
+    Diligent::RenderTargetBlendDesc blendDesc;
+    blendDesc.BlendEnable = true;
+    blendDesc.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
+    blendDesc.DestBlend = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
+    blendDesc.BlendOp = Diligent::BLEND_OPERATION_ADD;
+    blendDesc.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
+    blendDesc.DestBlendAlpha = Diligent::BLEND_FACTOR_ZERO;
+    blendDesc.BlendOpAlpha = Diligent::BLEND_OPERATION_ADD;
+    blendDesc.RenderTargetWriteMask = Diligent::COLOR_MASK_ALL;
+
+    PipelineStateObjCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0] = blendDesc;
 
     Diligent::ShaderCreateInfo shaderCreateInfo;
 
@@ -523,6 +537,9 @@ Sprite Renderer::loadSprite(const std::string& filename) {
     Sprite sprite;
     sprite.index = m_numSprites;
     sprite.pos = vec3(0.0f, 0.0f, 0.1f);
+    // for PMD overworld walk anim
+    sprite.pages = 56;
+    sprite.pagesPerAnim = 7;
 
     mat4 transform = translate(mat4(1.0f), vec3(sprite.pos.x, sprite.pos.y, sprite.pos.z));
     m_instanceData.push_back(transform);
@@ -542,7 +559,7 @@ void Renderer::loadGLB(const std::string& filename) {
 
     // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
     // TODO: Vertex buffer now no longer needs vector (unless animation node support is added later)
-    m_pMapVertexBuffers.push_back(m_pGlbModel->GetVertexBuffer(0, m_pDevice, m_pImmediateContext));
+    m_pMapVertexBuffer = m_pGlbModel->GetVertexBuffer(0, m_pDevice, m_pImmediateContext);
 
     /* Get buffers */
 
@@ -557,8 +574,12 @@ void Renderer::loadGLB(const std::string& filename) {
      /* TODO: Make some mechanism where program gracefully exits on encountering a textureless GLB, rather than crashing from an unset g_texture global in shaders */
     if (!m_pMapTextures.empty()) {
         // TODO: Must bind all textures!
-       Diligent::ITextureView* pTexView = m_pMapTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-       m_pMapShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(pTexView);
+       // Diligent::ITextureView* texViews;
+       // for (int i = 0; i < m_pMapTextures.size(); ++i) {
+       //     Diligent::ITextureView* pTexView = m_pMapTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+       // }
+        Diligent::ITextureView* pTexView = m_pMapTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+        m_pMapShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(pTexView);
     }
 
     // vertex buffers, index buffer and textures now loaded, proceed to render GLB scene
@@ -622,7 +643,7 @@ void Renderer::createFrameBuffer() {
 }
 
 void Renderer::renderMap() {
-    m_pImmediateContext->SetVertexBuffers(0, m_pMapVertexBuffers.size(), m_pMapVertexBuffers.data(), 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
+    m_pImmediateContext->SetVertexBuffers(0, 1, &m_pMapVertexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_pMapIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pMapPipelineStateObj); // set pipeline to use
     m_pImmediateContext->CommitShaderResources(m_pMapShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);

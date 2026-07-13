@@ -27,8 +27,11 @@
 using namespace glm;
 
 struct Sprite {
-    vec3 pos; // Position
-    int index; // specifically index in tex array
+    vec3 pos; // Position (before accounting for world-view-model matrix)
+    int index; // start index in tex array
+    int pages; // number of pages taken up by this spritesheet
+    int pagesPerAnim; // pages taken up by each animation
+    // (endPage = index + pages)
 };
 
 class Renderer {
@@ -44,6 +47,8 @@ public:
 
     void loadGLB(const std::string& filename);
     Sprite loadSprite(const std::string& filename);
+
+    void playSpriteAnim(const int& spriteIn);
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
@@ -86,7 +91,7 @@ private:
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
 
     /* ---- Map pipeline buffers & textures ---- */
-    std::vector<Diligent::IBuffer*>                   m_pMapVertexBuffers;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pMapVertexBuffer;
     std::vector<Diligent::ITexture*>                  m_pMapTextures;
     Diligent::IBuffer*                                m_pMapIndexBuffer;
 

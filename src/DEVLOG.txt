@@ -520,3 +520,21 @@ NOTE: UI library may be ImGui, but figure out how to control the styling so ever
 (though it should automatically do this based on the specified width/height in renderer, font can be pixelated as well)
 
 TODO: Switch to anisotropic filter for better-looking textures
+
+SPRITE HANDLING
+------------------------------
+
+SPRITE SOURCES:
+
+Pkmn (overwold): PMD Sprite repo
+
+---
+
+All sprites or pages of a spritesheet should be 192 x 192 px for desktop, any not upscaled accordingly will not work properly
+
+An entity is assigned a sprite map. This contains each spritesheet assigned to a key, which is the event that should trigger
+the use of a spritesheet to animate this entity.
+
+WALK
+RUN
+
