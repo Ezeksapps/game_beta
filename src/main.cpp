@@ -1,6 +1,8 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
 #include "common.hpp"
+#include "game_state.hpp"
+
 #include "game.hpp"
 #include "graphics/renderer.hpp"
 
@@ -22,13 +24,15 @@ const uint32_t HEIGHT_INITIAL = 600;
 
 GLFWwindow* window;
 Diligent::NativeWindow wnd;
-std::unique_ptr<Renderer> renderer = std::make_unique<Renderer>(WIDTH_INITIAL, HEIGHT_INITIAL);
+
+std::shared_ptr<GameState> g_state = std::make_shared<GameState>();
+
 Diligent::RENDER_DEVICE_TYPE renderBackend;
 
 
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
-    renderer->m_windowWidth = width;
-    renderer->m_windowHeight = height;
+    g_state->g_renderer->m_windowWidth = width;
+    g_state->g_renderer->m_windowHeight = height;
     //renderer->framebufferResized = true;
 }
 
@@ -37,15 +41,15 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         //handleInput(key);  // Send raw keycode
         switch (key) {
             case GLFW_KEY_A:
-                renderer->m_pCamera->rotate(vec3(0.0f, -(std::numbers::pi_v<float> * 0.01), 0.0f));
+                g_state->g_renderer->m_pCamera->rotate(vec3(0.0f, -(std::numbers::pi_v<float> * 0.01), 0.0f));
                 break;
             case GLFW_KEY_D:
-                renderer->m_pCamera->rotate(vec3(0.0f, (std::numbers::pi_v<float> * 0.01), 0.0f));
+                g_state->g_renderer->m_pCamera->rotate(vec3(0.0f, (std::numbers::pi_v<float> * 0.01), 0.0f));
             case GLFW_KEY_W:
-                renderer->m_pCamera->rotate(vec3(-(std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
+                g_state->g_renderer->m_pCamera->rotate(vec3(-(std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
                 break;
             case GLFW_KEY_S:
-                renderer->m_pCamera->rotate(vec3((std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
+                g_state->g_renderer->m_pCamera->rotate(vec3((std::numbers::pi_v<float> * 0.01), 0.0f, 0.0f));
                 break;
             default:
                 break;
@@ -94,7 +98,7 @@ void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-        renderer->renderFrame();
+        g_state->g_renderer->renderFrame();
         gameUpdate();
     }
 }
@@ -102,12 +106,13 @@ void mainLoop() {
 /* Entry point */
 int main() {
     try {
+        g_state->g_renderer = std::make_unique<Renderer>(WIDTH_INITIAL, HEIGHT_INITIAL);
         initWindow();
 
-        renderer->initRenderer(wnd, renderBackend);
-        renderer->loadGLB("assets/test.glb");
-        renderer->loadSprite("assets/sprites/eevee.png");
-        renderer->loadSprite("assets/sprites/vulpix_fire.png");
+        g_state->g_renderer->initRenderer(wnd, renderBackend);
+        g_state->g_renderer->loadGLB("assets/test.glb");
+        g_state->g_renderer->loadSprite("assets/sprites/eevee.png");
+       // renderer->loadSprite("assets/sprites/vulpix_fire.png");
 
         mainLoop();
 

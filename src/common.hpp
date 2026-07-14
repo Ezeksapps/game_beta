@@ -1,5 +1,12 @@
 #pragma once
 
+#include <memory>
+
+struct GameState; // forward declaration, defined by entry point which should include game_state.hpp
+
+/* Global game state manager */
+extern std::shared_ptr<GameState> g_state;
+
 /* Defines global macros required by libs */
 
 #if defined(__linux__)

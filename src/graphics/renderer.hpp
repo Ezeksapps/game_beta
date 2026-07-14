@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common.hpp"
+#include "../entity/sprite.hpp"
 #include "camera.hpp"
 #include "DiligentCore/Graphics/GraphicsEngine/interface/PipelineState.h"
 
@@ -26,14 +27,6 @@
 
 using namespace glm;
 
-struct Sprite {
-    vec3 pos; // Position (before accounting for world-view-model matrix)
-    int index; // start index in tex array
-    int pages; // number of pages taken up by this spritesheet
-    int pagesPerAnim; // pages taken up by each animation
-    // (endPage = index + pages)
-};
-
 class Renderer {
 
 public:
@@ -46,7 +39,19 @@ public:
     void update();
 
     void loadGLB(const std::string& filename);
-    Sprite loadSprite(const std::string& filename);
+
+    // create a texture for a specified Sprite object and add it to the texture array
+    // NOTE: Space in that array is limited to m_maxInstances, this function should be used
+    // to occupy the top-most slot with a spritesheet belonging to an Entity that is not yet being rendered
+    // If you need to switch the spritesheet used for an entity already using the renderer, use swapSprite()
+    // Returns the index of this Sprite in the texture array
+    int registerSprite(const std::shared_ptr<Sprite>& sprite);
+
+    // If an Entity already using the renderer for its sprite needs to switch to another sprite sheet,
+    // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
+    void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite);
+
+    Sprite loadSprite(const std::string& filename); // DEPRECATED
 
     void playSpriteAnim(const int& spriteIn);
 
@@ -57,6 +62,12 @@ public:
     std::unique_ptr<Camera>                           m_pCamera;
 
 private:
+
+    struct FrameConstants {
+        mat4 projMatrix;
+        mat4 viewMatrix;
+    };
+
 
     // TODO: UI will need separate PSO
 
@@ -71,9 +82,6 @@ private:
 
     /* Map file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
-
-
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pDebugLinePSO;
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
@@ -109,7 +117,7 @@ private:
 
     /* Number of sprites game is currently rendering */
     int m_numSprites = 0;
-    /* Max number of sprites (instances of billboards) */
+    /* Max number of sprites (aka. Entities that can use this renderer at one time) */
     const int m_maxInstances = 32;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
@@ -132,7 +140,8 @@ private:
 
     void updateUniformBuffer();
 
-    void loadTexture(const std::string& filename);
+    void registerTexture(const std::string& filepath);
+    void swapTexture(const int& oldTextureIndex, const std::string& newTextureFilepath);
 
     void createSpriteTextureArray();
 };

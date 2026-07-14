@@ -1,5 +1,7 @@
 #include "entity.hpp"
 
+// DEFINITE TODO: Figure out the game state system
+
 Entity::Entity(const SpriteSheetInfo& spriteSheetInfo) {
     for (int i = 0; i < spriteSheetInfo.entityEvents.size(); ++i) {
         Sprite sprite {
@@ -14,8 +16,11 @@ Entity::~Entity() {}
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
 
-    //renderer->accessSprite
-    //renderer->playSpriteAnim
+   // g_state->g_renderer->swapSprite(, )
+
+    /* TEMP PSEUDOCODE IMPL
+     * --------------------
+     * renderer->swapSprite(m_pActiveSprite.)
 
     // <Sprite>, <pageIdx> (within sprite),
 }
