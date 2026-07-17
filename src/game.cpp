@@ -1,6 +1,7 @@
 #include "game.hpp"
-#include "entity/entity.hpp"
 #include <iostream>
+
+std::unique_ptr<Engine>& g_pEngineRef;
 
 void handleInput(GameCmd* input) {
     switch(*input) {
@@ -39,14 +40,16 @@ void handleInput(GameCmd* input) {
 
 
 void gameUpdate(void) {
-    processCmds(handleInput);
+    g_pEngineRef->processCmds(handleInput);
 }
 
-void gameInit() {
-    SpriteSheetInfo playerSpriteSheetInfo {
-        .entityEvents = {ANIM_EVENT_WALK},
-        .spriteSheets = {"eevee_walk.png"},
-        .eventPages = {7}
-    };
-    Entity* player = new Entity(playerSpriteSheetInfo);
+void gameInit(const std::unique_ptr<Engine>& pEngineRef) {
+    //SpriteSheetInfo playerSpriteSheetInfo {
+    //    .entityEvents = {ANIM_EVENT_WALK},
+    //    .spriteSheets = {"eevee_walk.png"},
+   //     .eventPages = {7}
+   // };
+  //  Entity* player = new Entity(playerSpriteSheetInfo);
+    g_pEngineRef = pEngineRef;
+
 }

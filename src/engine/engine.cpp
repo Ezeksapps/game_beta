@@ -1,5 +1,5 @@
-#include "../fileio.hpp"
-#include "input_handler.hpp"
+#include "engine.hpp"
+#include "fileio.hpp"
 
 #include <queue>
 #include <unordered_map>
@@ -9,8 +9,9 @@
 using json = nlohmann::json;
 
 std::queue<GameCmd*> cmdQueue;
-
 std::unordered_map<int, GameCmd> keyMap = {};
+
+/* --- HELPER FUNCS --- */
 
 /* Read keybind config & map all game commands to the respective enumerated GLFW keys */
 void initInputHandler() {
@@ -22,14 +23,32 @@ void initInputHandler() {
     }
 }
 
-void handleInput(const int& keycode) {
+/* --- CONSTRUCTOR/DESTRUCTOR --- */
+
+Engine::Engine(const EngineConfig& config) {
+    // combine to one func?
+    m_pRenderer = std::make_unique<Renderer>(config.viewportWidth, config.viewportHeight);
+    m_pRenderer->initRenderer(config.window, config.renderBackend);
+    // TODO: renderer needs to re-create swap chain when viewport size changed
+    initInputHandler();
+}
+
+/* --- INPUT HANDLING --- */
+
+void Engine::handleInput(const int& keycode) {
     cmdQueue.push(&keyMap[keycode]);
 }
 
-void processCmds(void (*callback)(GameCmd* cmd)) {
+void Engine::processCmds(void (*callback)(GameCmd* cmd)) {
     if (!cmdQueue.empty()) {
         GameCmd* cmd = cmdQueue.front();
         cmdQueue.pop();
         callback(cmd);
     }
+}
+
+/* --- RENDERING --- */
+
+void Engine::renderFrame() {
+    m_pRenderer->renderFrame();
 }

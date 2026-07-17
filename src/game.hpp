@@ -1,6 +1,6 @@
 #pragma once
 
-#include "input/input_handler.hpp"
-#include "entity/entity.hpp"
+#include "engine/engine.hpp"
 
 void gameUpdate(void);
+void gameInit(const std::unique_ptr<Engine>& pEngineRef);

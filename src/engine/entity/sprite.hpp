@@ -10,6 +10,7 @@ struct Sprite {
     vec3 pos; // Position (before accounting for world-view-model matrix)
     int index; // start index in tex array
     int pages; // number of pages taken up by this spritesheet
+    std::vector<int> pageDurations; // duration of each page/frame for one cycle of the animation
     int pagesPerAnim; // pages taken up by each animation
     // (endPage = index + pages)
 };

@@ -267,7 +267,7 @@ void Renderer::registerTexture(const std::string& filepath) {
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-
+//textureLoader->GetTextureDesc().GetHeight();
     /* Box representing slice */
     Diligent::Box updateBox;
     updateBox.MinX = 0;

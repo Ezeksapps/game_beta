@@ -28,7 +28,8 @@ class Entity {
 
 public:
 
-    Entity(const SpriteSheetInfo& spriteSheetInfo);
+   // Entity(const SpriteSheetInfo& spriteSheetInfo);
+    Entity(const std::string& animJsonFilepath);
     ~Entity();
 
     void doAnimEvent(const AnimEvent& event);

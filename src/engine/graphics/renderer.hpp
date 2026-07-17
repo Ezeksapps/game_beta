@@ -29,6 +29,8 @@ using namespace glm;
 
 class Renderer {
 
+friend class Scene; /* could be permanent? saves needing getter funcs considering only this class ever needs the full entity list */
+
 public:
 
     Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight);
