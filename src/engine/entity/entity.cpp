@@ -27,6 +27,7 @@ Entity::~Entity() {}
 
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
+
 }
 
 void Entity::setDirection(const Direction& direction) {

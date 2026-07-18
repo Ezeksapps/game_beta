@@ -237,7 +237,7 @@ void Renderer::populateInstanceBuffer() {
 /* creates texture array for sprites */
 void Renderer::createSpriteTextureArray() {
     Diligent::TextureDesc textureArrayDesc;
-    textureArrayDesc.ArraySize = m_maxInstances * m_maxSpriteDimenstions;
+    textureArrayDesc.ArraySize = m_maxInstances * m_maxSpriteDimensions;
     // 2D array
     textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
     /* All sprite dimensions are 192 x 192 */
@@ -266,7 +266,6 @@ void Renderer::registerTexture(const std::string& filepath) {
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-//textureLoader->GetTextureDesc().GetHeight();
     /* Box representing slice */
     Diligent::Box updateBox;
     updateBox.MinX = 0;
@@ -274,13 +273,17 @@ void Renderer::registerTexture(const std::string& filepath) {
     updateBox.MinZ = 0;
     updateBox.MaxX = 192;
     updateBox.MaxY = 192;
-    updateBox.MaxZ = 1;  /* Z-axis represents slices */
+    updateBox.MaxZ = m_maxSpriteDimensions;  /* Z-axis represents slices */
+
+    // NOTE: All Sprites, regardless of how many slices they actually require will be treated as having a number of
+    // frames equal to the constexpr m_maxSpriteDimensions. This allows all spritesheets to occupy equal amounts of memory,
+    // meaning differently-sized spritesheets will not interfere with each other
 
     /* Update slice w/ new texture */
     m_pImmediateContext->UpdateTexture(
         m_pSpriteTextureArray,
         0,
-        m_numSprites,
+        m_numSprites * m_maxSpriteDimensions,
         updateBox,
         subResData,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
@@ -304,7 +307,11 @@ void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTex
     updateBox.MinZ = 0;
     updateBox.MaxX = 192;
     updateBox.MaxY = 192;
-    updateBox.MaxZ = 1;  /* Z-axis represents slices */
+    updateBox.MaxZ = m_maxSpriteDimensions;  /* Z-axis represents slices */
+
+    // NOTE: All Sprites, regardless of how many slices they actually require will be treated as having a number of
+    // frames equal to the constexpr m_maxSpriteDimensions. This allows all spritesheets to occupy equal amounts of memory,
+    // meaning differently-sized spritesheets will not interfere with each other
 
     /* Update slice w/ new texture */
     m_pImmediateContext->UpdateTexture(
@@ -321,7 +328,7 @@ void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTex
 /* --- LOADERS --- */
 
 // ----- DEPRECATED ----- //
-Sprite Renderer::loadSprite(const std::string& filename) {
+/*Sprite Renderer::loadSprite(const std::string& filename) {
     if (m_numSprites + 1 > m_maxInstances) return {};
     registerTexture(filename);
 
@@ -340,7 +347,7 @@ Sprite Renderer::loadSprite(const std::string& filename) {
     populateInstanceBuffer();
 
     return sprite;
-} // ----- END DEPRECATED ----- //
+}*/ // ----- END DEPRECATED ----- //
 
 int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
     if (m_numSprites + 1 > m_maxInstances) return -1;
@@ -369,6 +376,9 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
 /* --- DRAW CALLS --- */
 
 void Renderer::renderSprites() {
+
+    /* This can no longer just render the texture. The texture is now comprised of an entire, multi-frame spritesheet
+     * This should render all entities, but the texture should be the specific slice that is needed for the animation */
 
     // vertex buffer has proper size, print vals
 

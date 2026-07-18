@@ -35,7 +35,10 @@ public:
     ~Entity();
 
     void doAnimEvent(const AnimEvent& event);
-    void setDirection(const Direction& direction);
+    void setDirection(const Direction& direction); // may not be needed
+
+    Direction m_direction;
+    uint8_t m_currentFrame;
 
 private:
 
@@ -46,5 +49,4 @@ private:
      */
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
     std::shared_ptr<Sprite> m_pActiveSprite; // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
-    Direction m_direction;
 };

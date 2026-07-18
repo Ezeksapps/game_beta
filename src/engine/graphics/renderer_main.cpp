@@ -245,6 +245,8 @@ void Renderer::renderFrame() {
         *uniformConstants = constants;
     }
 
+    m_lastFrameTime = m_clock.now();
+
     renderMap();
     renderSprites();
 

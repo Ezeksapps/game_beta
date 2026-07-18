@@ -4,6 +4,9 @@
 #include "../entity/sprite.hpp"
 #include "../scene/scene.hpp"
 #include "camera.hpp"
+
+#include <chrono> // used for frame rate stabilisation & sprite animation timings
+
 #include "DiligentCore/Graphics/GraphicsEngine/interface/PipelineState.h"
 
 #include <DiligentCore/Graphics/GraphicsEngineVulkan/interface/EngineFactoryVk.h>
@@ -68,10 +71,14 @@ private:
         mat4 viewMatrix;
     };
 
+    /* Renderer clock */
+    std::chrono::steady_clock m_clock;
+    /* Time point where the last frame was drawn */
+    std::chrono::time_point<std::chrono::steady_clock> m_lastFrameTime;
+    /* Rendered scene */
     std::unique_ptr<Scene> m_pScene;
 
-    // TODO: UI will need separate PSO
-
+    /* ---- Core components ---- */
     Diligent::RefCntAutoPtr<Diligent::IEngineFactory> m_pEngineFactory;
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  m_pDevice;
     Diligent::RefCntAutoPtr<Diligent::IDeviceContext> m_pImmediateContext;
@@ -122,8 +129,8 @@ private:
     int m_numSprites = 0;
     /* Max number of sprites (aka. Entities that can use this renderer at one time) */
     static const int m_maxInstances = 32;
-    /* the maximum dimenstions of a sprite sheet */
-    static constexpr int m_maxSpriteDimenstions = 10 * 10;
+    /* the maximum dimensions of a sprite sheet */
+    static constexpr int m_maxSpriteDimensions = 10 * 10;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
 
