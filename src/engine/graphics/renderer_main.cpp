@@ -129,6 +129,10 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
+void Renderer::setScene(const std::string& sceneDir) {
+    m_pScene = std::make_unique<Scene>(sceneDir);
+}
+
 void Renderer::createSharedUniformBuffer() {
 
     /* Dynamic UBO for transform matrix */

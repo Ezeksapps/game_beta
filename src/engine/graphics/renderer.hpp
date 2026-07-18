@@ -2,6 +2,7 @@
 
 #include "../common.hpp"
 #include "../entity/sprite.hpp"
+#include "../scene/scene.hpp"
 #include "camera.hpp"
 #include "DiligentCore/Graphics/GraphicsEngine/interface/PipelineState.h"
 
@@ -29,8 +30,6 @@ using namespace glm;
 
 class Renderer {
 
-friend class Scene; /* could be permanent? saves needing getter funcs considering only this class ever needs the full entity list */
-
 public:
 
     Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight);
@@ -39,6 +38,8 @@ public:
     bool initRenderer(const Diligent::NativeWindow& window, const Diligent::RENDER_DEVICE_TYPE& deviceType);
     void renderFrame();
     void update();
+
+    void setScene(const std::string& sceneDir);
 
     void loadGLB(const std::string& filename);
 
@@ -60,9 +61,6 @@ public:
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
-    /* Camera instance */
-    std::unique_ptr<Camera>                           m_pCamera;
-
 private:
 
     struct FrameConstants {
@@ -70,6 +68,7 @@ private:
         mat4 viewMatrix;
     };
 
+    std::unique_ptr<Scene> m_pScene;
 
     // TODO: UI will need separate PSO
 
@@ -84,6 +83,8 @@ private:
 
     /* Map file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
+    /* Camera instance */
+    std::unique_ptr<Camera>                           m_pCamera;
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
@@ -120,7 +121,9 @@ private:
     /* Number of sprites game is currently rendering */
     int m_numSprites = 0;
     /* Max number of sprites (aka. Entities that can use this renderer at one time) */
-    const int m_maxInstances = 32;
+    static const int m_maxInstances = 32;
+    /* the maximum dimenstions of a sprite sheet */
+    static constexpr int m_maxSpriteDimenstions = 10 * 10;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
 

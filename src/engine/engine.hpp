@@ -11,8 +11,6 @@
 
 #include <memory>
 
-class Scene;
-
 enum GameCmd {
     ENTITY_MOVE_FORWARD,
     ENTITY_MOVE_LEFT,
@@ -45,6 +43,7 @@ public:
 
     // all scenes are in their own directory. setScene should take the name of the directory, so that
     // it can locate the JSON and glTF files corresponding to the scene and create the object
+    // acts as a public-access way to call renderer's setScene()
     void setScene(const std::string& sceneDir);
 
     /* --- INPUT HANDLING --- */

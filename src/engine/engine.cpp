@@ -33,6 +33,12 @@ Engine::Engine(const EngineConfig& config) {
     initInputHandler();
 }
 
+/* --- SCENES --- */
+
+void Engine::setScene(const std::string& sceneDir) {
+    m_pRenderer->setScene(sceneDir);
+}
+
 /* --- INPUT HANDLING --- */
 
 void Engine::handleInput(const int& keycode) {

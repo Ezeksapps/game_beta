@@ -9,30 +9,33 @@
 
 using namespace glm;
 
-enum AnimEvent {
+enum AnimEvent : uint8_t {
     ANIM_EVENT_WALK,
     ANIM_EVENT_RUN,
     ANIM_EVENT_SLEEP,
     ANIM_EVENT_WAKE
 };
 
-struct SpriteSheetInfo {
-    std::vector<AnimEvent> entityEvents;   // Events that this entity is assigned a spritesheet for
-    std::vector<std::string> spriteSheets; // Filepaths for respective spritesheets, in the order in which they were passed to entityEvents
-    std::vector<int> eventPages;           // Pages per anim for respective spritesheets, in the order in which they were passed to entityEvents
+enum Direction : uint8_t {
+    DIRECTION_SOUTH       = 0,
+    DIRECTION_SOUTH_EAST  = 1,
+    DIRECTION_EAST        = 2,
+    DIRECTION_NORTH_EAST  = 3,
+    DIRECTION_NORTH       = 4,
+    DIRECTION_NORTH_WEST  = 5,
+    DIRECTION_WEST        = 6,
+    DIRECTION_SOUTH_WEST  = 7
 };
-
-
 
 class Entity {
 
 public:
 
-   // Entity(const SpriteSheetInfo& spriteSheetInfo);
     Entity(const std::string& animJsonFilepath);
     ~Entity();
 
     void doAnimEvent(const AnimEvent& event);
+    void setDirection(const Direction& direction);
 
 private:
 
@@ -43,4 +46,5 @@ private:
      */
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
     std::shared_ptr<Sprite> m_pActiveSprite; // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
+    Direction m_direction;
 };

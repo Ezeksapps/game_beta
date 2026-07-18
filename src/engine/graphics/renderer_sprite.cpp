@@ -237,8 +237,7 @@ void Renderer::populateInstanceBuffer() {
 /* creates texture array for sprites */
 void Renderer::createSpriteTextureArray() {
     Diligent::TextureDesc textureArrayDesc;
-    // AKA max sprites
-    textureArrayDesc.ArraySize = m_maxInstances;
+    textureArrayDesc.ArraySize = m_maxInstances * m_maxSpriteDimenstions;
     // 2D array
     textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
     /* All sprite dimensions are 192 x 192 */

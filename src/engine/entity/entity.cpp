@@ -5,8 +5,6 @@
 
 using json = nlohmann::json;
 
-// DEFINITE TODO: Figure out the game state system
-
 Entity::Entity(const std::string& animJsonFilepath) {
 
     const char* spriteJson = readJsonAsset(animJsonFilepath.c_str()); // TODO: Fix these functions
@@ -29,13 +27,9 @@ Entity::~Entity() {}
 
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
+}
 
-   // g_state->g_renderer->swapSprite(, )
-
-    /* TEMP PSEUDOCODE IMPL
-     * --------------------
-     * renderer->swapSprite(m_pActiveSprite.)*/
-
-    // <Sprite>, <pageIdx> (within sprite),
+void Entity::setDirection(const Direction& direction) {
+    m_direction = direction;
 }
 

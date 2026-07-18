@@ -8,6 +8,8 @@
 
 class Scene {
 
+friend class Renderer;
+
 public:
 
     Scene(const std::string& sceneDir);

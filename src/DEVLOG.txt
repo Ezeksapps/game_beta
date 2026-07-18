@@ -7,512 +7,6 @@ Texture Array
 Geometry Shader
 Render Pass
 
-Diligent Samples makes reference several times to the UpdateData function, which is a member of IBuffer
-The LSP however tells me no such member function exists, the docs also no longer show any such member existing, but the Samples' READMEs
-still reference it. Looking at the release notes of previous versions of the engine, those for v2.4 (released 2018) show:
-Renamed/moved IBuffer::UpdateData() to IDeviceContext::UpdateBuffer()
-
-So UpdateData is outdated and removed, replaced by UpdateBuffer, a member function of the device context
-
-1. Load glb and one billboarded sprite
-
-https://ogldev.org/www/tutorial27/tutorial27.html
-Reference for billboarding implementation
-
-Geometry shader will be used to face the billboards to the camera
-
-Shader compilation constantly returned:
-
-Diligent Engine: ERROR in Initialize() (ShaderVkImpl.cpp, 199): Failed to compile shader 'vertex shader'
-Diligent Engine: ERROR in CreateDeviceObject() (RenderDeviceBase.hpp, 467): Failed to create Shader 'vertex shader'
-Diligent Engine: ERROR: Failed to parse shader source:
-ERROR: 0:12: '#version' : must occur first in shader
-ERROR: 0:12: '#version' : must be followed by version number
-ERROR: 0:12: '#version' : bad profile name; use es, core, or compatibility
-ERROR: 0:12: '#version' : bad tokens following profile -- expected newline
-
-But #version was indeed on the first line
-
-ezek@localhost:~/Projects/pkmn> od -c assets/shaders/vertex.glsl | head -5
-0000000   #   v   e   r   s   i   o   n  \n
-0000011
-
-Checked if it was some file format error, no, version was the very first directive
-
-Reason was then found in docs:
-
-https://diligentgraphics.github.io/docs/d7/dca/namespaceDiligent.html#aa320c77673b376507c40c9fa2a01e33c
-
-There are 2 enumerated flags indicating GLSL as the shader language, but one allows Diligent to handle versioning based on the hardware,
-and the other simply reads the shader code verbatim
-
-FIX: remove #version
-
-Diligent Engine: Warning: Render target view '0x415C3590' is not bound to the device context. ClearRenderTarget command is more efficient if render target view is bound to the device context. In OpenGL, Metal and WebGPU backends this is required.
-
-Diligent Engine enables applications to use and intermix render target API and render passes API. While the former one is a more implicit way, the latter is a more explicit approach and requires more effort from the application developers. Most importantly, no state transitions are allowed within the render pass. As a result, an application must not use RESOURCE_STATE_TRANSITION_MODE_TRANSITION with any command while a render pass is active.
-
-Render targets are more explicit and also what I'm more used to working with (Vulkan-style API), so use this instead of 'render target'
-
-NEED:
-
-- colour attachment + depth attachment (for 3D)
-- ref for attachments
-- subpass
-
-- framebuffer creation
-
-render pass system is based on:
-https://diligentgraphics.github.io/docs/d1/dc3/DiligentSamples_Tutorials_Tutorial19_RenderPasses_readme.html
-and my original Vulkan system on:
-<TO BE UPLOADED>
-which was based on the vulkan tutorials
-
-comments from Vulkan system:
-----------------------------
-A framebuffer is an object that holds references to image views used as attachments for rendering.
-Each framebuffer corresponds to a specific image in the swap chain
-
-A Render Pass is a collection of rendering commands defining how images are rendered to a framebuffer.
-Specifically, it defines the framebuffer attachments used while rendering,
-the number of colour & depth buffers, how many samples to use for each of them & how their contents should be handled
----------------------------
-
-Interestingly, in Diligent, you only make one framebuffer, but in Vulkan, you'd define the framebuffer desc and create one for
-all the texture views in the swap chain. Diligent is probably handling that internally when creating what appears to be one framebuffer.
-
-
-Build attempt 3
-------------------------
-
-Diligent Engine: ERROR: Using vertex buffers (DeviceContextVkImpl::Draw) requires buffer 'billboard vertex buffer' to be transitioned to VERTEX_BUFFER state.
-Actual buffer state: UNDEFINED. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
-Diligent Engine: ERROR: Using vertex buffers (DeviceContextVkImpl::Draw) requires buffer 'instance data buffer' to be transitioned to VERTEX_BUFFER state.
-Actual buffer state: COPY_DEST. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
-Diligent Engine: ERROR: Indexed draw call (DeviceContextVkImpl::Draw) requires buffer 'billboard index buffer' to be transitioned to INDEX_BUFFER state.
-Actual buffer state: UNDEFINED. Use appropriate state transition flags or explicitly transition the buffer using IDeviceContext::TransitionResourceStates() method.
-
-
-Buffers under render pass now require explicit transition between states, so do as debug error suggested, make a StateTransitionDesc array and invoke IDeviceContext::TransitionResourceStates()
-This is because no transitions are allowed under a render pass and must be done explicitly before activating one. Instance buffer needs to be transitioned separately,
-as calling its populator function will re-alter the state
-
-Tutorial 19's source code confirms this:
-https://github.com/DiligentGraphics/DiligentSamples/blob/6c0f05552d4eb7a5b3f25049699fadd02e4690b9/Tutorials/Tutorial19_RenderPasses/src/Tutorial19_RenderPasses.cpp
-Lines 525-536
-
---
-
-Diligent Engine: ERROR in CommitVkVertexBuffers() (DeviceContextVkImpl.cpp, 697): Currently bound pipeline state 'Game Pipeline Shader Object' expects 2 input buffer slots, but only 1 is bound
-
-TODO: To avoid interferance between the demands of both rendering systems, split 3D rendering (GLB) and billboard rendering (sprites) into two separate pipelines,
-both pipelines will have differing layout descs, but use the same render pass
-Eventually, the UI should also get its own pipeline (Note: the plan is to have an XML system for defining UI elements, but then after calculating
-appropriate sizes and parsing the markup, the actual rendering is handled again by the renderer)
-
-
-Diligent Engine: ERROR: No resource is bound to variable 'g_texture' in shader 'fragment shader desc' of PSO 'Map Pipeline State Object'
-
-
-Once this final issue is resolved, the renderer should be able to properly run. Although there is a high likelihood of some initial renderer errors
-Textures from the GLB still need handling (though no textures exist in the current test GLB).
-There is also a likelihood that either things are only partially shown or not shown at all, not because they aren't rendered, but because we lack a camera matrix
-
-Old Vulkan project can be used a ref as to how to handle this. Most errors will initially be related to shaders, Geometry shader for billboard creation and matrix calculation
-also needs to be set and written
-
-When renderer issues are properly resolved, then proper implementation of core game systems such as collision detection, coord system and camera movement (should follow player)
-can begin. The GLB Map will be accomanied by a map JSON defining positions of exits/links to other maps, NPCs and their respective dialogue
-
-When that is handled, create the UI which will also be used to display character dialogue. Game events such as battles can then also be declared.
-
-NOTE: GLSL stores matrices in column-major order
-
-TODO: glTF may be better format here than GLB, since textures can be reused
-
-
-Resolve geometry shader's dependency on the camera's position (vec3), when UBO holds pre-computed mat4
-Need proper camera matrix calculation and view matrix calculation
-
-Sources for shaders, billboard system and matrix calculation:
-
-https://gamedev.stackexchange.com/questions/113147/rotate-billboard-towards-camera
-https://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
-https://ogldev.org/www/tutorial27/tutorial27.html
-
-
-
-REALLY GOOD MATERIAL:
-
-
-When I had finished writing the shaders and was ready for the first proper test, I was expecting for my 3D environment to be rendered... but it wasn't
-First, I simplified my debug by removing the sprites' pipeline temporarily, so i only had to deal with the two shaders of the map loader
-I tried to set all fragment colours in the shaders to be red, in case the texture was somehow incorrectly set, but nothing was rendered.
-Playing around w/ matrices yielded nothing either
-
-Looking over the shaders, the initialistion code and the pipeline creation everything seemes fine?
-The only other possible option was that GLB loading was somehow off
-& it was
-
-GLB Loaded: assets/test.glb
-  Vertex Buffers: 5
-  Index Buffer: valid
-  Textures: 1
-Num vertex attribs is: 8
-Vertex attribute at index: 0 has name: POSITION
-Vertex attribute at index: 0 has buffer ID: 0
-Vertex attribute at index: 1 has name: NORMAL
-Vertex attribute at index: 1 has buffer ID: 0
-Vertex attribute at index: 2 has name: TEXCOORD_0
-Vertex attribute at index: 2 has buffer ID: 0
-Vertex attribute at index: 3 has name: TEXCOORD_1
-Vertex attribute at index: 3 has buffer ID: 2
-Vertex attribute at index: 4 has name: JOINTS_0
-Vertex attribute at index: 4 has buffer ID: 1
-Vertex attribute at index: 5 has name: WEIGHTS_0
-Vertex attribute at index: 5 has buffer ID: 1
-Vertex attribute at index: 6 has name: COLOR_0
-Vertex attribute at index: 6 has buffer ID: 3
-Vertex attribute at index: 7 has name: TANGENT
-Vertex attribute at index: 7 has buffer ID: 4
-
-FROM DILIGENT SAMPLE BASE:
-
-float4x4 GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const;
-
-float4x4 SampleBase::GetAdjustedProjectionMatrix(float FOV, float NearPlane, float FarPlane) const
-{
-    const auto& SCDesc = m_pSwapChain->GetDesc();
-
-    float AspectRatio = static_cast<float>(SCDesc.Width) / static_cast<float>(SCDesc.Height);
-    float XScale, YScale;
-    if (SCDesc.PreTransform == SURFACE_TRANSFORM_ROTATE_90 ||
-        SCDesc.PreTransform == SURFACE_TRANSFORM_ROTATE_270 ||
-        SCDesc.PreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90 ||
-        SCDesc.PreTransform == SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270)
-    {
-        // When the screen is rotated, vertical FOV becomes horizontal FOV
-        XScale = 1.f / std::tan(FOV / 2.f);
-        // Aspect ratio is inversed
-        YScale = XScale * AspectRatio;
-    }
-    else
-    {
-        YScale = 1.f / std::tan(FOV / 2.f);
-        XScale = YScale / AspectRatio;
-    }
-
-    float4x4 Proj;
-    Proj._11 = XScale;
-    Proj._22 = YScale;
-    Proj.SetNearFarClipPlanes(NearPlane, FarPlane, m_pDevice->GetDeviceInfo().NDC.MinZ == -1);
-    return Proj;
-}
-
-TERMS: Aspect ratio refers to the ratio between the viewport's width and height
-       FOV is field of view and determines how much of the rendered environment is visible on the viewport
-
-
-NOTE:
-
-When exporting from blender, it doesnt matter if you keep normals/animation data, it just gets ignored by the engine, since i'm not using it
-HOWEVER, make sure all transforms are applied to all objects before export, otherise the transforms will still be centred around the origin
-and the scene'll render incorrectly (for example, if you move a cube along y by 2m, but dont apply transforms, the GLB will have kept it at the origin)
-
-Mesh [0]: Cube.001 (Primitives: 1)
-  Primitive [0]:
-    IndexCount:   36
-    FirstIndex:   0
-    FirstVertex:  0
-    VertexCount:  24
-    MaterialId:   0
-Mesh [1]: Cube.002 (Primitives: 1)
-  Primitive [0]:
-    IndexCount:   36
-    FirstIndex:   36
-    FirstVertex:  0
-    VertexCount:  24
-    MaterialId:   0
-Mesh [2]: Plane (Primitives: 1)
-  Primitive [0]:
-    IndexCount:   6
-    FirstIndex:   72
-    FirstVertex:  0
-    VertexCount:  4
-    MaterialId:   0
-
-
-
-Crydsch camera proving too problematic, but would be even more problematic to manually program, as time is better focused on other tasks
-still need a quaternion free camera system
-
-github.com/hmazhar/moderngl_camera/blob/master/camera.cpp
-
-Simpler, but uses GLM, not good to mix diligent's math and GLM
-though GLM types have same structure, but also more features and better abstracted functions
-
-SWITCH TO GLM
-
-Example camera system has several issues, but are much easier to fix and adapt
-
-I am making a camera system for a game
-
-m_rotation was for some reason set to NaN values
-
-Set target pos:
-[ 0, 0, 0 ]
-Set rotation:
-[ 0, 0.785398, 0 ]
-Pitch quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0, 1 ]
-Yaw quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0.382683, 0, 0.92388 ]
-Rotation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 0 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-Translation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 0 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 0 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-
-Set target pos:
-[ 0, 0, 0 ]
-Set rotation:
-[ 0, 0.785398, 0 ]
-Pitch quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0, 1 ]
-Yaw quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0.382683, 0, 0.92388 ]
-Rotation Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, 0, 0.707107, 0 ]
-[ 0, 1, 0, 0 ]
-[ -0.707107, 0, 0.707107, 0 ]
-[ 0, 0, 0, 1 ]
-Translation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 0 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, 0, 0.707107, 0 ]
-[ 0, 1, 0, 0 ]
-[ -0.707107, 0, 0.707107, 0 ]
-[ 0, 0, 0, 1 ]
-
-distance is x=0 y=0 z=5
-target is x=0 y=0 z=0
-rotation is by 45deg in y-axis (where z-up)
-
-I am not seeing anything though, so clearly this must rotate in the wrong direction? all rendered objects are at 0, 0, 0
-Eye position: [0, 0, 0]
-Forward direction: [0, 1, 0]
-
-Eye position: [0, -2.12132, 0]
-Forward direction: [-0.707107, 0.707107, 0]
-Translation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 2.12132 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, -0.707107, 0, -1.5 ]
-[ 0.707107, 0.707107, 0, 1.5 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-
-removing orientation from new quat calc restores rotation, but breaks the position
-distance of camera should be set x=0 y=3 z=10
-This way camera is high above what its looking at
-
-   m_pCamera = std::make_unique<Camera>();
-    m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
-    m_pCamera->m_distance = vec3(0.0f, 3.0f, 10.0f);
-
-    m_pCamera->rotate(vec3(0.0f, std::numbers::pi_v<float> * 0.25f, 0.0f));
-
-    // Assign it
-    m_viewMatrix = m_pCamera->getViewMatrix();
-
-distance is equivalent in the way I'm using it to position
-I wanted to use a system like crydsch camera
-
-typedef struct camera {
-    CameraVec3 target_position;         // The target point, the camera is looking at. Aka camera eye position if camera.target_distance == 0.
-    float target_distance;              // Camera distance from eye to target. Note: negative values create zoom-like behaviour.
-    CameraQuat orientation;             // Camera rotation in 3D.
-    uint32_t mode;                      // Controlls camera behaviour. See CAMERA_MODE_* defines.
-
-    // Temporary accumulator. Cleared on camera_view_matrix(..).
-    CameraVec3 movement_accumulator;
-    CameraVec3 rotation_accumulator;
-    // Angle clamping limits. See "Angle Clamping" for further information.
-    float minPitch;
-    float maxPitch;
-    float minYaw;
-    float maxYaw;
-    float minRoll;
-    float maxRoll;
-} Camera;
-
-w/o clamping limits, but this is the main reference. looks like position is never stored, only distance?
-But then what does distance even represent if its a pure float value? distance from what? origin
-
-Maybe this is distance in one axis, prior to rotations finalising the position?
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, 0, 0.707107, 0 ]
-[ 0, 1, 0, 4 ]
-[ -0.707107, 0, 0.707107, 0 ]
-[ 0, 0, 0, 1 ]
-
-Tested with distance 4.0f
-This basically confirms it represents a translation in the forward direction, but I also need the camera to go up in z, otherwise this just stares into the void
-
-in other words, i need
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, 0, 0.707107, 0 ]
-[ 0, 1, 0, 4 ]
-[ -0.707107, 0, 0.707107, 10 ]
-[ 0, 0, 0, 1 ]
-
-That was the original way it was being used, as the offset from origin at which the camera was placed, the position
-Even then, I dont remember z translations applying
-
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, 0, 0.707107, -10 ]
-[ 0, 1, 0, -3 ]
-[ -0.707107, 0, 0.707107, 1.43051e-06 ]
-[ 0, 0, 0, 1 ]
-
-This rotation is fine, the translation column is the problem it should be 0, 3, 10, matching the offset which was input
-
-
-
-et target pos:
-[ 0, 0, 0 ]
-Set rotation:
-[ 0, 0.785398, 0 ]
-Pitch quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0, 1 ]
-Yaw quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0.382683, 0.92388 ]
-Rotation Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, -0.707107, 0, 0 ]
-[ 0.707107, 0.707107, 0, 0 ]
-[ 0, 0, 1, 0 ]
-[ 0, 0, 0, 1 ]
-Eye: -2.12132, 2.12132, 10
-Offset: 0, 3, 10
-Orientation: 0.92388, 0, 0, 0.382683
-Translation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 2.12132 ]
-[ 0, 1, 0, -2.12132 ]
-[ 0, 0, 1, -10 ]
-[ 0, 0, 0, 1 ]
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 0.707107, -0.707107, 0, 3 ]
-[ 0.707107, 0.707107, 0, 2.38419e-07 ]
-[ 0, 0, 1, -10 ]
-[ 0, 0, 0, 1 ]
-
-
-camera looks straight along -y by default
-
-INITIAL
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, -2 ]
-[ 0, 0, 1, -10 ]
-[ 0, 0, 0, 1 ]
-
-AFTER ROTATING A BIT
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 0.968583, -0.24869, 3.06492 ]
-[ 0, 0.24869, 0.968583, -9.72657 ]
-[ 0, 0, 0, 1 ]
-
-AFTER ROTATING FOR PROPER VISIBILITY
-
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, -0.982288, 0.187381, 1.82169 ]
-[ 0, -0.187381, -0.982288, -10.034 ]
-[ 0, 0, 0, 1 ]
-Pitch quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0, 1 ]
-Yaw quaternion
--=-=-=-=-=-=-=-=-
-[ 0, 0, 0, 1 ]
-Rotation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, -0, 0, 0 ]
-[ 0, -0.982288, 0.187381, 0 ]
-[ -0, -0.187381, -0.982288, 0 ]
-[ 0, 0, 0, 1 ]
-Eye: 0, -0.0907612, -10.1976
-Offset: 0, 2, 10
-Orientation: 0.0941083, -0.995562, 0, 0
-Translation Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, 1, 0, 0.0907612 ]
-[ 0, 0, 1, 10.1976 ]
-[ 0, 0, 0, 1 ]
-Camera View Matrix:
--=-=-=-=-=-=-=-=-
-[ 1, 0, 0, 0 ]
-[ 0, -0.982288, 0.187381, 1.82169 ]
-[ 0, -0.187381, -0.982288, -10.034 ]
-[ 0, 0, 0, 1 ]
-
-camera system feels weird because vec[0, 1, 0] has been defined as CAMERA_FORWARD
-expected natural behaviour in this case is that camera looks down -z by default (where z is up)
-instead camera by default looks down -y, meaning by default plane is hidden due to being viewed straight on
-the camera is meant to be looking at the game environment top-down with a 45deg rotation.
-
-In a camera system, what is defined as up and forward does not actually need to correspond to the coordinate system used in-game
-forward defined the axis the camera will look at by default. For a camera expected to zoom into/out from the player, Z would be the most
-natural axis for this, not Y. Y would make more sense for FPS or first-person, where the camera being near the ground is expected
-
-Initial assumption was that forward, up and right macros should correspond to the way world axes are defined. In this case, z is what is treated
-as up/down. This is not necessarily true.
 
 Pitch = up/down (world z), Yaw = left/right (world x)
 
@@ -521,25 +15,58 @@ NOTE: UI library may be ImGui, but figure out how to control the styling so ever
 
 TODO: Switch to anisotropic filter for better-looking textures
 
-SPRITE HANDLING
-------------------------------
+Renderer cannot render a frame if Scene is empty or unassigned. renderFrame() should return immediately if such a thing is attempted
+a Scene is loaded with setScene, a scene can be switched out for another with setScene()
+after creation, a Scene will always exist until ~Renderer() is called, because Renderer only exists in order to render a Scene
 
-SPRITE SOURCES:
+Upon setScene() being called, m_pScene should be assigned to a new unique_ptr assigned to the newly-constructed Scene
+setScene will not clear the sprite texture array, but it will reset m_numSprites to zero, so anything loaded in there from the
+previously-loaded Scene is treated as if it didn't exist and is overwritten as needed. This is done with registerSprite(), which
+will deal with loading the new sprite object's texture data into memory at index m_numSprites, and increment the counter.
 
-Pkmn (overworld): PMD Sprite repo
+For situations where the sprite sheet being used for an entity is being changed, swapSprite()
+takes the index of the old sprite you wish to replace and the new Sprite object and handles the swap
 
----
+(Though if the new sprite is smaller, then the residual space in memory used up by the old sprite won't be overwritten. This could be an issue
+if there is a situation where a smaller sprite sheet is loaded first, followed by a larger one, as this would overwrite the pages corresponding
+to a neightbouring sprite. Also, the size of the texture array is not dynamic. Initially it was set to m_maxInstances, but that is no longer possible
+with the implementation of sprite sheets as the number of entities no longer corresponds to the number of single sprite pages.
+To counteract both these issues, I must first determine the maximum accepted size grid that a sprite sheet may use. Then, when loading
+any sprite, regardless of size, into memory, assign the matching number of pages to the sprite, even if not all are used. The size of the array
+is also now set to m_maxInstances * maxSizeWidth * maxSizeHeight. This way, Sprites never overwrite each other and there is enough space
+to store all sprite sheets.
+For now, the maximum number of pages (frames) a sprite sheet may hold is 10 * 10. This might be adjusted later)
 
-All sprites or pages of a spritesheet should be 192 x 192 px for desktop, any not upscaled accordingly will not work properly
+The Sprite struct is:
 
-An entity is assigned a sprite map. This contains each spritesheet assigned to a key, which is the event that should trigger
-the use of a spritesheet to animate this entity.
+struct Sprite {
+    std::string filepath;
+    vec3 pos;                       // Position (before accounting for world-view-model matrix)
+    int index;                      // start index in tex array
+    int pages;                      // number of pages taken up by this spritesheet
+    std::vector<int> pageDurations; // duration of each page/frame for one cycle of the animation
+    int pagesPerAnim;               // pages taken up by each animation
+    // (endPage = index + pages)
+};
 
-WALK
-RUN
+a Sprite refers to a single sprite sheet. Index is not the 'number' of this entity, it is the start index in the whole
+texture array of the first page (frame) in the sprite sheet this Sprite object represents.
+each page has a duration in milliseconds, which is given by the pageDurations vector.
+Each sprite sheet contains the frames to animate a specific action for the Entity. This is repeated for all
+possible directions the Entity may be facing, which are north, north-east, east, south-east, south, south-west, west and north-west.
+(This means every sprite sheet has a maximum of 8 rows)
+Since every row is just a different version of the animation for a particular direction, the number of frames per row is also uniform.
+pageDurations is therefore the same size as the number of frames in a row.
+The pagesPerAnim field may not be necessary, since it can be calculated by the PNG width divided by 192 (all sprites are 192 x 192 px)
 
-Since the number of instances of sprites that can be drawn is equal to the m_numSprites, which cannot exceed m_maxInstances,
-but the number of individual sprite pages in memory will exceed this due to being spritesheets (multiple 192 x 192 pages),
-the page number in the Sprite curently loaded should be specified before rendering. This should be done for every entity
+Entity holds an enum AnimEvent, which represents the events an entity can be in. The JSON for an Entity holds the page durations and the AnimEvents for an entity
+as well as the filepaths to the PNG sprite sheets for these events. This JSON is loaded in Entity's constructor and fills the sprite map.
+The sprite map has the AnimEvent as the key and the Sprite object as the value. The private filed m_pActiveSprite defines the active animation for the Entity.
 
+This is all implemented, which leaves these things to deal with:
+Entity needs to store the direction it is facing. The correct row of the Sprite can then be used.
+The rows corresponding to every direction must be defined as a constant.
+The renderer must count the frame (col) in the row that is currently being shown and only keep it rendered for the specified time period
+(This means frame rate now needs to be controlled and taken into account), then loop back to the beginning
 
+NOTE: Spritesheets start from south, then rotate anit-clockwise in direction to south-west
