@@ -1,13 +1,3 @@
-Relevant tutorials:
-
-Triangle/cube
-Texturing
-Instancing
-Texture Array
-Geometry Shader
-Render Pass
-
-
 Pitch = up/down (world z), Yaw = left/right (world x)
 
 NOTE: UI library may be ImGui, but figure out how to control the styling so everything looks pixelated
@@ -37,36 +27,48 @@ is also now set to m_maxInstances * maxSizeWidth * maxSizeHeight. This way, Spri
 to store all sprite sheets.
 For now, the maximum number of pages (frames) a sprite sheet may hold is 10 * 10. This might be adjusted later)
 
-The Sprite struct is:
-
-struct Sprite {
-    std::string filepath;
-    vec3 pos;                       // Position (before accounting for world-view-model matrix)
-    int index;                      // start index in tex array
-    int pages;                      // number of pages taken up by this spritesheet
-    std::vector<int> pageDurations; // duration of each page/frame for one cycle of the animation
-    int pagesPerAnim;               // pages taken up by each animation
-    // (endPage = index + pages)
-};
-
-a Sprite refers to a single sprite sheet. Index is not the 'number' of this entity, it is the start index in the whole
-texture array of the first page (frame) in the sprite sheet this Sprite object represents.
-each page has a duration in milliseconds, which is given by the pageDurations vector.
+a Sprite refers to a single sprite sheet
+each frame has a duration in milliseconds, which is given by the frameDurations vector.
 Each sprite sheet contains the frames to animate a specific action for the Entity. This is repeated for all
 possible directions the Entity may be facing, which are north, north-east, east, south-east, south, south-west, west and north-west.
 (This means every sprite sheet has a maximum of 8 rows)
 Since every row is just a different version of the animation for a particular direction, the number of frames per row is also uniform.
-pageDurations is therefore the same size as the number of frames in a row.
-The pagesPerAnim field may not be necessary, since it can be calculated by the PNG width divided by 192 (all sprites are 192 x 192 px)
+frameDurations is therefore the same size as the number of frames in a row.
 
-Entity holds an enum AnimEvent, which represents the events an entity can be in. The JSON for an Entity holds the page durations and the AnimEvents for an entity
+Entity holds an enum AnimEvent, which represents the events an entity can be in. The JSON for an Entity holds the frame durations and the AnimEvents for an entity
 as well as the filepaths to the PNG sprite sheets for these events. This JSON is loaded in Entity's constructor and fills the sprite map.
 The sprite map has the AnimEvent as the key and the Sprite object as the value. The private filed m_pActiveSprite defines the active animation for the Entity.
 
 This is all implemented, which leaves these things to deal with:
-Entity needs to store the direction it is facing. The correct row of the Sprite can then be used.
-The rows corresponding to every direction must be defined as a constant.
+---
+Entity needs to store the direction it is facing. The correct row of the Sprite can then be used. -- DONE
+The rows corresponding to every direction must be defined as a constant.                          -- DONE
+
 The renderer must count the frame (col) in the row that is currently being shown and only keep it rendered for the specified time period
 (This means frame rate now needs to be controlled and taken into account), then loop back to the beginning
 
-NOTE: Spritesheets start from south, then rotate anit-clockwise in direction to south-west
+NOTE: Because all sprites now occupy equal amounts of memory, index can be repurposed to just be the entity number the sprite belongs
+to. To find the start index in the tex array, do index * m_maxSpriteDimensions
+
+Render currently renders all sprites with the full texture in the tex array, needs to be adjusted to only one frame
+
+One issue is the frame rate, the timings must be reflected in what is actually displayed, so they need to be synced to frame rate
+
+Loading a scene will run the constructor, register the default sprite sheet and setup a callback to swap sprite sheets whenever
+the AnimEvent is changed by Entity::doAnimEvent()
+
+Each sprite has a steady_clock timer, which is started on creation. this will be used to determine when to switch frames
+(based on sprite->frameDurations)
+
+Sprite sheets are in rows and columns, where each in each row are the frames for a particular direction
+The row to access can be determined based on the direction of the entity, since each Direction enum val
+is assigned a number equal to the row of the sprite sheet the anim for that direction will be
+
+dimensions are at a max of 8 * 10 frames, there are currently 8 possible directions
+
+Start index of the animation is therefore the start index of the Sprite in tex array (sprite->index * m_maxSpriteDimensions)
+plus (uint8_t)Direction * (sprite width), end index is start index plus sprite width
+
+CHECK: Should sprite width be stored in Sprite? it can be calculated at runtime using textureLoader->GetTextureDesc().GetWidth() / 192
+(all sprites are 192 x 192 per frame), also, should the texture width and height be defined as constants?
+

@@ -45,7 +45,7 @@ void Engine::handleInput(const int& keycode) {
     cmdQueue.push(&keyMap[keycode]);
 }
 
-void Engine::processCmds(void (*callback)(GameCmd* cmd)) {
+void Engine::processCmds(std::function<void(GameCmd* cmd)> callback) {
     if (!cmdQueue.empty()) {
         GameCmd* cmd = cmdQueue.front();
         cmdQueue.pop();

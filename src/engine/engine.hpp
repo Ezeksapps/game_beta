@@ -54,7 +54,7 @@ public:
     void handleInput(const int& keycode);
 
     // used to get the latest command in the command queue and pass it to the game's command callback
-    void processCmds(void (*callback)(GameCmd* cmd));
+    void processCmds(std::function<void(GameCmd* cmd)> callback);
 
     /* --- RENDERING --- */
 

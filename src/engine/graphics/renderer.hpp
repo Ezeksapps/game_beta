@@ -57,8 +57,6 @@ public:
     // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
     void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite);
 
-    Sprite loadSprite(const std::string& filename); // DEPRECATED
-
     void playSpriteAnim(const int& spriteIn);
 
     uint32_t m_windowWidth;
@@ -72,7 +70,7 @@ private:
     };
 
     /* Renderer clock */
-    std::chrono::steady_clock m_clock;
+    std::chrono::steady_clock m_clock; // TODO: USE FOR FRAME RATE STABILISATION
     /* Time point where the last frame was drawn */
     std::chrono::time_point<std::chrono::steady_clock> m_lastFrameTime;
     /* Rendered scene */
@@ -130,7 +128,7 @@ private:
     /* Max number of sprites (aka. Entities that can use this renderer at one time) */
     static const int m_maxInstances = 32;
     /* the maximum dimensions of a sprite sheet */
-    static constexpr int m_maxSpriteDimensions = 10 * 10;
+    static constexpr int m_maxSpriteDimensions = 8 * 10;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
 

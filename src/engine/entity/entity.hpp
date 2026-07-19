@@ -34,19 +34,23 @@ public:
     Entity(const std::string& animJsonFilepath);
     ~Entity();
 
+    void setSpriteChangeCallback(std::function<void(std::shared_ptr<Entity> entity)> callback);
+
     void doAnimEvent(const AnimEvent& event);
-    void setDirection(const Direction& direction); // may not be needed
+    const std::shared_ptr<Sprite>& getActiveSprite();
+    void setDirection(const Direction& direction);
 
     Direction m_direction;
     uint8_t m_currentFrame;
 
 private:
 
-    /* TODO */
+    /* callback for sprite sheet animation changes */
+    std::function<void(std::shared_ptr<Entity> entity)> m_spriteChangeCallback;
 
     /* Every spritesheet is associated with a certain event/action, which will act as the key in the sprite map
-     * An example of a key could be 'walk' or 'run', each of which are separate actions with separate spritesheets
-     */
+     * An example of a key could be 'walk' or 'run', each of which are separate actions with separate spritesheets */
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
-    std::shared_ptr<Sprite> m_pActiveSprite; // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
+    // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
+    std::shared_ptr<Sprite> m_pActiveSprite;
 };

@@ -119,10 +119,7 @@ void Renderer::loadGLB(const std::string& filename) {
     m_pGlbModel = std::make_unique<Diligent::GLTF::Model>(m_pDevice, m_pImmediateContext, modelCreateInfo);
 
     // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
-    // TODO: Vertex buffer now no longer needs vector (unless animation node support is added later)
     m_pMapVertexBuffer = m_pGlbModel->GetVertexBuffer(0, m_pDevice, m_pImmediateContext);
-
-    /* Get buffers */
 
     m_pMapIndexBuffer = m_pGlbModel->GetIndexBuffer();
 

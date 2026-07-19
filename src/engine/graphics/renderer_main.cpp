@@ -2,35 +2,6 @@
 
 #include <cstdint>
 
-// TODO:
-
-// Once renderer complete, associate sprites with an 'Entity' -- IN PROGRESS
-
-// set one entity as the player, others as NPCs (Likely classes extending Entity)
-// Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
-// X & Y coords should work like a grid system (ortho proj?)
-// Along w/ GLB, map also defined by a JSON giving NPCs in map and exits/links to other areas within map
-// Create dialogue system and UI Renderer (defined by XML reader, then render in here, maybe in separate subpass?)
-// Create other systems, assign to game events
-
-// CURRENTLY COMPLETE:
-// Renderer init
-// GLB loader
-// Sprite loader and renderer
-// Graphics pipelines, render pass and frame buffer
-// Sprite billboards' vertex, index and instance buffers
-// window creation and input handling (needs to be associated to a callback)
-// shaders for both pipelines
-// Camera system
-// sprite billboards' positioning relative to camera
-
-/* CURRENT STATUS:
- * Compiles successfully, renderer and pipelines initialise with no problems.
- * Map pipeline renders with no issues. Camera system is properly set up and can rotate with yaw or pitch with no issues
- * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
- */
-
-
 /* --- INIT --- */
 
 
@@ -131,6 +102,21 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
 
 void Renderer::setScene(const std::string& sceneDir) {
     m_pScene = std::make_unique<Scene>(sceneDir);
+
+    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities /* TODO: CHANGE TO GETTER */) {
+
+        /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
+        if (entity->getActiveSprite()) {
+            registerSprite(entity->getActiveSprite());
+        }
+
+        /* Callback, runs whenever active sprite is changed */
+        entity->setSpriteChangeCallback([this](std::shared_ptr<Entity> entity) {
+            /* Swap sprite for new sprite */
+            const std::shared_ptr<Sprite>& newSprite = entity->getActiveSprite();
+            this->swapSprite(newSprite->index, newSprite);
+        });
+    }
 }
 
 void Renderer::createSharedUniformBuffer() {
@@ -245,12 +231,12 @@ void Renderer::renderFrame() {
         *uniformConstants = constants;
     }
 
-    m_lastFrameTime = m_clock.now();
-
     renderMap();
     renderSprites();
 
     m_pImmediateContext->EndRenderPass();
+
+    m_lastFrameTime = m_clock.now();
 
     m_pImmediateContext->Flush();
     m_pSwapChain->Present(1 /* VSync on */); /* NOTE: Must signal present, or unpresented resources pile up in dynamic heap and crash program */

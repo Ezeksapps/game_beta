@@ -264,6 +264,7 @@ void Renderer::registerTexture(const std::string& filepath) {
     loadInfo.IsSRGB = true;
     Diligent::CreateTextureLoaderFromFile(filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
+
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
     /* Box representing slice */
@@ -327,30 +328,10 @@ void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTex
 
 /* --- LOADERS --- */
 
-// ----- DEPRECATED ----- //
-/*Sprite Renderer::loadSprite(const std::string& filename) {
-    if (m_numSprites + 1 > m_maxInstances) return {};
-    registerTexture(filename);
-
-    Sprite sprite;
-    sprite.index = m_numSprites;
-    sprite.pos = vec3(0.0f, 0.0f, 0.1f);
-    // for PMD overworld walk anim
-    sprite.pages = 56;
-    sprite.pagesPerAnim = 7;
-
-    mat4 transform = translate(mat4(1.0f), vec3(sprite.pos.x, sprite.pos.y, sprite.pos.z));
-    m_instanceData.push_back(transform);
-
-    ++m_numSprites;
-
-    populateInstanceBuffer();
-
-    return sprite;
-}*/ // ----- END DEPRECATED ----- //
-
 int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
     if (m_numSprites + 1 > m_maxInstances) return -1;
+
+    sprite->index = m_numSprites; // first time sprite is being used, so assign the index
 
     registerTexture(sprite->filepath);
 
@@ -365,7 +346,9 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
 }
 
 void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
-    swapTexture(oldSpriteIndex, newSprite->filepath);
+    // NOTE: sprite->index refers to the Entity 'number' that Sprite belongs to. The start index in the tex array
+    // the Sprite's texture exists in can be found with index * m_maxSpriteDimensions
+    swapTexture(oldSpriteIndex * m_maxSpriteDimensions, newSprite->filepath);
 
     mat4 transform = translate(mat4(1.0f), vec3(newSprite->pos.x, newSprite->pos.y, newSprite->pos.z));
     m_instanceData.push_back(transform);
