@@ -2,10 +2,6 @@
 
 /* Contains renderer functions relevant to the sprites' pipeline only */
 
-struct Vertex {
-    vec3 pos;
-    vec2 uv;
-};
 
 /* Billboards will all be identically-sized quads (made of two triangle primitives),
  * they therefore always have the same vertices and indices, which are defined here
@@ -16,11 +12,11 @@ const std::vector<uint16_t> billboardIndices = {
     0, 1, 2, 3, 0
 };
 
-const std::vector<Vertex> billboardVertices = {
-    {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-    {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-    {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
-    {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}}
+const std::vector<vec3> billboardVertices = {
+    {-0.5f, -0.5f, 0.0f},
+    { 0.5f, -0.5f, 0.0f},
+    { 0.5f,  0.5f, 0.0f},
+    {-0.5f,  0.5f, 0.0f}
 };
 
 
@@ -103,14 +99,13 @@ void Renderer::createSpritePipelineState() {
          * LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
          */
 
-        /* --- Per-vertex Data --- */
+        /* --- Per-vertex Data (from vertex buffer) --- */
 
         // vertex position
         Diligent::LayoutElement{0, 0, 3, Diligent::VT_FLOAT32, false},
-        // texture UVs
-        Diligent::LayoutElement{1, 0, 2, Diligent::VT_FLOAT32, false},
+        // NOTE: UVs not needed as they are always the same and set by the geometry shader
 
-        /* --- Per-instance Data --- */
+        /* --- Per-instance Data (from instance buffer) --- */
 
         /* NOTE: This differs from the tutorial's setup in that the program only uses GLSL, so these attribs will represent
          * the columns of the matrix, not the rows */
@@ -123,7 +118,7 @@ void Renderer::createSpritePipelineState() {
         Diligent::LayoutElement{4, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 4
         Diligent::LayoutElement{5, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-        // texture array index
+        // texture array index of current frame
         Diligent::LayoutElement{6, 1, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
             Diligent::LAYOUT_ELEMENT_AUTO_STRIDE, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
@@ -182,12 +177,12 @@ void Renderer::createVertexBuffer() {
     vertexBufferDesc.Name      = "billboard vertex buffer";
     vertexBufferDesc.Usage     = Diligent::USAGE_IMMUTABLE;
     vertexBufferDesc.BindFlags = Diligent::BIND_VERTEX_BUFFER;
-    vertexBufferDesc.Size      = billboardVertices.size() * sizeof(Vertex);
+    vertexBufferDesc.Size      = billboardVertices.size() * sizeof(vec3);
     vertexBufferDesc.Size = sizeof(billboardVertices);
 
     Diligent::BufferData vertexBufferData;
     vertexBufferData.pData    = billboardVertices.data();
-    vertexBufferData.DataSize = billboardVertices.size() * sizeof(Vertex);
+    vertexBufferData.DataSize = billboardVertices.size() * sizeof(vec3);
     m_pDevice->CreateBuffer(vertexBufferDesc, &vertexBufferData, &m_pSpriteVertexBuffer);
 }
 
@@ -337,8 +332,6 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
 
     mat4 transform = translate(mat4(1.0f), vec3(sprite->pos.x, sprite->pos.y, sprite->pos.z));
     m_instanceData.push_back(transform);
-
-    populateInstanceBuffer();
 
     ++m_numSprites;
 

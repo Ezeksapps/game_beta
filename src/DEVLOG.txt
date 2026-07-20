@@ -5,6 +5,11 @@ NOTE: UI library may be ImGui, but figure out how to control the styling so ever
 
 TODO: Switch to anisotropic filter for better-looking textures
 
+
+
+SPRITE SHEET SYSTEM LOG
+-=-=-=-=-=-=-=-=-=-=-=-=-
+
 Renderer cannot render a frame if Scene is empty or unassigned. renderFrame() should return immediately if such a thing is attempted
 a Scene is loaded with setScene, a scene can be switched out for another with setScene()
 after creation, a Scene will always exist until ~Renderer() is called, because Renderer only exists in order to render a Scene
@@ -52,7 +57,6 @@ to. To find the start index in the tex array, do index * m_maxSpriteDimensions
 
 Render currently renders all sprites with the full texture in the tex array, needs to be adjusted to only one frame
 
-One issue is the frame rate, the timings must be reflected in what is actually displayed, so they need to be synced to frame rate
 
 Loading a scene will run the constructor, register the default sprite sheet and setup a callback to swap sprite sheets whenever
 the AnimEvent is changed by Entity::doAnimEvent()
@@ -66,9 +70,68 @@ is assigned a number equal to the row of the sprite sheet the anim for that dire
 
 dimensions are at a max of 8 * 10 frames, there are currently 8 possible directions
 
+
+
 Start index of the animation is therefore the start index of the Sprite in tex array (sprite->index * m_maxSpriteDimensions)
 plus (uint8_t)Direction * (sprite width), end index is start index plus sprite width
 
 CHECK: Should sprite width be stored in Sprite? it can be calculated at runtime using textureLoader->GetTextureDesc().GetWidth() / 192
 (all sprites are 192 x 192 per frame), also, should the texture width and height be defined as constants?
 
+
+SHADER MODIFICATION FOR SPRITE SHEET
+
+VERTEX LAYOUT
+-=-=-=-=-=-=-=-
+vec3 pos                       [buf slot 0]
+vec2 uv                        [buf slot 0]
+mat4 transform (model matrix)  [buf slot 1]
+int  texArrayIndex             [buf slot 1]
+
+UV turns out to be entirely useless, since UVs are set in the geometry shader when growing the primitive anyway
+
+The current vertex layout of the Sprite pipeline has a slot for the texture array index (copied from Diligent samples)
+This is currently unused, but can be set to the index in the texture array of the frame to be drawn, which can be retrieved by:
+
+const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
+int frameArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->getDirection() * activeSprite->frame)
+
+where activeSprite->frame is the zero-indexed frame number of one animation in one direction
+
+Each slice of the texture array is defined to be a 192 * 192 box
+The correct Diligent::Box to use as the texture for a given Entity can therefore be passed in texArrayIndex and used to assign the correct texture
+
+The fragment shader is currently setting the `out vec4 color` to be: color = texture(g_texture, vec3(uv, 0.0));
+The vec3 in that texture function works exactly the same as a Diligent::Box object when updating a texture, where the z coordinate
+defines the number of slices in the texture (aka. frames). Because previously, only one 192 * 192 sprite existed in every texture, this could be left as 0.0f,
+but I now need to access a specific frame/slice. The z-coordinate therefore should now be texArrayIndex
+
+Instance buffer doesn't currently do anyting other than manage and update the model matrices,
+the size of the buffer is set on creation to sizeof(mat4) * m_maxInstances, which is only enough to hold all the model matrices and nothing else
+this should be updated to sizeof(mat4) * sizeof(int) * m_maxInstances, so that the texArrayIndex is included
+
+model matrices are updated with:
+
+uint32_t dataSize = static_cast<uint32_t>(sizeof(mat4) * m_instanceData.size());
+m_pImmediateContext->UpdateBuffer(m_pSpriteInstanceBuffer, 0, dataSize, m_instanceData.data(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+IDeviceContext::UpdateBuffer should also be called to update the texArrayIndex, the question now becomes how?
+Also, sprites/entities still are not using the clock to time their frames, the timing mechanism needs to be determined.
+
+Currently done is:
+- shaders now only draw one frame
+- entity, scene and sprite classes/structs are all made
+- setScene() properly loads all necessary sprites into memory and sets the sprite's index field
+- entities have a sprite change callback linked to renderer so that sprite sheets are properly swapped out when the active sprite is changed
+- timing frames and updating current Sprite frame using Entity::update() and Renderer's delta time
+
+animation time can be updated every frame draw based on delta time between last frame and current frame
+https://vikramsinghmtl.github.io/420-5P6-Game-Programming/concepts/delta-time/
+
+all movement is also scaled by delta time with a system like this. This will be important when calling moveEntity along w/ an animation
+(The entity should in that case be transformed by the specified vector, but movement is gradual so that the movement 'steps' are evenly
+split up. The entity should stop at its final destination after one loop of the appropriate animation has completed.
+In the case that the transform vector is for more than one position, then the animation loops x amount of times)
+
+ALSO TODO: Fix Engine ptr reference pass in game.cpp
+then use game to set new empty scene for test scene (make sure it loads the GLB as well!)

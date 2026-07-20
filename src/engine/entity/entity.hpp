@@ -40,8 +40,10 @@ public:
     const std::shared_ptr<Sprite>& getActiveSprite();
     void setDirection(const Direction& direction);
 
+    // update frame timing data based on the delta time of the renderer
+    void update(const float& deltaTime);
+
     Direction m_direction;
-    uint8_t m_currentFrame;
 
 private:
 
@@ -53,4 +55,6 @@ private:
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
     // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
     std::shared_ptr<Sprite> m_pActiveSprite;
+
+    float m_frameTimer;
 };

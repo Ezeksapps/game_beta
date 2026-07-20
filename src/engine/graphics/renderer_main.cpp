@@ -231,12 +231,16 @@ void Renderer::renderFrame() {
         *uniformConstants = constants;
     }
 
+    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
+    m_lastFrameTime = m_clock.now(); // update last frame time for next frame
+
+    // update frame timings for all entities
+    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) entity->update(m_deltaTime);
+
     renderMap();
     renderSprites();
 
     m_pImmediateContext->EndRenderPass();
-
-    m_lastFrameTime = m_clock.now();
 
     m_pImmediateContext->Flush();
     m_pSwapChain->Present(1 /* VSync on */); /* NOTE: Must signal present, or unpresented resources pile up in dynamic heap and crash program */

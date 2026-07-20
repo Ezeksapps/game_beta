@@ -25,6 +25,21 @@ Entity::Entity(const std::string& animJsonFilepath) {
 
 Entity::~Entity() {}
 
+void Entity::update(const float& deltaTime) {
+
+    m_frameTimer += deltaTime;
+
+    // intended duration of current frame in ms
+    float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
+
+    // if the timer shows that the currently rendered frame has been rendered for a time exceeding the intended duration,
+    // reset the timer and advance to next frame
+    if (m_frameTimer >= duration) {
+        m_frameTimer           = 0.0f;
+        m_pActiveSprite->frame = (m_currentFrame + 1) % m_pActiveSprite->framesPerRow;
+    }
+}
+
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
 }

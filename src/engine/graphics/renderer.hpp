@@ -130,6 +130,9 @@ private:
     /* the maximum dimensions of a sprite sheet */
     static constexpr int m_maxSpriteDimensions = 8 * 10;
 
+    /* Updated per frame, equal to the time taken for the current frame to draw after the previous */
+    float m_deltaTime;
+
     /* NOTE: num sprites setter must not increment sprites past max instances */
 
     void createSharedUniformBuffer();
