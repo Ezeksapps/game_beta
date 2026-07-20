@@ -1,8 +1,6 @@
 #include "game.hpp"
 #include <iostream>
 
-std::unique_ptr<Engine>& g_pEngineRef;
-
 void handleInput(GameCmd* input) {
     switch(*input) {
         case ENTITY_MOVE_FORWARD:
@@ -40,16 +38,11 @@ void handleInput(GameCmd* input) {
 
 
 void gameUpdate(void) {
-    g_pEngineRef->processCmds(handleInput);
+    g_pEngine->processCmds(handleInput);
 }
 
-void gameInit(const std::unique_ptr<Engine>& pEngineRef) {
-    //SpriteSheetInfo playerSpriteSheetInfo {
-    //    .entityEvents = {ANIM_EVENT_WALK},
-    //    .spriteSheets = {"eevee_walk.png"},
-   //     .eventPages = {7}
-   // };
-  //  Entity* player = new Entity(playerSpriteSheetInfo);
-    g_pEngineRef = pEngineRef;
+void gameInit() {
+
+    g_pEngine->setScene(""); // blank since set scene will just use test scene for now anyway
 
 }

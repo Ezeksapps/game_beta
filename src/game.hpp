@@ -2,7 +2,7 @@
 
 // TODO:
 
-// Animate sprites w/ sprite sheet system -- IN PROGRESS, APPROX 70% COMPLETE
+// Animate sprites w/ sprite sheet system -- IN TESTING
 
 // [Engine code]
 // set one entity as the player, others as NPCs (Likely classes extending Entity)
@@ -37,4 +37,4 @@
 #include "engine/engine.hpp"
 
 void gameUpdate(void);
-void gameInit(const std::unique_ptr<Engine>& pEngineRef);
+void gameInit();

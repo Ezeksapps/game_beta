@@ -43,7 +43,9 @@ public:
     // update frame timing data based on the delta time of the renderer
     void update(const float& deltaTime);
 
+    // CHECK: Should be private members?
     Direction m_direction;
+    vec3 m_pos;               // Position (before accounting for world-view-model matrix)
 
 private:
 

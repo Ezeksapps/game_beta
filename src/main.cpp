@@ -93,7 +93,7 @@ int main() {
         };
         g_pEngine = std::make_unique<Engine>(config);
 
-        gameInit(g_pEngine);
+        gameInit();
 
         mainLoop();
 

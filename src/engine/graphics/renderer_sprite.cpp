@@ -3,22 +3,10 @@
 /* Contains renderer functions relevant to the sprites' pipeline only */
 
 
-/* Billboards will all be identically-sized quads (made of two triangle primitives),
- * they therefore always have the same vertices and indices, which are defined here
- */
-
-// NOTE: billboards are actually generated in GS, these are equivalently-sized constants for buffer init
+/* Indices are always the same for a quad, so this is fine as a constant */
 const std::vector<uint16_t> billboardIndices = {
     0, 1, 2, 3, 0
 };
-
-const std::vector<vec3> billboardVertices = {
-    {-0.5f, -0.5f, 0.0f},
-    { 0.5f, -0.5f, 0.0f},
-    { 0.5f,  0.5f, 0.0f},
-    {-0.5f,  0.5f, 0.0f}
-};
-
 
 /* --- PIPELINE --- */
 
@@ -41,7 +29,7 @@ void Renderer::createSpritePipelineState() {
     PipelineStateObjCreateInfo.GraphicsPipeline.SubpassIndex                            = 0;
 
     /* NOTE: Weirdly, Blend is applied to a 'render target', even if you're using a render pass system? */
-    // TODO: Transparency might need sorting (grid-like system may mean this isn't necessary though)
+    // TODO: Transparency might need sorting? (grid-like system may mean this isn't necessary)
     Diligent::RenderTargetBlendDesc blendDesc;
     blendDesc.BlendEnable = true;
     blendDesc.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
@@ -99,27 +87,21 @@ void Renderer::createSpritePipelineState() {
          * LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
          */
 
-        /* --- Per-vertex Data (from vertex buffer) --- */
-
-        // vertex position
-        Diligent::LayoutElement{0, 0, 3, Diligent::VT_FLOAT32, false},
-        // NOTE: UVs not needed as they are always the same and set by the geometry shader
-
         /* --- Per-instance Data (from instance buffer) --- */
 
         /* NOTE: This differs from the tutorial's setup in that the program only uses GLSL, so these attribs will represent
          * the columns of the matrix, not the rows */
 
         // rotation matrix, col 1
-        Diligent::LayoutElement{2, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{2, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 2
-        Diligent::LayoutElement{3, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{3, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 3
-        Diligent::LayoutElement{4, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{4, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 4
-        Diligent::LayoutElement{5, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{5, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // texture array index of current frame
-        Diligent::LayoutElement{6, 1, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
+        Diligent::LayoutElement{6, 0, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
             Diligent::LAYOUT_ELEMENT_AUTO_STRIDE, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
 
@@ -171,21 +153,6 @@ void Renderer::createSpritePipelineState() {
 
 /* --- BUFFERS --- */
 
-/* Vertex buffer for billboards */
-void Renderer::createVertexBuffer() {
-    Diligent::BufferDesc vertexBufferDesc;
-    vertexBufferDesc.Name      = "billboard vertex buffer";
-    vertexBufferDesc.Usage     = Diligent::USAGE_IMMUTABLE;
-    vertexBufferDesc.BindFlags = Diligent::BIND_VERTEX_BUFFER;
-    vertexBufferDesc.Size      = billboardVertices.size() * sizeof(vec3);
-    vertexBufferDesc.Size = sizeof(billboardVertices);
-
-    Diligent::BufferData vertexBufferData;
-    vertexBufferData.pData    = billboardVertices.data();
-    vertexBufferData.DataSize = billboardVertices.size() * sizeof(vec3);
-    m_pDevice->CreateBuffer(vertexBufferDesc, &vertexBufferData, &m_pSpriteVertexBuffer);
-}
-
 /* Index buffer for billboards */
 void Renderer::createIndexBuffer() {
 
@@ -208,14 +175,14 @@ void Renderer::createInstanceBuffer() {
     /* Default usage, as buffer is only updated when grid size changes */
     instanceBufferDesc.Usage     = Diligent::USAGE_DEFAULT;
     instanceBufferDesc.BindFlags = Diligent::BIND_VERTEX_BUFFER;
-    instanceBufferDesc.Size      = sizeof(mat4) * m_maxInstances;
+    instanceBufferDesc.Size      = sizeof(InstanceData) * m_maxInstances;
     m_pDevice->CreateBuffer(instanceBufferDesc, nullptr, &m_pSpriteInstanceBuffer);
     /* NOTE: instance buffer holds no data until sprites are added, no need to populate upon creation */
 }
 
 void Renderer::populateInstanceBuffer() {
 
-    uint32_t dataSize = static_cast<uint32_t>(sizeof(mat4) * m_instanceData.size());
+    uint32_t dataSize = static_cast<uint32_t>(sizeof(InstanceData) * m_instanceData.size());
     /* NOTE: IBuffer::UpdateData() is no longer a function, use IDeviceContext::UpdateBuffer() now (see patch notes for v2.4) */
     m_pImmediateContext->UpdateBuffer(m_pSpriteInstanceBuffer, 0, dataSize, m_instanceData.data(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
 
@@ -252,13 +219,19 @@ void Renderer::createSpriteTextureArray() {
     m_pSpriteShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(m_pSpriteShaderResourceView);
 }
 
-void Renderer::registerTexture(const std::string& filepath) {
+/* --- LOADERS --- */
+
+int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
+    if (m_numSprites + 1 > m_maxInstances) return -1;
+
+    sprite->index = m_numSprites; // first time sprite is being used, so assign the index
 
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
     Diligent::TextureLoadInfo loadInfo;
     loadInfo.IsSRGB = true;
-    Diligent::CreateTextureLoaderFromFile(filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+    Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
+    sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
@@ -285,13 +258,21 @@ void Renderer::registerTexture(const std::string& filepath) {
         Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
     );
+
+    ++m_numSprites;
+
+    return m_numSprites - 1;
 }
 
-void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTextureFilepath) {
+void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
+    // NOTE: sprite->index refers to the Entity 'number' that Sprite belongs to. The start index in the tex array
+    // the Sprite's texture exists in can be found with index * m_maxSpriteDimensions
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
     Diligent::TextureLoadInfo loadInfo;
     loadInfo.IsSRGB = true;
-    Diligent::CreateTextureLoaderFromFile(newTextureFilepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+    Diligent::CreateTextureLoaderFromFile(newSprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+
+    newSprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
@@ -313,7 +294,7 @@ void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTex
     m_pImmediateContext->UpdateTexture(
         m_pSpriteTextureArray,
         0,
-        oldTextureIndex,
+        oldSpriteIndex * m_maxSpriteDimensions,
         updateBox,
         subResData,
         Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
@@ -321,45 +302,12 @@ void Renderer::swapTexture(const int& oldTextureIndex, const std::string& newTex
     );
 }
 
-/* --- LOADERS --- */
-
-int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
-    if (m_numSprites + 1 > m_maxInstances) return -1;
-
-    sprite->index = m_numSprites; // first time sprite is being used, so assign the index
-
-    registerTexture(sprite->filepath);
-
-    mat4 transform = translate(mat4(1.0f), vec3(sprite->pos.x, sprite->pos.y, sprite->pos.z));
-    m_instanceData.push_back(transform);
-
-    ++m_numSprites;
-
-    return m_numSprites - 1;
-}
-
-void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
-    // NOTE: sprite->index refers to the Entity 'number' that Sprite belongs to. The start index in the tex array
-    // the Sprite's texture exists in can be found with index * m_maxSpriteDimensions
-    swapTexture(oldSpriteIndex * m_maxSpriteDimensions, newSprite->filepath);
-
-    mat4 transform = translate(mat4(1.0f), vec3(newSprite->pos.x, newSprite->pos.y, newSprite->pos.z));
-    m_instanceData.push_back(transform);
-
-    populateInstanceBuffer();
-}
-
 /* --- DRAW CALLS --- */
 
 void Renderer::renderSprites() {
 
-    /* This can no longer just render the texture. The texture is now comprised of an entire, multi-frame spritesheet
-     * This should render all entities, but the texture should be the specific slice that is needed for the animation */
-
-    // vertex buffer has proper size, print vals
-
     uint64_t offsets[] = {0, 0};
-    Diligent::IBuffer* pBuffers[] = {m_pSpriteVertexBuffer, m_pSpriteInstanceBuffer};
+    Diligent::IBuffer* pBuffers[] = {m_pSpriteInstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffers), pBuffers, offsets, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_pSpriteIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pSpritePipelineStateObj); // set pipeline to use

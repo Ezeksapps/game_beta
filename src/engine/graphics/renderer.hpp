@@ -40,11 +40,8 @@ public:
 
     bool initRenderer(const Diligent::NativeWindow& window, const Diligent::RENDER_DEVICE_TYPE& deviceType);
     void renderFrame();
-    void update();
 
     void setScene(const std::string& sceneDir);
-
-    void loadGLB(const std::string& filename);
 
     // create a texture for a specified Sprite object and add it to the texture array
     // NOTE: Space in that array is limited to m_maxInstances, this function should be used
@@ -57,8 +54,6 @@ public:
     // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
     void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite);
 
-    void playSpriteAnim(const int& spriteIn);
-
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
@@ -69,8 +64,13 @@ private:
         mat4 viewMatrix;
     };
 
+    struct InstanceData {
+        mat4 modelMatrix;
+        int  texArrayIndex;
+    };
+
     /* Renderer clock */
-    std::chrono::steady_clock m_clock; // TODO: USE FOR FRAME RATE STABILISATION
+    std::chrono::steady_clock m_clock;
     /* Time point where the last frame was drawn */
     std::chrono::time_point<std::chrono::steady_clock> m_lastFrameTime;
     /* Rendered scene */
@@ -99,7 +99,7 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pSpritePipelineStateObj;
 
     /* ---- Sprite pipeline buffers & textures ---- */
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteVertexBuffer;
+    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
@@ -121,7 +121,8 @@ private:
     mat4 m_projMatrix; // The world space's projection matrix
     mat4 m_viewMatrix; // The camera's matrix
 
-    std::vector<mat4> m_instanceData; // transform matrices for every billboard instance
+    // model matrix and array index of sprite sheet frame for each Entity
+    std::vector<InstanceData> m_instanceData;
 
     /* Number of sprites game is currently rendering */
     int m_numSprites = 0;
@@ -148,13 +149,12 @@ private:
     void createRenderPass();
     void createFrameBuffer();
 
+    void loadGLB(const std::string& filename);
+
     void renderMap();
     void renderSprites();
 
     void updateUniformBuffer();
-
-    void registerTexture(const std::string& filepath);
-    void swapTexture(const int& oldTextureIndex, const std::string& newTextureFilepath);
 
     void createSpriteTextureArray();
 };

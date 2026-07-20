@@ -20,6 +20,8 @@ Entity::Entity(const std::string& animJsonFilepath) {
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
     }
 
+    doAnimEvent(ANIM_EVENT_WALK); // PLACEHOLDER, REMOVE FOLLOWING TEST
+
 }
 
 
@@ -36,7 +38,7 @@ void Entity::update(const float& deltaTime) {
     // reset the timer and advance to next frame
     if (m_frameTimer >= duration) {
         m_frameTimer           = 0.0f;
-        m_pActiveSprite->frame = (m_currentFrame + 1) % m_pActiveSprite->framesPerRow;
+        m_pActiveSprite->frame = (m_pActiveSprite->frame + 1) % m_pActiveSprite->framesPerRow;
     }
 }
 

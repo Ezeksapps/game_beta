@@ -1,5 +1,11 @@
 #pragma once
 
+#include <memory>
+
+class Engine;
+
+extern std::unique_ptr<Engine> g_pEngine;
+
 /* Defines global macros required by libs */
 
 #if defined(__linux__)

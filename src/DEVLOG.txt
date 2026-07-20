@@ -133,5 +133,11 @@ all movement is also scaled by delta time with a system like this. This will be 
 split up. The entity should stop at its final destination after one loop of the appropriate animation has completed.
 In the case that the transform vector is for more than one position, then the animation loops x amount of times)
 
-ALSO TODO: Fix Engine ptr reference pass in game.cpp
-then use game to set new empty scene for test scene (make sure it loads the GLB as well!)
+
+Vertex buffer redundant (pos not needed), remove
+
+Instance buffer population does need to happen per frame, since Sprite animation frames are always changing
+Run after calling update() for all entities to make sure frame index is up-to-date
+
+TODO: Upscale PMD sprites for 192 * 192 frame dimensions
+TODO: Fix shader bug

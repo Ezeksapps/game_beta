@@ -33,6 +33,8 @@ Engine::Engine(const EngineConfig& config) {
     initInputHandler();
 }
 
+Engine::~Engine() {}
+
 /* --- SCENES --- */
 
 void Engine::setScene(const std::string& sceneDir) {

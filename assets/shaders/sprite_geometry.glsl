@@ -14,10 +14,10 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 layout(location = 0) in mat4 modelMatrix[];
-layout(location = 1) in int  texArrayIndex_gs[];
+layout(location = 1) flat in int  texArrayIndex_gs[];
 
 out vec2 uv; // CHECK: is this actually needed? (only set to the last value 1.0, 0.0, then used in frag??)
-out int  texArrayIndex;
+flat out int  texArrayIndex;
 
 void main() {
     /* Generate billboard & calculate matrix based on camera position */
