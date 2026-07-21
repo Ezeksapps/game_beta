@@ -57,6 +57,9 @@ public:
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
+    /* Camera instance */
+    std::unique_ptr<Camera>                           m_pCamera;
+
 private:
 
     struct FrameConstants {
@@ -66,7 +69,7 @@ private:
 
     struct InstanceData {
         mat4 modelMatrix;
-        int  texArrayIndex;
+        float  texArrayIndex;
     };
 
     /* Renderer clock */
@@ -88,8 +91,7 @@ private:
 
     /* Map file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
-    /* Camera instance */
-    std::unique_ptr<Camera>                           m_pCamera;
+
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
@@ -100,7 +102,7 @@ private:
 
     /* ---- Sprite pipeline buffers & textures ---- */
     //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteVertexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteIndexBuffer;
+    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;

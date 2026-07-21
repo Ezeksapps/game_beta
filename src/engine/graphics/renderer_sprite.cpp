@@ -2,6 +2,8 @@
 
 /* Contains renderer functions relevant to the sprites' pipeline only */
 
+// index buffer removed, unused.
+// TODO: input layout not working properly, all calculations setting instance data seem fine
 
 /* Indices are always the same for a quad, so this is fine as a constant */
 const std::vector<uint16_t> billboardIndices = {
@@ -18,7 +20,7 @@ void Renderer::createSpritePipelineState() {
     PipelineStateObjCreateInfo.PSODesc.PipelineType = Diligent::PIPELINE_TYPE_GRAPHICS;
 
     /* Defines what kind of primitives will be rendered by this pipeline state */
-    PipelineStateObjCreateInfo.GraphicsPipeline.PrimitiveTopology                       = Diligent::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    PipelineStateObjCreateInfo.GraphicsPipeline.PrimitiveTopology                       = Diligent::PRIMITIVE_TOPOLOGY_POINT_LIST;
     /* Face culling mode */
     PipelineStateObjCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode                 = Diligent::CULL_MODE_BACK;
     /* Enable depth testing */
@@ -91,18 +93,26 @@ void Renderer::createSpritePipelineState() {
 
         /* NOTE: This differs from the tutorial's setup in that the program only uses GLSL, so these attribs will represent
          * the columns of the matrix, not the rows */
-
+/*
         // rotation matrix, col 1
-        Diligent::LayoutElement{2, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{0, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 2
-        Diligent::LayoutElement{3, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{1, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 3
-        Diligent::LayoutElement{4, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{2, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // rotation matrix, col 4
-        Diligent::LayoutElement{5, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        Diligent::LayoutElement{3, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         // texture array index of current frame
-        Diligent::LayoutElement{6, 0, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
-            Diligent::LAYOUT_ELEMENT_AUTO_STRIDE, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
+        Diligent::LayoutElement{4, 0, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
+            Diligent::LAYOUT_ELEMENT_AUTO_STRIDE, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}*/
+
+// Model matrix – columns at offsets 0, 16, 32, 48
+{0, 0, 4, Diligent::VT_FLOAT32, false, 0,  sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+{1, 0, 4, Diligent::VT_FLOAT32, false, 16, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+{2, 0, 4, Diligent::VT_FLOAT32, false, 32, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+{3, 0, 4, Diligent::VT_FLOAT32, false, 48, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+// Texture index – offset 64 (after matrix)
+{4, 0, 1, Diligent::VT_FLOAT32, false, 64, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
     };
 
     /* Create pipeline state */
@@ -154,7 +164,7 @@ void Renderer::createSpritePipelineState() {
 /* --- BUFFERS --- */
 
 /* Index buffer for billboards */
-void Renderer::createIndexBuffer() {
+/*void Renderer::createIndexBuffer() {
 
     Diligent::BufferDesc indexBufferDesc;
     indexBufferDesc.Name      = "billboard index buffer";
@@ -166,7 +176,7 @@ void Renderer::createIndexBuffer() {
     indexBufferData.pData    = billboardIndices.data();
     indexBufferData.DataSize = billboardIndices.size() * sizeof(uint16_t);
     m_pDevice->CreateBuffer(indexBufferDesc, &indexBufferData, &m_pSpriteIndexBuffer);
-}
+}*/
 
 /* Instance buffer for billboards */
 void Renderer::createInstanceBuffer() {
@@ -231,37 +241,49 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
     loadInfo.IsSRGB = true;
     Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
+    // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
+
     sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
+    int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-    /* Box representing slice */
-    Diligent::Box updateBox;
-    updateBox.MinX = 0;
-    updateBox.MinY = 0;
-    updateBox.MinZ = 0;
-    updateBox.MaxX = 192;
-    updateBox.MaxY = 192;
-    updateBox.MaxZ = m_maxSpriteDimensions;  /* Z-axis represents slices */
 
     // NOTE: All Sprites, regardless of how many slices they actually require will be treated as having a number of
     // frames equal to the constexpr m_maxSpriteDimensions. This allows all spritesheets to occupy equal amounts of memory,
     // meaning differently-sized spritesheets will not interfere with each other
 
-    /* Update slice w/ new texture */
-    m_pImmediateContext->UpdateTexture(
-        m_pSpriteTextureArray,
-        0,
-        m_numSprites * m_maxSpriteDimensions,
-        updateBox,
-        subResData,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-    );
+    for (int row = 0; row < framesPerCol; ++row) {
+        for (int col = 0; col < sprite->framesPerRow; ++col) {
+
+            int sliceIndex = m_numSprites * m_maxSpriteDimensions + (row * sprite->framesPerRow) + col;
+
+            Diligent::Box updateBox;
+            updateBox.MinX = 0;
+            updateBox.MinY = 0;
+            updateBox.MinZ = 0;
+            updateBox.MaxX = 192;
+            updateBox.MaxY = 192;
+            updateBox.MaxZ = 1;
+
+            /* Update slice w/ new texture */
+            m_pImmediateContext->UpdateTexture(
+                m_pSpriteTextureArray,
+                0,
+                m_numSprites * m_maxSpriteDimensions,
+                updateBox,
+                subResData,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
+            );
+        }
+    }
+
+    m_instanceData.push_back(InstanceData()); // allocate a new empty slot in instance data vector
 
     ++m_numSprites;
 
-    return m_numSprites - 1;
+    return m_numSprites - 1; // unused return?
 }
 
 void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
@@ -272,34 +294,43 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
     loadInfo.IsSRGB = true;
     Diligent::CreateTextureLoaderFromFile(newSprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
+    // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
+
     newSprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
+    int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
 
     /* Get pixel subres data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-
-    /* Box representing slice */
-    Diligent::Box updateBox;
-    updateBox.MinX = 0;
-    updateBox.MinY = 0;
-    updateBox.MinZ = 0;
-    updateBox.MaxX = 192;
-    updateBox.MaxY = 192;
-    updateBox.MaxZ = m_maxSpriteDimensions;  /* Z-axis represents slices */
 
     // NOTE: All Sprites, regardless of how many slices they actually require will be treated as having a number of
     // frames equal to the constexpr m_maxSpriteDimensions. This allows all spritesheets to occupy equal amounts of memory,
     // meaning differently-sized spritesheets will not interfere with each other
 
-    /* Update slice w/ new texture */
-    m_pImmediateContext->UpdateTexture(
-        m_pSpriteTextureArray,
-        0,
-        oldSpriteIndex * m_maxSpriteDimensions,
-        updateBox,
-        subResData,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-    );
+    for (int row = 0; row < framesPerCol; ++row) {
+        for (int col = 0; col < newSprite->framesPerRow; ++col) {
+
+            int sliceIndex = oldSpriteIndex * m_maxSpriteDimensions + (row * newSprite->framesPerRow) + col;
+
+            Diligent::Box updateBox;
+            updateBox.MinX = 0;
+            updateBox.MinY = 0;
+            updateBox.MinZ = 0;
+            updateBox.MaxX = 192;
+            updateBox.MaxY = 192;
+            updateBox.MaxZ = 1;
+
+            /* Update slice w/ new texture */
+            m_pImmediateContext->UpdateTexture(
+                m_pSpriteTextureArray,
+                0,
+                oldSpriteIndex * m_maxSpriteDimensions,
+                updateBox,
+                subResData,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
+            );
+        }
+    }
 }
 
 /* --- DRAW CALLS --- */
@@ -309,15 +340,19 @@ void Renderer::renderSprites() {
     uint64_t offsets[] = {0, 0};
     Diligent::IBuffer* pBuffers[] = {m_pSpriteInstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffers), pBuffers, offsets, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
-    m_pImmediateContext->SetIndexBuffer(m_pSpriteIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
+
+   // m_pSpriteInstanceBuffer->
+
+   // m_pImmediateContext->SetIndexBuffer(m_pSpriteIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pSpritePipelineStateObj); // set pipeline to use
     m_pImmediateContext->CommitShaderResources(m_pSpriteShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
 
-    Diligent::DrawIndexedAttribs drawAttribs;
-    drawAttribs.IndexType = Diligent::VT_UINT16; /* sprite indices are 16-bit uint */
-    drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
+    Diligent::DrawAttribs drawAttribs;
+    //drawAttribs.IndexType = Diligent::VT_UINT16; /* sprite indices are 16-bit uint */
+    //drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
     drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
     drawAttribs.NumInstances = m_numSprites;
-    m_pImmediateContext->DrawIndexed(drawAttribs);
+    drawAttribs.NumVertices = 1;
+    m_pImmediateContext->Draw(drawAttribs);
 
 }

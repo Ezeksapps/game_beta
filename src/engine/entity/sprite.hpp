@@ -7,8 +7,8 @@ using namespace glm;
 
 struct Sprite {
     std::string filepath;
-    uint8_t index;                        // Entity number this Sprite belongs to (zero-indexed)
-    std::vector<int> frameDurations;      // duration of each page/frame for one cycle of the animation
-    uint8_t frame;                        // current frame of animation this Sprite is on
-    uint8_t framesPerRow;                 // number of frames per row, set by Renderer when registering Sprite
+    int index;                        // Entity number this Sprite belongs to (zero-indexed)
+    std::vector<int> frameDurations;  // duration of each page/frame for one cycle of the animation
+    int frame;                        // current frame of animation this Sprite is on
+    int framesPerRow;                 // number of frames per row, set by Renderer when registering Sprite
 };

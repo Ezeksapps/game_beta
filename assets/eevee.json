@@ -1,0 +1,37 @@
+{
+    "anims": [
+        {
+            "type": 0,
+            "filepath": "assets/eevee/walk.png",
+            "durations": [
+                4,
+                4,
+                4,
+                4,
+                6,
+                2,
+                2
+            ]
+        },
+        {
+            "type": 2,
+            "filepath": "assets/eevee/sleep.png",
+            "durations": [
+                30,
+                35
+            ]
+        },
+        {
+            "type": 3,
+            "filepath": "assets/eevee/wake.png",
+            "durations": [
+                8,
+                4,
+                14,
+                8,
+                4,
+                4
+            ]
+        }
+    ]
+}

@@ -1,5 +1,8 @@
 #include "game.hpp"
+#include "engine/common.hpp"
 #include <iostream>
+
+std::vector<std::shared_ptr<Entity>> entities;
 
 void handleInput(GameCmd* input) {
     switch(*input) {
@@ -44,5 +47,5 @@ void gameUpdate(void) {
 void gameInit() {
 
     g_pEngine->setScene(""); // blank since set scene will just use test scene for now anyway
-
+    //entities = g_pEngine->getEntities();
 }

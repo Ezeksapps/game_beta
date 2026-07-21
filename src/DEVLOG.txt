@@ -141,3 +141,96 @@ Run after calling update() for all entities to make sure frame index is up-to-da
 
 TODO: Upscale PMD sprites for 192 * 192 frame dimensions
 TODO: Fix shader bug
+
+Movement API:
+
+Entity::move() moves entity by one square (x/y grid) in any of the enumerated directions
+TODO: Z-axis updates must be checked following translation by a collision check
+
+Movement cannot exist w/o animation. Move must define mode of movement in a second param, this being an AnimEvent
+
+Movement must then occur in a way so that the translation does not complete until the anim completes and both finish in sync
+
+total anim time in ms can be found by summing all elems in sprite->frameDurations
+entity::translate() must then be run in steps, translation in all axes being divided by the frame durations
+
+
+World is a 2.5D system, the map is a glTF file loaded through the custom Renderer. This is handled specifically by the 'map' pipeline (might be renamed to Scene later)
+
+Any map/scene is therefore a fully 3D environment. The projection matrix is a perspective projection. The camera is a custom quaternion based implementation that treats Z as its forward direction (so by default it overlooks the scene looking down -z)
+
+The Engine is initialised by the platform entry point, which then hands the pointer off to game.cpp aka. The main game code.
+
+This is currently on Linux (w/ X11 or Wayland) and Windows so the platform entry point uses GLFW
+
+Engine holds two private members, the Scene and the Renderer, both unique pointers
+
+Scene holds a vector of shared pointers to all Entity objects that the Renderer is rendering. This is done on the separate sprite pipeline,
+which grows a billboard around the world-space position of the Entity and assigns the correct slice/frame of the sprite sheet texture onto it.
+
+The objective now is to define the relations between all Engine's classes and the API interface
+
+Entities have now been reworked so that all sprites are animated via a sprite sheet system.
+Through a callback, the renderer will be notified if the sprite sheet changes and updates accordingly
+
+Movement does not currently exist however. The basic concept is not difficult. All you have to do is update Entity position (a vec3)
+Despite the world space being 3D, the way the game is played is still 2D. X and Y coordinates are the only ones that matter for game interactions.
+The Z axis exists to provide 3D depth.
+
+Movement is therefore done square-by-square (like in PMD)
+The move function takes the Direction (enum) of movement and the mode (AnimEvent) of movement, which plays the correct animation. Each square is 1.0f * 1.0f
+Origin is 0, 0
+
+When position is updated I now most likely need another callback connected to renderer to
+1. Check if the translation in any direction is > 1.0f, if so reject it
+2. Split the transform so that it is done in sprite->frameDurations.size() steps (aka. numFrames), this way the animation plays smoothly across movement
+3. Run transforms
+
+Another issue is how to detect constant hold on a key w/ GLFW instead of single presses.
+All other movement inputs in command queue should be ignored until Renderer completes current one.
+
+NOTE: MaxZ truns out to not specify slices to update, a 2D texture must have them all updated one-by-one
+
+Diligent Engine: ERROR in ValidateTextureRegion() (TextureBase.cpp, 386): Texture '0x2CCF9580': Region max Z (80) must be 1 for all but 3D textures.
+Diligent Engine: ERROR: Debug assertion failed in ValidateUpdateTextureParams(), file TextureBase.cpp, line 441:
+Source data depth stride (0) is below the image plane size (215040).
+
+280 × 384, 40 x 48 per frame
+
+7 rows, 8 cols
+
+192 * 7 = 1344
+192 * 8 = 1536
+
+1344 * 1536
+
+
+CHECK: Why is camera randomising its position now?
+CHECK: Update instance buffer calcs for index clearly work, but checking frag shader shows texArrayIndex always == 0?
+
+Texture array index: 42
+Texture array index: 43
+Texture array index: 44
+Texture array index: 45
+Texture array index: 46
+Texture array index: 47
+Texture array index: 48
+Texture array index: 42
+Texture array index: 43
+Texture array index: 44
+Texture array index: 45
+Texture array index: 46
+Texture array index: 47
+Texture array index: 48
+
+Print of result of (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
+Aka. texArrayIndex, clearly correct, running every frame
+
+Bug is vertex shader is somehow not recieving this data
+
+[Low-pri bug]
+
+Diligent Engine: Info: Desired back buffer count (2) is smaller than the minimal image count supported for this surface (3). Resetting to 3
+Diligent Engine: Info: Created swap chain with 3 images vs 2 requested.
+
+

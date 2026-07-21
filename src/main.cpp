@@ -30,7 +30,23 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
-        g_pEngine->handleInput(key);  // Send raw keycode
+       // g_pEngine->handleInput(key);  // Send raw keycode
+        switch (key) {
+            case GLFW_KEY_W:
+                g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));
+                break;
+            case GLFW_KEY_S:
+                g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));
+                break;
+            case GLFW_KEY_A:
+                g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(0.0f, -std::numbers::pi_v<float> * 0.01, 0.0f));
+                break;
+            case GLFW_KEY_D:
+                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(0.0f, std::numbers::pi_v<float> * 0.01, 0.0f));
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -101,7 +117,7 @@ int main() {
         glfwTerminate();
 
     } catch (const std::exception& e) {
-        std::cout << "----\n[!] Program About to exit, exception caught!";
+        std::cout << "---------\n[!] Program About to exit, exception caught!\n";
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }

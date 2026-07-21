@@ -46,6 +46,10 @@ public:
     // acts as a public-access way to call renderer's setScene()
     void setScene(const std::string& sceneDir);
 
+    /* --- GETTERS --- */
+
+    std::vector<std::shared_ptr<Entity>>& getEntities();
+
     /* --- INPUT HANDLING --- */
 
     // Send a keycode (GLFW enum key) to the input handler, the corresponding GameCmd be added to command queue
@@ -61,9 +65,11 @@ public:
     // This just acts as a public-access way to call renderer's renderFrame()
     void renderFrame();
 
+      std::unique_ptr<Renderer> m_pRenderer; // TEMP MEASURE!
+
 private:
 
     std::unique_ptr<Scene> m_pScene;
-    std::unique_ptr<Renderer> m_pRenderer;
+
 
 };

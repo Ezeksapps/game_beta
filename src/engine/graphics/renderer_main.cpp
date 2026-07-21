@@ -82,15 +82,15 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createMapPipelineState();
     createSpritePipelineState();
 
-    createIndexBuffer();
+    //createIndexBuffer();
     createInstanceBuffer();
 
     /* States of buffers must be updated prior to starting render pass, since no state transitions can occur when one is active */
-    Diligent::StateTransitionDesc barriers[] = {
-        {m_pSpriteIndexBuffer, Diligent::RESOURCE_STATE_UNKNOWN, Diligent::RESOURCE_STATE_INDEX_BUFFER, Diligent::STATE_TRANSITION_FLAG_UPDATE_STATE},
-    };
+    //Diligent::StateTransitionDesc barriers[] = {
+     //   {m_pSpriteIndexBuffer, Diligent::RESOURCE_STATE_UNKNOWN, Diligent::RESOURCE_STATE_INDEX_BUFFER, Diligent::STATE_TRANSITION_FLAG_UPDATE_STATE},
+    //};
 
-    m_pImmediateContext->TransitionResourceStates(_countof(barriers), barriers);
+    //m_pImmediateContext->TransitionResourceStates(_countof(barriers), barriers);
 
     createSpriteTextureArray();
     createFrameBuffer();
@@ -207,6 +207,27 @@ void Renderer::renderFrame() {
     clearValues[0].SetColor(m_pSwapChain->GetDesc().ColorBufferFormat, 0.0f, 0.0f, 0.0f, 1.0f);  // Colour attachment
     clearValues[1].SetDepthStencil(Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB, 1.0f, 0);              // Depth attachment
 
+    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
+    m_lastFrameTime = m_clock.now(); // update last frame time for next frame
+
+    // issue, will fail if no pre-exisiting instance data exists, as indices not allocated until pushed to vector
+
+    m_instanceData.clear();
+    //m_instanceData.reserve(m_pScene->m_pEntities.size());
+
+    // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
+    int i = 0;
+    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
+        entity->update(m_deltaTime);
+        const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
+        int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
+        mat4 transform = translate(mat4(1.0f), entity->m_pos);
+        m_instanceData.push_back(InstanceData(transform, texArrayIndex));
+        ++i;
+    }
+
+    populateInstanceBuffer();
+
     m_pImmediateContext->BeginRenderPass({
         m_pRenderPass,
         m_pFrameBuffer,
@@ -230,22 +251,6 @@ void Renderer::renderFrame() {
         );
         *uniformConstants = constants;
     }
-
-    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
-    m_lastFrameTime = m_clock.now(); // update last frame time for next frame
-
-    // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
-    int i = 0;
-    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
-        entity->update(m_deltaTime);
-        const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
-        int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->frame);
-        mat4 transform = translate(mat4(1.0f), entity->m_pos);
-        m_instanceData[i] = InstanceData(transform, texArrayIndex);
-        ++i;
-    }
-
-    populateInstanceBuffer();
 
     renderMap();
     renderSprites();

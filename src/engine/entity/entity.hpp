@@ -43,6 +43,9 @@ public:
     // update frame timing data based on the delta time of the renderer
     void update(const float& deltaTime);
 
+    // move entity by one square in one direction, with a specified mode of transport (walking/running)
+    void move(const Direction& direction, const AnimEvent& mode);
+
     // CHECK: Should be private members?
     Direction m_direction;
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)

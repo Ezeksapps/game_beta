@@ -15,6 +15,8 @@ public:
     Scene(const std::string& sceneDir);
     ~Scene();
 
+    std::vector<std::shared_ptr<Entity>>& getEntities();
+
 private:
 
     std::vector<std::shared_ptr<Entity>> m_pEntities;
