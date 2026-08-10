@@ -51,6 +51,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 }
 
 void initWindow() {
+   // glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);  // ENABLE only when needing to debug shaders (RenderDoc doesn't support Wayland)
     if (glfwInit() != GLFW_TRUE) return;
 
     if (glfwVulkanSupported()) {

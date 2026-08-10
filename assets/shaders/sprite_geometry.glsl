@@ -1,6 +1,15 @@
-uniform Constants {
+layout(binding = 0) uniform Constants {
     mat4 g_projMatrix;
     mat4 g_viewMatrix;
+};
+
+struct InstanceData {
+    mat4 modelMatrix;
+    float texArrayIndex;
+};
+
+layout(binding = 1) uniform SpriteConstants {
+    InstanceData g_instData[32];
 };
 
 /* Refs for implementation:
@@ -13,19 +22,27 @@ uniform Constants {
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-layout(location = 0) in mat4 modelMatrix[];
-layout(location = 4) flat in float  texArrayIndex_gs[];
+flat in int instanceID[];
 
-out vec2 uv; // CHECK: is this actually needed? (only set to the last value 1.0, 0.0, then used in frag??)
-flat out float  texArrayIndex;
+out vec2 uv;
+out flat float texArrayIndex;
 
 void main() {
     /* Generate billboard & calculate matrix based on camera position */
 
-    // TODO: will only use first index in UVs and matrices, even if multiple sprites exist
+    int instID = instanceID[0];
+    texArrayIndex = g_instData[instID].texArrayIndex; // now working (confirmed as quad is green, meaning texArrayIndex > 0.0f)
 
-    vec3 pos = gl_in[0].gl_Position.xyz; // get position vector of primitive (centre point of billboard)
 
+    mat4 model = mat4(1.0);  // Identity matrix (position at origin)
+    vec3 pos = vec3(0.0, 0.0, 0.0);  // Force position
+
+    // mat4 model = g_instData[instID].modelMatrix;
+
+    // World‑space position
+    //vec3 pos = (g_instData[instID].modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+
+    // Camera axes
     vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
     vec3 cameraUp = vec3(g_viewMatrix[0][1], g_viewMatrix[1][1], g_viewMatrix[2][1]);
 
@@ -50,6 +67,4 @@ void main() {
     EmitVertex();
 
     EndPrimitive();
-
-    texArrayIndex = texArrayIndex_gs[0];
 }

@@ -6,7 +6,6 @@ NOTE: UI library may be ImGui, but figure out how to control the styling so ever
 TODO: Switch to anisotropic filter for better-looking textures
 
 
-
 SPRITE SHEET SYSTEM LOG
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -233,4 +232,298 @@ Bug is vertex shader is somehow not recieving this data
 Diligent Engine: Info: Desired back buffer count (2) is smaller than the minimal image count supported for this surface (3). Resetting to 3
 Diligent Engine: Info: Created swap chain with 3 images vs 2 requested.
 
+The specific current issues are:
 
+1. For some reason, camera positions are being randomised every time the program opens which wasn't a problem before & shouldn't be a problem since nothing I can see
+is directly altering the view matrix apart from the debug control and when the position of the camera is first set. The proj matrix calculation never changes so it can't be that
+
+2. The map pipeline responsible for displaying the 3D environment loaded from a glTF works fine. The second sprite pipeline responsible for the creation of billboards
+and rendering and animating the 2D sprites is not correctly recieving input, currently the sprite is not even drawing for reasons unclear (matrix should be set, the
+code controlling the sprite animation frame is also tested and confirmed to work perfectly, but the texArrayIndex var in the shader is what is failing)
+
+
+[clang] (static_assert_requirement_failed) Static assertion failed due to requirement 'sizeof(Renderer::InstanceData) == 80': InstanceData size is not 80 bytes! [renderer_sprite.cpp:195] Expression evaluates to '68 == 80'
+
+Apparently incorrect stride?
+
+Nothing changes with proper alignment
+The actual values in-shader must be not correctly set, again why a printf equivalent would be advantageous, or at least a way to dump binary data
+
+=== Instance Data Debug ===
+m_instanceData.size(): 1
+Instance 0:
+  texArrayIndex: 42
+  Matrix[0][0]: 1
+  Matrix[0][3]: 0
+  Matrix[1][3]: 0
+  Matrix[2][3]: 0
+populateInstanceBuffer: dataSize=80, instanceData.size=1
+=== Instance Data Debug ===
+m_instanceData.size(): 1
+Instance 0:
+  texArrayIndex: 43
+  Matrix[0][0]: 1
+  Matrix[0][3]: 0
+  Matrix[1][3]: 0
+  Matrix[2][3]: 0
+populateInstanceBuffer: dataSize=80, instanceData.size=1
+=== Instance Data Debug ===
+m_instanceData.size(): 1
+Instance 0:
+  texArrayIndex: 44
+  Matrix[0][0]: 1
+  Matrix[0][3]: 0
+  Matrix[1][3]: 0
+  Matrix[2][3]: 0
+
+The martrix is fine (maybe?) since the sprite is meant to be at 0, 0, 0 right now and the geo shader should account for the world-view-model matrix, which is does
+as confirmed by the fact this previouslty worked fine prior to the new implementation of the animated sprite sheet system
+Something must be different now, but the issue is how to debug this, the good thing is that based on this I can dete4rmine that this issue is isolated to when the instance buffer is updated
+
+Then again, that is only updating frame constants, not the actual model matrices and texArrayIndices
+
+
+void Renderer::populateInstanceBuffer() {
+
+    uint32_t dataSize = static_cast<uint32_t>(sizeof(InstanceData) * m_instanceData.size());
+    /* NOTE: IBuffer::UpdateData() is no longer a function, use IDeviceContext::UpdateBuffer() now (see patch notes for v2.4) */
+    m_pImmediateContext->UpdateBuffer(m_pSpriteInstanceBuffer, 0, dataSize, m_instanceData.data(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+    std::cout << "populateInstanceBuffer: dataSize=" << dataSize
+    << ", instanceData.size=" << m_instanceData.size() << std::endl;
+
+    /* Updating the buffer causes a resource state change, update back to a vertex buffer prior to render pass */
+    Diligent::StateTransitionDesc barrier{
+        m_pSpriteInstanceBuffer, Diligent::RESOURCE_STATE_UNKNOWN, Diligent::RESOURCE_STATE_VERTEX_BUFFER, Diligent::STATE_TRANSITION_FLAG_UPDATE_STATE
+    };
+    m_pImmediateContext->TransitionResourceStates(1, &barrier);
+}
+
+
+So somehow this is failing?
+
+Diligent Engine: ERROR in CommitVkVertexBuffers() (DeviceContextVkImpl.cpp, 697): Currently bound pipeline state 'Sprite Pipeline State Object' expects 2 input buffer slots, but only 1 is bound
+
+        // rotation matrix, col 1
+        Diligent::LayoutElement{0, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // rotation matrix, col 2
+        Diligent::LayoutElement{1, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // rotation matrix, col 3
+        Diligent::LayoutElement{2, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // rotation matrix, col 4
+        Diligent::LayoutElement{3, 1, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // texture array index of current frame
+        Diligent::LayoutElement{4, 1, 1, Diligent::VT_FLOAT32, false, Diligent::LAYOUT_ELEMENT_AUTO_OFFSET,
+            Diligent::LAYOUT_ELEMENT_AUTO_STRIDE, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}
+
+This makes the geometry actually appear (but slightly corrupted due to the unbound slot), so now the question is why exactly is this going to a slot 1 if nothing is using
+the buffer slot 0?
+
+    /* Layout of shader input (that being what is passed to the first shader in the pipeline, the vertex shader) */
+    Diligent::LayoutElement layoutElems[] = {
+
+        /* LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
+         */
+
+        // vertex position
+        Diligent::LayoutElement{0, 0, 3, Diligent::VT_FLOAT32, false, 0, 32, Diligent::INPUT_ELEMENT_FREQUENCY_PER_VERTEX},
+        // TEXCOORD_0: offset 24, stride 32
+        Diligent::LayoutElement{2, 0, 2, Diligent::VT_FLOAT32, false, 24, 32, Diligent::INPUT_ELEMENT_FREQUENCY_PER_VERTEX}
+    };
+
+
+The map pipeline is able to properly use its slot zero, unless this might be because a vertex buffer is being reserved for slot 0?
+Even with this change, the geometry is red, so the debug in the frag shader:     if (texArrayIndex == 0) color = vec4(1.0f, 0.0f, 0.0f, 1.0f); // test
+is activating which shows the texArrayIndex is still not set properly?
+
+    uint64_t offsets[] = {0};
+    Diligent::IBuffer* pBuffers[] = {m_pSpriteInstanceBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffers), pBuffers, offsets, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
+
+only one buffer is assigned. The reason the input was changed to use slot 1 is because that actually generates the geometry properly, using slot zero does... nothing
+I don't know what slot 0 is being used for. TexArrayIndex is still not set properly, geometry (quad) is still red
+
+
+
+FYI, texArrayIndex is being properly set within the shaders, but its value is still being read as zero
+
+void main() {
+    /* Generate billboard & calculate matrix based on camera position */
+
+    // TODO: will only use first index in UVs and matrices, even if multiple sprites exist
+
+    vec3 pos = gl_in[0].gl_Position.xyz; // get position vector of primitive (centre point of billboard)
+
+    vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
+    vec3 cameraUp = vec3(g_viewMatrix[0][1], g_viewMatrix[1][1], g_viewMatrix[2][1]);
+
+    mat4 viewProjMatrix = g_projMatrix * g_viewMatrix;
+
+    float size = 0.5;
+
+    texArrayIndex = texArrayIndex_gs[0];
+
+    gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
+    uv = vec2(0.0, 1.0);
+    EmitVertex();
+
+    gl_Position = viewProjMatrix * vec4(pos - cameraRight * size + cameraUp * size, 1.0);
+    uv = vec2(0.0, 0.0);
+    EmitVertex();
+
+    gl_Position = viewProjMatrix * vec4(pos + cameraRight * size - cameraUp * size, 1.0);
+    uv = vec2(1.0, 1.0);
+    EmitVertex();
+
+    gl_Position = viewProjMatrix * vec4(pos + cameraRight * size + cameraUp * size, 1.0);
+    uv = vec2(1.0, 0.0);
+    EmitVertex();
+
+    EndPrimitive();
+}
+
+Num elements: 5
+  Element 0: slot=1, location=0
+  Element 1: slot=1, location=1
+  Element 2: slot=1, location=2
+  Element 3: slot=1, location=3
+  Element 4: slot=1, location=4
+
+  nothing in slot 0 supposedly. maybe it's the geometry/trig list in there, but unlikely
+
+  again, two issues, 1. slot 0 mysteriously not working, 2. texArrayIndex not set? maybe because input expects float, but shader expects int and val is int?
+
+
+
+From the tests VS seems to get the right input but for some reason, when trying to simply habnd off the input value to the FS from GS it gets set to zero?
+(again a way to print things would be very helpful here)
+
+Setting the texArrayIndex as a const that only goes into the FS would work, but only for one instance. there are multiple instances, each will be on a different texArrayIndex
+so it's passed along with per-instance model matrices. What really needs to happen is a way to definitively determine where in the shader pipeline things are going wrong
+but that can't happen effectively if all i can ever get from the shaders is a colour out of FS
+
+[VS]
+
+texArrayIndex_gs = texArrayIndex_in;
+
+[GS]
+
+texArrayIndex = texArrayIndex_gs[0];
+
+SHOWS RED QUAD
+
+
+[VS]
+
+texArrayIndex_gs = texArrayIndex_in;
+
+[GS]
+
+if (texArrayIndex_gs[0] == 1.0f) texArrayIndex = 1.0f;
+
+SHOWS GREEN QUAD
+
+
+[VS]
+
+texArrayIndex_gs = texArrayIndex_in;
+
+[GS]
+
+if (texArrayIndex_gs[0] > 0.0f) texArrayIndex = 1.0f;
+
+SHOWS GREEN QUAD
+
+----
+
+FRAG SHADER:
+
+uniform sampler2DArray g_texture;
+
+in vec2 uv;
+flat in float  texArrayIndex;
+
+out vec4 color;
+
+void main() {
+    color = texture(g_texture, vec3(uv, texArrayIndex));// texArrayIndex));
+    if (texArrayIndex == 0.0f) color = vec4(1.0f, 0.0f, 0.0f, 1.0f); // test
+    else if (texArrayIndex > 0.0f) color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+}
+
+CONCLUSION: Input per-instance data (model matrix and texArrayIndex) with another uniform constant structure,
+this matches what Diligent's HLSL turorials seem to do and also the approach I had in my older Vulkan project:
+
+<FROM VULKAN PROJ>
+
+layout(binding = 0) uniform PerFrameUBO {
+    mat4 proj;
+    mat4 view;
+} ubo;
+
+layout(binding = 1) uniform PerSpriteUBO {
+    mat4 model;
+} spriteData[];
+
+////
+
+CHECK: Is VS even needed now? At this stage, it is practically redundant in the sprite pipeline
+
+CHANGES:
+- Remove instance buffer (specialised Vertex buffer), replace with new uniform buffer created per-instance and updated per-sprite
+- set new UBO to hold both model matrix and texArrayIndex, used in GS and FS/PS
+
+
+
+Upload appears fine
+
+First model[0][3]: 0
+model matrix isnt though?
+evidenced by having to manually specify identity matrix to get visible geometry
+
+TexArrayIndex is properly set now, evidenced by the quad appearing green, which only happens if texArrayIndex > 0.0f
+Only issue is nothing will be seen if i draw the proper texture due to following bug:
+
+
+BUG: Only one frame of the texture is available in the sampler2DArray in fragment shader. Using a z position other than 0.0f will not show a frame
+
+SRV and SRB are properly set, and should be updating properly
+
+m_pDevice->CreateTexture(textureArrayDesc, nullptr /* No initial data */, &m_pSpriteTextureArray);
+m_pSpriteShaderResourceView = m_pSpriteTextureArray->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+m_pSpriteShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(m_pSpriteShaderResourceView);
+
+Sprite num rows: 7, Sprite num cols: 8
+Texture desc detects correct number of rows and cols
+
+checking loop shows texture array updates 56 slices (7 * 8 slices), so that's correct
+
+FOUND:
+
+The box always updates at x=0, y=0, so always copies the same data
+
+Diligent::Box updateBox;
+updateBox.MinX = 0;
+updateBox.MinY = 0;
+updateBox.MinZ = 0;
+updateBox.MaxX = 192;
+updateBox.MaxY = 192;
+updateBox.MaxZ = 1;
+
+even then, the other slices should be available in the FS, but specifyng any value > 0.0f will show no visible texture
+the sprite frame shown for 0.0f is the very first one in the top-right of the sprite sheet
+REASON:
+when calling UpdateTexture, the param uint32_t slice is always being set to m_numSprites * m_maxSpriteDimensions, equal to the first index corresponding
+to the current Sprite in the texture array. The reason the other frames are unavailable is due to no other indices apart from the first ever being updated
+
+(m_numSprites * m_maxSpriteDimensions) + (row * col) possible fix, but may not work properly when at row 0
+
+Diligent Engine: ERROR in ValidateTextureRegion() (TextureBase.cpp, 360): Texture '0x3DC536C0': Region max X coordinate (1344) is out of allowed range [0, 192].
+Diligent Engine: ERROR in ValidateTextureRegion() (TextureBase.cpp, 375): Texture '0x3DC536C0': Region max Y coordinate (1536) is out of allowed range [0, 192].
+
+Interesting? texture should be an pre-allocated array with enough 192 * 192 slots to accomodate m_maxSprites textures (being m_maxSpriteDimensions * m_maxInstances slices)
+
+Box struct seems to be used only to represent destination slice
+
+FIX: Use staging buffer to copy every frame to a slice
+
+The only remaining problem is that the model matrix isn't being properly set in the shader

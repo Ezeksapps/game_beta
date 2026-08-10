@@ -78,12 +78,13 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createRenderPass();
 
     createSharedUniformBuffer();
+    createPerSpriteUniformBuffer();
 
     createMapPipelineState();
     createSpritePipelineState();
 
     //createIndexBuffer();
-    createInstanceBuffer();
+    //createInstanceBuffer();
 
     /* States of buffers must be updated prior to starting render pass, since no state transitions can occur when one is active */
     //Diligent::StateTransitionDesc barriers[] = {
@@ -226,7 +227,38 @@ void Renderer::renderFrame() {
         ++i;
     }
 
-    populateInstanceBuffer();
+    // BEGIN NEEDS WORK
+
+
+    std::vector<InstanceData> spriteData;
+    spriteData.reserve(m_instanceData.size());
+
+    for (const auto& data : m_instanceData) {
+        InstanceData psd;
+        psd.modelMatrix = data.modelMatrix;
+        psd.texArrayIndex = static_cast<float>(data.texArrayIndex);
+        spriteData.push_back(psd);
+    }
+
+    if (!m_instanceData.empty()) {
+        uint32_t dataSize = static_cast<uint32_t>(sizeof(InstanceData) * m_instanceData.size());
+
+        Diligent::MapHelper<InstanceData> mappedData(
+            m_pImmediateContext,
+            m_pSpriteConstants,
+            Diligent::MAP_WRITE,
+            Diligent::MAP_FLAG_DISCARD
+        );
+
+        if (mappedData) {
+            // Copy only the active instances to the beginning of the buffer
+            memcpy(mappedData, m_instanceData.data(), dataSize);
+        }
+    }
+
+    // --- END NEEDS WORK
+
+   // populateInstanceBuffer(); -- UNUSED
 
     m_pImmediateContext->BeginRenderPass({
         m_pRenderPass,
@@ -251,6 +283,7 @@ void Renderer::renderFrame() {
         );
         *uniformConstants = constants;
     }
+
 
     renderMap();
     renderSprites();

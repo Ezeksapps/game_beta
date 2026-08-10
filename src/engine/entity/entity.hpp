@@ -16,6 +16,7 @@ enum AnimEvent : uint8_t {
     ANIM_EVENT_WAKE
 };
 
+// TODO: Some sprites have only one anim row, as they are direction-independent (sleep anim), accomodate these as well
 enum Direction : uint8_t {
     DIRECTION_SOUTH       = 0,
     DIRECTION_SOUTH_EAST  = 1,

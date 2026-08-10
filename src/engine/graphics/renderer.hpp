@@ -69,7 +69,7 @@ private:
 
     struct InstanceData {
         mat4 modelMatrix;
-        float  texArrayIndex;
+        float texArrayIndex;
     };
 
     /* Renderer clock */
@@ -95,6 +95,8 @@ private:
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
+    /* ---- Per-sprite UBO, holding model matrix and texture array index for individual sprites ---- */
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteConstants;
 
     /* ---- Pipeline state objects (PSOs) ---- */
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pMapPipelineStateObj;
@@ -139,6 +141,8 @@ private:
     /* NOTE: num sprites setter must not increment sprites past max instances */
 
     void createSharedUniformBuffer();
+
+    void createPerSpriteUniformBuffer(); // per-sprite UBO
 
     void createMapPipelineState();
     void createSpritePipelineState();

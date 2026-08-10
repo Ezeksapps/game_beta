@@ -1,14 +1,8 @@
-layout(location = 0) in mat4 modelMatrix_in;
-layout(location = 4) in float  texArrayIndex_in;
+flat out int instanceID;
 
-out mat4 modelMatrix;
-flat out float  texArrayIndex_gs;
+// TODO: This needs to be able to handle non-vulkan systems as well (OpenGL uses gl_InstanceID)
+// https://stackoverflow.com/questions/35638512/instanced-glsl-shaders-in-vulkan
 
 void main() {
-    // no vertex buffer exists because it isn't necessary, centre billboard pos = world-space pos = model matrix * vec4(0.0f, 0.0f, 0.0f, 1.0f)
-    gl_Position = modelMatrix_in * vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
-    // model matrix and texture array index not handled here, pass down to next stage (GS)
-    modelMatrix = modelMatrix_in;
-    texArrayIndex_gs = texArrayIndex_in;
+    instanceID = gl_InstanceIndex;
 }

@@ -2,9 +2,8 @@
 
 // TODO:
 
-// Animate sprites w/ sprite sheet system -- IN TESTING
-
 // [Engine code]
+// create system to move sprite billboards and synchronise the movement to the sprite animation
 // set one entity as the player, others as NPCs (Likely classes extending Entity)
 // Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
 // X & Y coords should work like a 2D grid system
@@ -30,8 +29,9 @@
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
- * Map pipeline renders with no issues. Camera system is properly set up and can rotate with yaw, pitch and roll with no issues
+ * Map pipeline renders 3D environment. Camera system is properly set up and can rotate with yaw, pitch and roll
  * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
+ * Sprite sheet system fully implemented, but needs updating to accomodate directionless sprite sheets
  */
 
 #include "engine/engine.hpp"
