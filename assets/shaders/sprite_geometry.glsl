@@ -35,7 +35,7 @@ void main() {
 
 
     mat4 model = mat4(1.0);  // Identity matrix (position at origin)
-    vec3 pos = vec3(0.0, 0.0, 0.0);  // Force position
+    vec3 pos = vec3(0.0, 0.0, -0.5);  // Force position
 
     // mat4 model = g_instData[instID].modelMatrix;
 

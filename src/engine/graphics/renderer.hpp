@@ -72,6 +72,13 @@ private:
         float texArrayIndex;
     };
 
+    struct EntityTransl {
+       std::weak_ptr<Entity> entity; // entity associated with this translation
+       vec3 translVec;               // translation matrix for every step
+       float animFrames;             // duration in frames of this translation
+       float animFramesAcc;          // number of frames this transformation has been running for
+    };
+
     /* Renderer clock */
     std::chrono::steady_clock m_clock;
     /* Time point where the last frame was drawn */
@@ -87,7 +94,8 @@ private:
     Diligent::NativeWindow                            m_window;
 
     Diligent::RefCntAutoPtr<Diligent::IRenderPass>    m_pRenderPass;
-    Diligent::RefCntAutoPtr<Diligent::IFramebuffer>   m_pFrameBuffer;
+
+    std::unordered_map<Diligent::ITextureView*, Diligent::RefCntAutoPtr<Diligent::IFramebuffer>> m_frameBufferMap;
 
     /* Map file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
@@ -103,9 +111,8 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pSpritePipelineStateObj;
 
     /* ---- Sprite pipeline buffers & textures ---- */
-    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteVertexBuffer;
-    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
+    //Diligent::RefCntAutoPtr<Diligent::IBuffer>       m_pSpriteIndexBuffer;
+    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
@@ -135,10 +142,20 @@ private:
     /* the maximum dimensions of a sprite sheet */
     static constexpr int m_maxSpriteDimensions = 8 * 10;
 
-    /* Updated per frame, equal to the time taken for the current frame to draw after the previous */
+    /* Frame rate */
+    static constexpr float m_fps = 60.0f;
+    /* Duration of each frame with a constant FPS value, in milliseconds */
+    static constexpr float m_timePerFrame = 1000 / m_fps;
+
+    /* Equal to the time taken between the previous and current invokation of renderFrame() */
     float m_deltaTime;
+    /* Accumulator for time taken, used to make sure frames are drawn at a constant steady rate, with an FPS equal to m_fps */
+    float m_timeAcc;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
+
+    /* Contains entity translations that are currently being run */
+    std::vector<EntityTransl> m_entityTransls;
 
     void createSharedUniformBuffer();
 
@@ -153,7 +170,9 @@ private:
     void populateInstanceBuffer();
 
     void createRenderPass();
-    void createFrameBuffer();
+
+    Diligent::RefCntAutoPtr<Diligent::IFramebuffer> createFrameBuffer();
+    Diligent::IFramebuffer* getCurrentFrameBuffer();
 
     void loadGLB(const std::string& filename);
 
@@ -163,4 +182,6 @@ private:
     void updateUniformBuffer();
 
     void createSpriteTextureArray();
+
+    void update();
 };

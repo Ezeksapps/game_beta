@@ -25,6 +25,7 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
      target pos and offset are preserved, as is proj matrix
      */
 
+    m_lastFrameTime = m_clock.now(); // init last frame time
 }
 
 Renderer::~Renderer() {
@@ -84,17 +85,8 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createSpritePipelineState();
 
     //createIndexBuffer();
-    //createInstanceBuffer();
-
-    /* States of buffers must be updated prior to starting render pass, since no state transitions can occur when one is active */
-    //Diligent::StateTransitionDesc barriers[] = {
-     //   {m_pSpriteIndexBuffer, Diligent::RESOURCE_STATE_UNKNOWN, Diligent::RESOURCE_STATE_INDEX_BUFFER, Diligent::STATE_TRANSITION_FLAG_UPDATE_STATE},
-    //};
-
-    //m_pImmediateContext->TransitionResourceStates(_countof(barriers), barriers);
 
     createSpriteTextureArray();
-    createFrameBuffer();
 
     return true;
 }
@@ -115,6 +107,16 @@ void Renderer::setScene(const std::string& sceneDir) {
             const std::shared_ptr<Sprite>& newSprite = entity->getActiveSprite();
             this->swapSprite(newSprite->index, newSprite);
         });
+
+        // CHECK: Might work better in another location
+        /* Callback, runs whenever an entity needs to be moved on-screen */
+        entity->setMovementCallback([this](std::weak_ptr<Entity> entity, vec3 translVec, const float& animFrames) {
+            m_entityTransls.push_back(EntityTransl {
+                .entity = entity,
+                .translVec = translVec,
+                .animFrames = animFrames
+            });
+        });
     }
 
     loadGLB(m_pScene->m_glbFilepath);
@@ -132,7 +134,7 @@ void Renderer::createSharedUniformBuffer() {
     m_pDevice->CreateBuffer(uniformBufferDesc, nullptr, &m_pFrameConstants);
 }
 
-/* --- RENDER PASS AND FRAMEBUFFER --- */
+/* --- RENDER PASS AND FRAMEBUFFERS --- */
 
 void Renderer::createRenderPass() {
     /* Need two attachments, the framebuffer image to render to and a depth attachment to handle 3D depth testing */
@@ -174,11 +176,14 @@ void Renderer::createRenderPass() {
     m_pDevice->CreateRenderPass(renderPassDesc, &m_pRenderPass);
 }
 
-void Renderer::createFrameBuffer() {
-    Diligent::ITextureView* pRenderTaregtView = m_pSwapChain->GetCurrentBackBufferRTV();
+// TODO: Check compatibility with OpenGL
+Diligent::RefCntAutoPtr<Diligent::IFramebuffer> Renderer::createFrameBuffer() {
+    Diligent::ITextureView* pRenderTargetView = m_pSwapChain->GetCurrentBackBufferRTV();
     Diligent::ITextureView* pDepthStencilView = m_pSwapChain->GetDepthBufferDSV();
 
-    Diligent::ITextureView* attachments[] = {pRenderTaregtView, pDepthStencilView};
+    Diligent::ITextureView* attachments[] = {pRenderTargetView, pDepthStencilView};
+
+    Diligent::RefCntAutoPtr<Diligent::IFramebuffer> pFrameBuffer;
 
     Diligent::FramebufferDesc frameBufferDesc;
     frameBufferDesc.Name = "Game frame buffer";
@@ -188,28 +193,48 @@ void Renderer::createFrameBuffer() {
     frameBufferDesc.Width = m_windowWidth;
     frameBufferDesc.Height = m_windowHeight;
 
-    m_pDevice->CreateFramebuffer(frameBufferDesc, &m_pFrameBuffer);
+    m_pDevice->CreateFramebuffer(frameBufferDesc, &pFrameBuffer);
+
+    return pFrameBuffer;
 }
 
+Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
+    Diligent::ITextureView* pCurrentBackBufferRTV = //m_pDevice->GetDeviceInfo().IsGLDevice() ? nullptr : // check reason for ternary, does OpenGL need separate handling?
+    m_pSwapChain->GetCurrentBackBufferRTV();
 
-/* --- DRAW CALLS --- */
+    auto fb_it = m_frameBufferMap.find(pCurrentBackBufferRTV);
+    if (fb_it != m_frameBufferMap.end())
+    {
+        return fb_it->second;
+    }
+    else
+    {
+        auto it = m_frameBufferMap.emplace(pCurrentBackBufferRTV, createFrameBuffer());
+        VERIFY_EXPR(it.second);
+        return it.first->second;
+    }
+}
 
-void Renderer::renderFrame() {
+/* --- GAME DATA UPDATE FUNC --- */
 
-    /* Render frame must run in two steps:
-     * 1. Render the buffers and textures associated with the main 3D map
-     * 2. Render the buffers and textures associated with the 2D sprites
-     *
-     * These will both be done in one subpass
-    */
+void Renderer::update() {
 
-    /* Both render pass attachments need clear values */
-    Diligent::OptimizedClearValue clearValues[2];
-    clearValues[0].SetColor(m_pSwapChain->GetDesc().ColorBufferFormat, 0.0f, 0.0f, 0.0f, 1.0f);  // Colour attachment
-    clearValues[1].SetDepthStencil(Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB, 1.0f, 0);              // Depth attachment
+    if (!m_entityTransls.empty()) {
+        for (int i = 0; i < m_entityTransls.size();) {
+            EntityTransl& transl = m_entityTransls[i];
+            ++transl.animFramesAcc;
 
-    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
-    m_lastFrameTime = m_clock.now(); // update last frame time for next frame
+            // Apply translation to entity's position
+            if (std::shared_ptr<Entity> entity = transl.entity.lock()) entity->m_pos += transl.translVec;
+
+            // Check if translation is complete
+            if (transl.animFramesAcc >= transl.animFrames) {
+                /* Remove complete translation, done by swapping this and the last EntityTransl so that this now complete translation can be popped */
+                if (i < m_entityTransls.size() - 1) std::swap(m_entityTransls[i], m_entityTransls.back());
+                m_entityTransls.pop_back();
+            } else ++i;
+        }
+    }
 
     // issue, will fail if no pre-exisiting instance data exists, as indices not allocated until pushed to vector
 
@@ -219,13 +244,87 @@ void Renderer::renderFrame() {
     // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
     int i = 0;
     for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
-        entity->update(m_deltaTime);
+        entity->update(1.0f);
         const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
         mat4 transform = translate(mat4(1.0f), entity->m_pos);
         m_instanceData.push_back(InstanceData(transform, texArrayIndex));
         ++i;
     }
+}
+
+/* --- DRAW CALLS --- */
+
+
+void Renderer::renderFrame() {
+
+    /* Render frame must run in two steps:
+     * 1. Render the buffers and textures associated with the main 3D map
+     * 2. Render the buffers and textures associated with the 2D sprites
+     *
+     * These will both be done in one subpass
+     */
+
+    // TODO: Add the third step (The UI's pipeline, which renders buffers and textures associated with the UI and draws over the other two pipelines)
+
+    /*
+    ISSUE:
+    ---------
+    The word 'frame' gets used to refer to multiple things. There are the frames when renderFrame() is called,
+    the frames which have an actual effect (those that call update() to update game entities and position data) which occur at a rate of 60fps,
+    & the frames of animation in a sprite sheet, which are also referred to as slices in the context of the texture array by the Diligent tutorials
+
+    Variable names and function names in the code use frame to refer to all three. TODO: Figure out a less confusing naming scheme? (Maybe all sprite animation frames are just slices)
+    ---------
+    */
+
+
+    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
+    m_timeAcc += m_deltaTime;
+    m_lastFrameTime = m_clock.now(); // update last frame time for next frame
+
+    /* Whilst presentation must occur every time the GPU is free to draw, the rate at which the game is actually updated needs to be constant and controlled
+     * (Since GPU performance will always be fluctuating and if updates to movement/animation/position etc. data were tied to the GPU, the game speed would also
+     * fluctuate unpredictably) This is set to 60fps. The timeAcc accumulates dt until it grows greater than the pre-calculated (constexpr) timePerFrame,
+     * which then runs the game update after its proper constant interval.
+     * Because of this, the frame rate technically still fluctuates, but the frames that matter are always at the constant rate of 60fps
+     */
+
+    while (m_timeAcc >= m_timePerFrame) {
+        update();  // update entities and other relevant variable data
+        m_timeAcc -= m_timePerFrame;
+    }
+
+    /* Both render pass attachments need clear values */
+    Diligent::OptimizedClearValue clearValues[2];
+    clearValues[0].SetColor(m_pSwapChain->GetDesc().ColorBufferFormat, 0.0f, 0.0f, 0.0f, 1.0f);  // Colour attachment
+    clearValues[1].SetDepthStencil(Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB, 1.0f, 0);              // Depth attachment
+
+
+    m_pImmediateContext->BeginRenderPass({
+        m_pRenderPass,
+        getCurrentFrameBuffer(),
+        _countof(clearValues),
+        clearValues,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
+    });
+
+    {
+        updateUniformBuffer(); // for now just updates camera, since proj matrix is constant unless FOV is changed
+
+        FrameConstants constants;
+        constants.projMatrix = m_projMatrix;
+        constants.viewMatrix = m_viewMatrix;
+
+        Diligent::MapHelper<FrameConstants> uniformConstants(
+            m_pImmediateContext,
+            m_pFrameConstants,
+            Diligent::MAP_WRITE,
+            Diligent::MAP_FLAG_DISCARD
+        );
+        *uniformConstants = constants;
+    }
+
 
     // BEGIN NEEDS WORK
 
@@ -257,32 +356,6 @@ void Renderer::renderFrame() {
     }
 
     // --- END NEEDS WORK
-
-   // populateInstanceBuffer(); -- UNUSED
-
-    m_pImmediateContext->BeginRenderPass({
-        m_pRenderPass,
-        m_pFrameBuffer,
-        _countof(clearValues),
-        clearValues,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-    });
-
-    {
-        updateUniformBuffer();
-
-        FrameConstants constants;
-        constants.projMatrix = m_projMatrix;
-        constants.viewMatrix = m_viewMatrix;
-
-        Diligent::MapHelper<FrameConstants> uniformConstants(
-            m_pImmediateContext,
-            m_pFrameConstants,
-            Diligent::MAP_WRITE,
-            Diligent::MAP_FLAG_DISCARD
-        );
-        *uniformConstants = constants;
-    }
 
 
     renderMap();

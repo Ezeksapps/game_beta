@@ -8,6 +8,7 @@ void handleInput(GameCmd* input) {
     switch(*input) {
         case ENTITY_MOVE_FORWARD:
             std::cout << "W pressed\n";
+            entities[0]->move(DIRECTION_EAST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_LEFT:
 

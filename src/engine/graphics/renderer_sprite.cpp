@@ -194,48 +194,37 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
     Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
     // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
+    // UPDATE: Can also only update from a region in the source texture equal to the size of the dest texture (192 * 192),
+    // and cannot access any region in the src texture whose x & y coords are higher than the texture maxX and maxY (so any frame past the first, starting at the coord origin)
+    // which explains why only the first frame got loaded to the tex array initially.
+    // FIX: Temporarily load each frame into an intermediate buffer (sized for a 192*192 tex) then copy that to the texture array
 
     sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
     int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
 
-    // 2. Get the full texture data
+    /* Get full texture data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-    const unsigned char* fullData = static_cast<const unsigned char*>(subResData.pData);
-    int rowPitch = subResData.Stride;  // Bytes per row in the source data
+    const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
+    int rowStride = subResData.Stride;  // Bytes per row in the source data
 
-    // copy each frame into its own slice
+    // copy each frame into its own slice of the texture array
     for (int row = 0; row < framesPerCol; ++row) {
         for (int col = 0; col < sprite->framesPerRow; ++col) {
 
-            int sliceIndex = (sprite->index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col;
+            int sliceIndex = (sprite->index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index
 
-            // 4. Create a staging buffer for this cell
-            uint32_t cellSize = 192 * 192 * 4;  // RGBA = 4 bytes
-            std::vector<unsigned char> cellData(cellSize);
+            /* Create an empty buffer for this frame's image data */
+            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
+            std::vector<unsigned char> frameBuffer(frameDataSize);
 
-            // 5. Copy the cell from the spritesheet to the staging buffer
+            /* Copy current frame to temp frame buffer */
             for (int y = 0; y < 192; ++y) {
-                int srcOffset = ((row * 192 + y) * rowPitch) + (col * 192 * 4);
+                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
                 int dstOffset = y * 192 * 4;
-                memcpy(cellData.data() + dstOffset, fullData + srcOffset, 192 * 4);
+                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
             }
 
-            // 6. Upload the cell to the texture array
-            Diligent::BufferDesc stagingDesc;
-            stagingDesc.Name = "staging buffer";
-            stagingDesc.Usage = Diligent::USAGE_STAGING;
-            stagingDesc.BindFlags = Diligent::BIND_NONE;
-            stagingDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
-            stagingDesc.Size = cellSize;
-
-            Diligent::BufferData stagingData;
-            stagingData.pData = cellData.data();
-            stagingData.DataSize = cellSize;
-
-            Diligent::RefCntAutoPtr<Diligent::IBuffer> pStagingBuffer;
-            m_pDevice->CreateBuffer(stagingDesc, &stagingData, &pStagingBuffer);
-
-            // 7. Copy from staging buffer to texture array
+            /* update slice in main texture array */
             Diligent::Box updateBox;
             updateBox.MinX = 0;
             updateBox.MinY = 0;
@@ -244,17 +233,17 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
             updateBox.MaxY = 192;
             updateBox.MaxZ = 1;
 
-            Diligent::TextureSubResData cellSubRes;
-            cellSubRes.pData = cellData.data();
-            cellSubRes.Stride = 192 * 4;
-            cellSubRes.DepthStride = 0;
+            Diligent::TextureSubResData frameSubRes;
+            frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
+            frameSubRes.Stride = 192 * 4;
+            frameSubRes.DepthStride = 0;
 
             m_pImmediateContext->UpdateTexture(
                 m_pSpriteTextureArray,
                 0,
                 sliceIndex,
                 updateBox,
-                cellSubRes,
+                frameSubRes,
                 Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
                 Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
             );
@@ -277,37 +266,55 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
     Diligent::CreateTextureLoaderFromFile(newSprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
     // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
+    // UPDATE: Can also only update from a region in the source texture equal to the size of the dest texture (192 * 192),
+    // and cannot access any region in the src texture whose x & y coords are higher than the texture maxX and maxY (so any frame past the first, starting at the coord origin)
+    // which explains why only the first frame got loaded to the tex array initially.
+    // FIX: Temporarily load each frame into an intermediate buffer (sized for a 192*192 tex) then copy that to the texture array
 
     newSprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
     int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
 
-    /* Get pixel subres data */
+    /* Get full texture data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
+    const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
+    int rowStride = subResData.Stride;  // Bytes per row in the source data
 
-    // NOTE: All Sprites, regardless of how many slices they actually require will be treated as having a number of
-    // frames equal to the constexpr m_maxSpriteDimensions. This allows all spritesheets to occupy equal amounts of memory,
-    // meaning differently-sized spritesheets will not interfere with each other
-
+    // copy each frame into its own slice of the texture array
     for (int row = 0; row < framesPerCol; ++row) {
         for (int col = 0; col < newSprite->framesPerRow; ++col) {
 
             int sliceIndex = oldSpriteIndex * m_maxSpriteDimensions + (row * newSprite->framesPerRow) + col;
 
+            /* Create an empty buffer for this frame's image data */
+            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
+            std::vector<unsigned char> frameBuffer(frameDataSize);
+
+            /* Copy current frame to temp frame buffer */
+            for (int y = 0; y < 192; ++y) {
+                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
+                int dstOffset = y * 192 * 4;
+                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
+            }
+            /* update slice in main texture array */
             Diligent::Box updateBox;
-            updateBox.MinX = col * 192;
-            updateBox.MinY = row * 192;
+            updateBox.MinX = 0;
+            updateBox.MinY = 0;
             updateBox.MinZ = 0;
-            updateBox.MaxX = (col + 1) * 192;
-            updateBox.MaxY = (row + 1) * 192;
+            updateBox.MaxX = 192;
+            updateBox.MaxY = 192;
             updateBox.MaxZ = 1;
 
-            /* Update slice w/ new texture */
+            Diligent::TextureSubResData frameSubRes;
+            frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
+            frameSubRes.Stride = 192 * 4;
+            frameSubRes.DepthStride = 0;
+
             m_pImmediateContext->UpdateTexture(
                 m_pSpriteTextureArray,
                 0,
                 sliceIndex,
                 updateBox,
-                subResData,
+                frameSubRes,
                 Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
                 Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
             );
@@ -320,6 +327,8 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
 void Renderer::renderSprites() {
 
     // NO VERTEX BUFFER
+
+    /* Index buffer may be re-enabled in future, left commented out for now */
 
     // m_pImmediateContext->SetIndexBuffer(m_pSpriteIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pSpritePipelineStateObj); // set pipeline to use

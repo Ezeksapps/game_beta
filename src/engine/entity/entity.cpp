@@ -22,7 +22,7 @@ Entity::Entity(const std::string& animJsonFilepath) {
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
     }
 
-    doAnimEvent(ANIM_EVENT_WALK); // PLACEHOLDER, REMOVE FOLLOWING TEST
+    //doAnimEvent(ANIM_EVENT_WALK); // PLACEHOLDER, REMOVE FOLLOWING TEST
     m_direction = DIRECTION_WEST;
 
 }
@@ -34,7 +34,7 @@ void Entity::update(const float& deltaTime) {
 
     m_frameTimer += deltaTime;
 
-    // intended duration of current frame in ms
+    // intended duration of current frame of sprite sheet in frames
     float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
 
     // if the timer shows that the currently rendered frame has been rendered for a time exceeding the intended duration,
@@ -57,48 +57,64 @@ void Entity::setSpriteChangeCallback(std::function<void(std::shared_ptr<Entity> 
     m_spriteChangeCallback = callback;
 }
 
+void Entity::setMovementCallback(std::function<void(std::shared_ptr<Entity> entity, vec3 translVec, const float& animFrames)> callback) {
+    m_movementCallback = callback;
+}
+
 void Entity::setDirection(const Direction& direction) {
     m_direction = direction;
 }
-/*
-enum Direction : uint8_t {
-    DIRECTION_SOUTH       = 0,
-    DIRECTION_SOUTH_EAST  = 1,
-    DIRECTION_EAST        = 2,
-    DIRECTION_NORTH_EAST  = 3,
-    DIRECTION_NORTH       = 4,
-    DIRECTION_NORTH_WEST  = 5,
-    DIRECTION_WEST        = 6,
-    DIRECTION_SOUTH_WEST  = 7
-};*/
 
-// TODO: Must not alter Z-axis, checkCollision() must only update Z
+// TODO: Must not alter Z-axis, only checkCollision() should update Z
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
     doAnimEvent(mode);
+
+    // find total number of frames accompanying movement animation runs for
+    int animFrames = 0;
+    for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
+
+    vec3 translVec;
+
     switch (direction) {
         case DIRECTION_SOUTH:
-            m_pos += vec3(0.0f, -1.0f, 0.0f);
+            //m_pos += vec3(0.0f, -1.0f, 0.0f);
+            translVec = vec3(0.0f, -1.0 / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_SOUTH_EAST:
-            m_pos += vec3(1.0f, -1.0f, 0.0f);
+            //m_pos += vec3(1.0f, -1.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_EAST:
-            m_pos += vec3(1.0f, 0.0f, 0.0f);
+            //m_pos += vec3(1.0f, 0.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_NORTH_EAST:
-            m_pos += vec3(1.0f, 1.0f, 0.0f);
+            //m_pos += vec3(1.0f, 1.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_NORTH:
-            m_pos += vec3(0.0f, 1.0f, 0.0f);
+            //m_pos += vec3(0.0f, 1.0f, 0.0f);
+            translVec = vec3(0.0f, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_NORTH_WEST:
-            m_pos += vec3(-1.0f, 1.0f, 0.0f);
+            //m_pos += vec3(-1.0f, 1.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_WEST:
-            m_pos += vec3(-1.0f, 0.0f, 0.0f);
+            //m_pos += vec3(-1.0f, 0.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         case DIRECTION_SOUTH_WEST:
-            m_pos += vec3(-1.0f, -1.0f, 0.0f);
+            //m_pos += vec3(-1.0f, -1.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
             break;
         default:
             break;

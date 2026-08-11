@@ -30,18 +30,18 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS) {
-       // g_pEngine->handleInput(key);  // Send raw keycode
+        g_pEngine->handleInput(key);  // Send raw keycode
         switch (key) {
-            case GLFW_KEY_W:
+            case GLFW_KEY_UP:
                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));
                 break;
-            case GLFW_KEY_S:
+            case GLFW_KEY_DOWN:
                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));
                 break;
-            case GLFW_KEY_A:
+            case GLFW_KEY_LEFT:
                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(0.0f, -std::numbers::pi_v<float> * 0.01, 0.0f));
                 break;
-            case GLFW_KEY_D:
+            case GLFW_KEY_RIGHT:
                  g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(0.0f, std::numbers::pi_v<float> * 0.01, 0.0f));
                 break;
             default:

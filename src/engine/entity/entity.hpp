@@ -9,14 +9,14 @@
 
 using namespace glm;
 
-enum AnimEvent : uint8_t {
+enum AnimEvent : uint8_t { // TODO: Add Idle animation as well
     ANIM_EVENT_WALK,
     ANIM_EVENT_RUN,
     ANIM_EVENT_SLEEP,
     ANIM_EVENT_WAKE
 };
 
-// TODO: Some sprites have only one anim row, as they are direction-independent (sleep anim), accomodate these as well
+// TODO: Some sprites have only one anim row, as they are direction-independent, accomodate these as well
 enum Direction : uint8_t {
     DIRECTION_SOUTH       = 0,
     DIRECTION_SOUTH_EAST  = 1,
@@ -36,6 +36,7 @@ public:
     ~Entity();
 
     void setSpriteChangeCallback(std::function<void(std::shared_ptr<Entity> entity)> callback);
+    void setMovementCallback(std::function<void(std::shared_ptr<Entity> entity, vec3 translVec, const float& animFrames)> callback);
 
     void doAnimEvent(const AnimEvent& event);
     const std::shared_ptr<Sprite>& getActiveSprite();
@@ -55,11 +56,13 @@ private:
 
     /* callback for sprite sheet animation changes */
     std::function<void(std::shared_ptr<Entity> entity)> m_spriteChangeCallback;
+    /* Callback for movement */
+    std::function<void(std::shared_ptr<Entity> entity, vec3 translVec, const float& animFrames)> m_movementCallback;
 
     /* Every spritesheet is associated with a certain event/action, which will act as the key in the sprite map
      * An example of a key could be 'walk' or 'run', each of which are separate actions with separate spritesheets */
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
-    // will match whatever the current or last event's corresponding Sprite obj was, set by doAnimEvent()
+    // will match whatever the current or last event's corresponding Sprite obj was set by doAnimEvent()
     std::shared_ptr<Sprite> m_pActiveSprite;
 
     float m_frameTimer;
