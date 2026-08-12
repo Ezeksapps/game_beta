@@ -66,10 +66,11 @@ public:
     void renderFrame();
 
       std::unique_ptr<Renderer> m_pRenderer; // TEMP MEASURE!
+      // std::unique_ptr<Scene> m_pScene; // TEMP MEASURE!
 
 private:
 
-    std::unique_ptr<Scene> m_pScene;
+
 
 
 };

@@ -8,7 +8,8 @@
 
 class Scene {
 
-friend class Renderer;
+friend class Renderer; // TODO remove
+friend class Engine; // TODO remove
 
 public:
 
@@ -16,10 +17,11 @@ public:
     ~Scene();
 
     std::vector<std::shared_ptr<Entity>>& getEntities();
+        std::vector<std::shared_ptr<Entity>> m_pEntities; // TEMP
 
 private:
 
-    std::vector<std::shared_ptr<Entity>> m_pEntities;
+
     std::string m_glbFilepath;
 
 };

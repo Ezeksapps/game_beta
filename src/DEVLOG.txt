@@ -30,3 +30,56 @@ attach a function to. The callback runs whenever Entity calls it an invokes the 
 
 UPDATE:
 Model matrix is calculated on every update() call, transform matrix can auto form, tranlVec is all that's needed for callback
+
+Logs from working protoype:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+Pushing new entity position: [x = -2, y = 2, z = 0]       << START POSITION
+Sprite change detected
+Pushing new entity position: [x = -2.03846, y = 2, z = 0]
+Pushing new entity position: [x = -2.07692, y = 2, z = 0]
+Pushing new entity position: [x = -2.11539, y = 2, z = 0]
+Pushing new entity position: [x = -2.15385, y = 2, z = 0]
+Pushing new entity position: [x = -2.19231, y = 2, z = 0]
+Pushing new entity position: [x = -2.23077, y = 2, z = 0]
+Pushing new entity position: [x = -2.26923, y = 2, z = 0]
+Pushing new entity position: [x = -2.30769, y = 2, z = 0]
+Pushing new entity position: [x = -2.34615, y = 2, z = 0]
+Pushing new entity position: [x = -2.38462, y = 2, z = 0]
+Pushing new entity position: [x = -2.42308, y = 2, z = 0]
+Pushing new entity position: [x = -2.46154, y = 2, z = 0]
+Pushing new entity position: [x = -2.5, y = 2, z = 0]
+Pushing new entity position: [x = -2.53846, y = 2, z = 0]
+Pushing new entity position: [x = -2.57692, y = 2, z = 0]
+Pushing new entity position: [x = -2.61538, y = 2, z = 0]
+Pushing new entity position: [x = -2.65385, y = 2, z = 0]
+Pushing new entity position: [x = -2.69231, y = 2, z = 0]
+Pushing new entity position: [x = -2.73077, y = 2, z = 0]
+Pushing new entity position: [x = -2.76923, y = 2, z = 0]
+Pushing new entity position: [x = -2.80769, y = 2, z = 0]
+Pushing new entity position: [x = -2.84615, y = 2, z = 0]
+Pushing new entity position: [x = -2.88461, y = 2, z = 0]
+Pushing new entity position: [x = -2.92308, y = 2, z = 0]
+Pushing new entity position: [x = -2.96154, y = 2, z = 0]
+Pushing new entity position: [x = -3, y = 2, z = 0]       << END POSITION
+
+Movement lagging
+Geometry shader running as needed, and updates to model matrix running at correct speed
+walk animation is seen for barely a second and smooth movement isnt seen, more like teleportation to the next tile
+Issue might be the fact that geometry shader regrows the quad whenever position is changed rather than modifying an existing quad?
+Moving quad gen to C++ not a good idea, but would be better to only grow a quad one then re-use it
+---
+
+The instance data upload is technically computationally expensive but there is currently only one entity which means instance data only has
+one index at all times. considering that this isn't a low-end PC and the draw calls are all relatively simple, there is no reason to conclude that
+the instance data upload is the issue. The geometry shader must also be running at sufficient frequency since the idle animation renders fine
+issues only exist when the sprite is moving, the enity does move to its proper position and debug shows the geometry must be moving but the sprite
+meant to be visible isn't. it cannot be an issue with the sprite sheet system since animations without a moving entity play fine, the switch back
+to the idle animation also executes fine.
+
+I also did a test where I did not reset to the idle animation following the translation. The walking animation plays just fine after movement
+completes and continues in a loop, it is specifically during movement that somehow the draw does not work properly, despite geometry clearly
+moving as expected
+
+Frame rate cannot be the issue since the animation speed is tied to the frame rate (the rate at which update() is called) and, as stated
+previously, animations play fine with expected behaviour.

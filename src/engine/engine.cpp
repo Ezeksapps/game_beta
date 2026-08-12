@@ -44,7 +44,7 @@ void Engine::setScene(const std::string& sceneDir) {
 /* --- GETTERS --- */
 
 std::vector<std::shared_ptr<Entity>>& Engine::getEntities() {
-    return m_pScene->getEntities();
+    return m_pRenderer->getEntities();
 }
 
 /* --- INPUT HANDLING --- */

@@ -32,14 +32,14 @@
 // ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
 
-// NEXT TODO: Movement -- IN PROGRESS APPROX 90%
-// CHECK: Movement system mostly complete, but program now crashes on launch, investigate why
+// NEXT TODO: Movement -- DEBUGGING
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
  * Map pipeline renders 3D environment. Camera system is properly set up and can rotate with yaw, pitch and roll
  * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
- * Sprite sheet system fully implemented, but needs to accomodate directionless sprite sheets as well
+ * Sprite sheet system fully implemented, but needs to accomodate directionless sprite sheets as well.
+ * Entitiy movement operational, but animation not played properly and movement lags
  */
 
 #include "engine/engine.hpp"

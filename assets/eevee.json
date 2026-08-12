@@ -1,7 +1,15 @@
 {
     "anims": [
-        {
+         {
             "type": 0,
+            "filepath": "assets/eevee/idle.png",
+            "durations": [
+                16,
+                16
+            ]
+        },
+        {
+            "type": 1,
             "filepath": "assets/eevee/walk.png",
             "durations": [
                 4,
@@ -14,7 +22,7 @@
             ]
         },
         {
-            "type": 2,
+            "type": 3,
             "filepath": "assets/eevee/sleep.png",
             "durations": [
                 30,
@@ -22,7 +30,7 @@
             ]
         },
         {
-            "type": 3,
+            "type": 4,
             "filepath": "assets/eevee/wake.png",
             "durations": [
                 8,

@@ -31,16 +31,12 @@ void main() {
     /* Generate billboard & calculate matrix based on camera position */
 
     int instID = instanceID[0];
-    texArrayIndex = g_instData[instID].texArrayIndex; // now working (confirmed as quad is green, meaning texArrayIndex > 0.0f)
+    texArrayIndex = g_instData[instID].texArrayIndex;
 
-
-    mat4 model = mat4(1.0);  // Identity matrix (position at origin)
-    vec3 pos = vec3(0.0, 0.0, -0.5);  // Force position
-
-    // mat4 model = g_instData[instID].modelMatrix;
+    mat4 model = g_instData[instID].modelMatrix;
 
     // World‑space position
-    //vec3 pos = (g_instData[instID].modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec3 pos = (g_instData[instID].modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
 
     // Camera axes
     vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);

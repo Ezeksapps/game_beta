@@ -112,6 +112,8 @@ int main() {
 
         gameInit();
 
+        g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.05, 0.0f, 0.0f));
+
         mainLoop();
 
         glfwDestroyWindow(window);

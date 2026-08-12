@@ -42,6 +42,7 @@ public:
     void renderFrame();
 
     void setScene(const std::string& sceneDir);
+    std::vector<std::shared_ptr<Entity>>& getEntities();
 
     // create a texture for a specified Sprite object and add it to the texture array
     // NOTE: Space in that array is limited to m_maxInstances, this function should be used
@@ -73,7 +74,7 @@ private:
     };
 
     struct EntityTransl {
-       std::weak_ptr<Entity> entity; // entity associated with this translation
+       int  index;                   // index in Scene of entity associated with this translation
        vec3 translVec;               // translation matrix for every step
        float animFrames;             // duration in frames of this translation
        float animFramesAcc;          // number of frames this transformation has been running for
@@ -145,7 +146,7 @@ private:
     /* Frame rate */
     static constexpr float m_fps = 60.0f;
     /* Duration of each frame with a constant FPS value, in milliseconds */
-    static constexpr float m_timePerFrame = 1000 / m_fps;
+    static constexpr float m_timePerFrame = 1000000.0f / m_fps;
 
     /* Equal to the time taken between the previous and current invokation of renderFrame() */
     float m_deltaTime;

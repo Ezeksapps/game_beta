@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 
+#include <chrono>
 #include <cstdint>
 
 /* --- INIT --- */
@@ -102,17 +103,16 @@ void Renderer::setScene(const std::string& sceneDir) {
         }
 
         /* Callback, runs whenever active sprite is changed */
-        entity->setSpriteChangeCallback([this](std::shared_ptr<Entity> entity) {
+        entity->setSpriteChangeCallback([this](std::shared_ptr<Sprite> newSprite) {
             /* Swap sprite for new sprite */
-            const std::shared_ptr<Sprite>& newSprite = entity->getActiveSprite();
             this->swapSprite(newSprite->index, newSprite);
         });
 
         // CHECK: Might work better in another location
         /* Callback, runs whenever an entity needs to be moved on-screen */
-        entity->setMovementCallback([this](std::weak_ptr<Entity> entity, vec3 translVec, const float& animFrames) {
-            m_entityTransls.push_back(EntityTransl {
-                .entity = entity,
+        entity->setMovementCallback([this](const int& index, vec3 translVec, const float& animFrames) {
+            m_entityTransls.push_back(EntityTransl{
+                .index = index,
                 .translVec = translVec,
                 .animFrames = animFrames
             });
@@ -120,6 +120,15 @@ void Renderer::setScene(const std::string& sceneDir) {
     }
 
     loadGLB(m_pScene->m_glbFilepath);
+}
+
+std::vector<std::shared_ptr<Entity>>& Renderer::getEntities() {
+    // If no scene exists, return empty vector or throw
+    if (!m_pScene) {
+        static std::vector<std::shared_ptr<Entity>> empty;
+        return empty;
+    }
+    return m_pScene->m_pEntities;
 }
 
 void Renderer::createSharedUniformBuffer() {
@@ -225,10 +234,12 @@ void Renderer::update() {
             ++transl.animFramesAcc;
 
             // Apply translation to entity's position
-            if (std::shared_ptr<Entity> entity = transl.entity.lock()) entity->m_pos += transl.translVec;
+            m_pScene->m_pEntities[transl.index]->m_pos += transl.translVec;
+            vec3 pos =  m_pScene->m_pEntities[transl.index]->m_pos;
 
             // Check if translation is complete
             if (transl.animFramesAcc >= transl.animFrames) {
+                m_pScene->m_pEntities[transl.index]->doAnimEvent(ANIM_EVENT_IDLE); // reset to idle animation
                 /* Remove complete translation, done by swapping this and the last EntityTransl so that this now complete translation can be popped */
                 if (i < m_entityTransls.size() - 1) std::swap(m_entityTransls[i], m_entityTransls.back());
                 m_entityTransls.pop_back();
@@ -279,7 +290,7 @@ void Renderer::renderFrame() {
     */
 
 
-    m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_clock.now() - m_lastFrameTime).count();
+    m_deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(m_clock.now() - m_lastFrameTime).count();
     m_timeAcc += m_deltaTime;
     m_lastFrameTime = m_clock.now(); // update last frame time for next frame
 
@@ -300,14 +311,6 @@ void Renderer::renderFrame() {
     clearValues[0].SetColor(m_pSwapChain->GetDesc().ColorBufferFormat, 0.0f, 0.0f, 0.0f, 1.0f);  // Colour attachment
     clearValues[1].SetDepthStencil(Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB, 1.0f, 0);              // Depth attachment
 
-
-    m_pImmediateContext->BeginRenderPass({
-        m_pRenderPass,
-        getCurrentFrameBuffer(),
-        _countof(clearValues),
-        clearValues,
-        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-    });
 
     {
         updateUniformBuffer(); // for now just updates camera, since proj matrix is constant unless FOV is changed
@@ -352,8 +355,18 @@ void Renderer::renderFrame() {
         if (mappedData) {
             // Copy only the active instances to the beginning of the buffer
             memcpy(mappedData, m_instanceData.data(), dataSize);
+            m_pImmediateContext->Flush();
+            m_pImmediateContext->WaitForIdle();
         }
     }
+
+    m_pImmediateContext->BeginRenderPass({
+        m_pRenderPass,
+        getCurrentFrameBuffer(),
+        _countof(clearValues),
+        clearValues,
+        Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
+    });
 
     // --- END NEEDS WORK
 

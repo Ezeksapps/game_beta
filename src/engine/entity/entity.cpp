@@ -6,7 +6,9 @@
 
 using json = nlohmann::json;
 
-Entity::Entity(const std::string& animJsonFilepath) {
+Entity::Entity(const std::string& animJsonFilepath, const int& index) {
+
+    m_index = index;
 
     const char* spriteJson = readJsonAsset(animJsonFilepath.c_str()); // TODO: Fix these functions
 
@@ -22,8 +24,8 @@ Entity::Entity(const std::string& animJsonFilepath) {
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
     }
 
-    //doAnimEvent(ANIM_EVENT_WALK); // PLACEHOLDER, REMOVE FOLLOWING TEST
-    m_direction = DIRECTION_WEST;
+    doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
+    m_direction = DIRECTION_WEST; // default direction
 
 }
 
@@ -47,17 +49,20 @@ void Entity::update(const float& deltaTime) {
 
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
+     std::cout << "Switching to sprite with index: " << m_pActiveSprite->index << std::endl;
+    // also called to set default anim before setting callback
+    if (m_spriteChangeCallback) m_spriteChangeCallback(m_pActiveSprite);
 }
 
 const std::shared_ptr<Sprite>& Entity::getActiveSprite() {
     return m_pActiveSprite;
 }
 
-void Entity::setSpriteChangeCallback(std::function<void(std::shared_ptr<Entity> entity)> callback) {
+void Entity::setSpriteChangeCallback(std::function<void(std::shared_ptr<Sprite> newSprite)> callback) {
     m_spriteChangeCallback = callback;
 }
 
-void Entity::setMovementCallback(std::function<void(std::shared_ptr<Entity> entity, vec3 translVec, const float& animFrames)> callback) {
+void Entity::setMovementCallback(std::function<void(const int& index, vec3 translVec, const float& animFrames)> callback) {
     m_movementCallback = callback;
 }
 
@@ -69,6 +74,8 @@ void Entity::setDirection(const Direction& direction) {
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
     doAnimEvent(mode);
 
+    m_direction = direction;
+
     // find total number of frames accompanying movement animation runs for
     int animFrames = 0;
     for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
@@ -79,42 +86,42 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
         case DIRECTION_SOUTH:
             //m_pos += vec3(0.0f, -1.0f, 0.0f);
             translVec = vec3(0.0f, -1.0 / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_SOUTH_EAST:
             //m_pos += vec3(1.0f, -1.0f, 0.0f);
             translVec = vec3(1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_EAST:
             //m_pos += vec3(1.0f, 0.0f, 0.0f);
             translVec = vec3(1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_NORTH_EAST:
             //m_pos += vec3(1.0f, 1.0f, 0.0f);
             translVec = vec3(1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_NORTH:
             //m_pos += vec3(0.0f, 1.0f, 0.0f);
             translVec = vec3(0.0f, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_NORTH_WEST:
             //m_pos += vec3(-1.0f, 1.0f, 0.0f);
             translVec = vec3(-1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_WEST:
             //m_pos += vec3(-1.0f, 0.0f, 0.0f);
             translVec = vec3(-1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         case DIRECTION_SOUTH_WEST:
             //m_pos += vec3(-1.0f, -1.0f, 0.0f);
             translVec = vec3(-1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(std::shared_ptr<Entity>(this), translVec, animFrames);
+            m_movementCallback(m_index, translVec, animFrames);
             break;
         default:
             break;
