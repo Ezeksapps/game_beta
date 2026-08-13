@@ -184,6 +184,7 @@ void Renderer::createSpriteTextureArray() {
 /* --- LOADERS --- */
 
 int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
+     auto start = std::chrono::high_resolution_clock::now();
     if (m_numSprites + 1 > m_maxInstances) return -1;
 
     sprite->index = m_numSprites; // first time sprite is being used, so assign the index
@@ -206,6 +207,10 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
     const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
     int rowStride = subResData.Stride;  // Bytes per row in the source data
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "registerSprite (" << sprite->filepath << ") took " << duration << " µs" << std::endl;
 
     // copy each frame into its own slice of the texture array
     for (int row = 0; row < framesPerCol; ++row) {
@@ -254,10 +259,13 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
 
     ++m_numSprites;
 
+
+
     return m_numSprites - 1; // unused return?
 }
 
 void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
+     auto start = std::chrono::high_resolution_clock::now();
     // NOTE: sprite->index refers to the Entity 'number' that Sprite belongs to. The start index in the tex array
     // the Sprite's texture exists in can be found with index * m_maxSpriteDimensions
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
@@ -278,6 +286,10 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
     const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
     int rowStride = subResData.Stride;  // Bytes per row in the source data
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "swapSprite (to " << newSprite->filepath << ") took " << duration << " µs" << std::endl;
 
     // copy each frame into its own slice of the texture array
     for (int row = 0; row < framesPerCol; ++row) {
@@ -320,6 +332,7 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
             );
         }
     }
+
 }
 
 /* --- DRAW CALLS --- */

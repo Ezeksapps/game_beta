@@ -92,6 +92,31 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
+
+Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(const int& entityIndex) {
+    Diligent::RefCntAutoPtr<Diligent::ITexture> texArray;
+
+    Diligent::TextureDesc textureArrayDesc;
+    textureArrayDesc.ArraySize = m_maxSpriteDimensions * sizeof(AnimEvent);
+    // 2D array
+    textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
+    /* All sprite dimensions are 192 x 192 */
+    textureArrayDesc.Width  = 192;
+    textureArrayDesc.Height = 192;
+    /* NOTE: Mip levels refer to number of smaller-sized versions of the texture to create (used for efficiency when rendering faraway objs)
+     * this is irrelevant here, only take 1, that is, the original image */
+    textureArrayDesc.MipLevels = 1;
+    textureArrayDesc.Format    = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB; // TODO: Set to swap chain's format instead
+    textureArrayDesc.Usage     = Diligent::USAGE_DEFAULT;
+    textureArrayDesc.BindFlags = Diligent::BIND_SHADER_RESOURCE;
+
+    m_pDevice->CreateTexture(textureArrayDesc, nullptr /* No initial data */, &texArray);
+
+    // no SRV or SRB since this array is not for rendering
+
+    const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[entityIndex];
+}
+
 void Renderer::setScene(const std::string& sceneDir) {
     m_pScene = std::make_unique<Scene>(sceneDir);
 
@@ -234,7 +259,8 @@ void Renderer::update() {
             ++transl.animFramesAcc;
 
             // Apply translation to entity's position
-            m_pScene->m_pEntities[transl.index]->m_pos += transl.translVec;
+            m_pScene->m_pEntities[transl.index]->m_pos            += transl.translVec;
+          //  m_pScene->m_pEntities[transl.index]->m_pos += lerp(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), 0.5f);
             vec3 pos =  m_pScene->m_pEntities[transl.index]->m_pos;
 
             // Check if translation is complete
@@ -300,6 +326,19 @@ void Renderer::renderFrame() {
      * which then runs the game update after its proper constant interval.
      * Because of this, the frame rate technically still fluctuates, but the frames that matter are always at the constant rate of 60fps
      */
+
+
+    static int frameCount = 0;
+    static auto lastLog = std::chrono::steady_clock::now();
+    frameCount++;
+
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastLog);
+    if (elapsed >= std::chrono::seconds(1)) {
+        std::cout << "Render FPS: " << frameCount << std::endl;
+        frameCount = 0;
+        lastLog = now;
+    }
 
     while (m_timeAcc >= m_timePerFrame) {
         update();  // update entities and other relevant variable data

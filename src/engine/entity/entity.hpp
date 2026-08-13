@@ -10,11 +10,11 @@
 using namespace glm;
 
 enum AnimEvent : uint8_t { // TODO: Add Idle animation as well
-    ANIM_EVENT_IDLE,
-    ANIM_EVENT_WALK,
-    ANIM_EVENT_RUN,
-    ANIM_EVENT_SLEEP,
-    ANIM_EVENT_WAKE
+    ANIM_EVENT_IDLE  = 0,
+    ANIM_EVENT_WALK  = 1,
+    ANIM_EVENT_RUN   = 2,
+    ANIM_EVENT_SLEEP = 3,
+    ANIM_EVENT_WAKE  = 4
 };
 
 // TODO: Some sprites have only one anim row, as they are direction-independent, accomodate these as well
@@ -53,6 +53,9 @@ public:
     Direction m_direction;
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
+
+    // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
+    std::string m_animJsonFilepath;
 
 private:
 

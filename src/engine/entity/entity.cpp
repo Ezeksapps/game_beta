@@ -49,7 +49,6 @@ void Entity::update(const float& deltaTime) {
 
 void Entity::doAnimEvent(const AnimEvent& event) {
     m_pActiveSprite = m_spriteMap[event];
-     std::cout << "Switching to sprite with index: " << m_pActiveSprite->index << std::endl;
     // also called to set default anim before setting callback
     if (m_spriteChangeCallback) m_spriteChangeCallback(m_pActiveSprite);
 }
@@ -77,8 +76,9 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
     m_direction = direction;
 
     // find total number of frames accompanying movement animation runs for
-    int animFrames = 0;
-    for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
+    int animFrames = 46;
+    //for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
+    //std::cout << "Animation lasts for " << animFrames << " frames\n";
 
     vec3 translVec;
 

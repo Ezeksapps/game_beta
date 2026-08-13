@@ -83,3 +83,115 @@ moving as expected
 
 Frame rate cannot be the issue since the animation speed is tied to the frame rate (the rate at which update() is called) and, as stated
 previously, animations play fine with expected behaviour.
+
+Shaders in OpenGL/Vulkan will run every frame, specifically:
+[https://stackoverflow.com/questions/35243518/frequency-of-shader-invocations-in-rendering-commands]
+VS runs once per vertex assuming non-indexed drawing (may be less if using indexed draw calls)
+GS runs once for every input geometry (In this case for every point vertex, which is the centre positions of all billboard quads)
+FS runs at least once for every pixel-sized area covered by the primitive being rasterised
+
+A test to check if the geometry shader is the issue is to set the fragment shader to ignore texture and just draw opaque green to the quad,
+if this moves smoothly, GS is fine, otherwise, GS is probably the issue
+
+Test showed that the green never stopped rendering, meaning the quad was at no point destroyed, but did still show laggy movement rather
+than the smooth movement that is expected to result from the gradual translation system, though some intermediate steps can be seen
+The issue is definitely to do with the way these gradual translations are being done, which is computationally expensive
+
+https://stackoverflow.com/questions/2807053/how-to-make-smooth-movements-in-opengl
+This confirms it, instead use interpolation while storing the final position immediately then do the translation on a timer
+
+The interpolation here refers to calculating intermediate positions, which is done through linear interpolation (lerp)
+GLM provides a function for this glm::lerp() though this might not be useful if I'm doing the interpolation shader-side
+a generic lerp function is:
+
+(from https://bsmarted.com/en/topics/opengl/implementing-animation-basics)
+
+float lerp(float start, float end, float t) {
+    return start + t * (end - start);
+}
+
+where t is the progression between the keyframes (a keyframe is a specific state defining either the start or end point of a smooth animation)
+
+lerp is not to be confused with spherical linear interpolation (slerp), which is good for perfoming smooth rotations
+
+However, this is not technically any less computationally expensive than the other method I was using
+
+A further experiment I did was to set animFrames to a hgher value. The animation assigned to ANIM_EVENT_WALK was 26 frames, but I overrode this and set
+animFrames to 55 to see what would happen. When this is done, the walk animation is visibly played (the fps drop remains) for about 1/2 cycles,
+which doesnt make sense since 1/2 cycles of the walk anim would be 39 frames
+It seems that switching a texture may possibly introduce some lag? The original movement with 26 frames barely flashed the walk anim right at the end
+So what is this beginning bottleneck? It must be related to the fps drop somehow
+
+registerSprite (assets/eevee/idle.png) took 99634 µs
+Render FPS: 62
+Render FPS: 60
+swapSprite (to assets/eevee/walk.png) took 326533 µs
+Render FPS: 38
+swapSprite (to assets/eevee/idle.png) took 122962 µs
+Render FPS: 55
+swapSprite (to assets/eevee/walk.png) took 326371 µs
+Render FPS: 53
+swapSprite (to assets/eevee/idle.png) took 123126 µs
+Render FPS: 55
+swapSprite (to assets/eevee/walk.png) took 326344 µs
+Render FPS: 45
+swapSprite (to assets/eevee/idle.png) took 123911 µs
+Render FPS: 55
+swapSprite (to assets/eevee/walk.png) took 332326 µs
+Render FPS: 38
+swapSprite (to assets/eevee/idle.png) took 124363 µs
+swapSprite (to assets/eevee/walk.png) took 329000 µs
+Render FPS: 34
+swapSprite (to assets/eevee/idle.png) took 101472 µs
+Render FPS: 55
+
+the switch back to the idle sprite specifically always is fairly instant (though it is a significantly smaller sprite sheet)
+average time taken to switch to walk sprite sheet: 328114.8 µs, which approx. = 328 ms
+almost 1/3 of a second is a significant lag to swap out one texture
+
+game runs at 60 fps
+1000 / 60 = 16.67 ms per frame
+16.67 * 26 = 433.42 ms
+
+That means with the current game speed at 60 fps, the ANIM_EVENT_WALK animation should take 433.42 ms (26 frames) to make one complete cycle
+if 328 (19.6 frames) of those ms are expended loading the walk animation, then for only 105.42 ms does the walk animation actually get to play (6 frames)
+This is almost instant and it is hard to notice the animation even started playing at all apart from the sprite shrinking (since currently
+the idle and walk sprite are at different resolutions, as I havent properly prepared all sprites yet)
+so, in order to get one complete cycle of the walk animation to play with the current delay, the animFrames would need to be set to 20 + 26 = 46 frames
+The approx 100 ms delay in re-loading the idle animation is also not ideal, despite being less noticeable.
+The game should have no visible lag in an ideal scenario.
+
+I also need to test which specific part of the sprite registry and swapping takes the longest, the read of the PNG from disk, or the loading
+of the data into the texture array
+
+First, I timed the execution time for the PNG read and texture creation:
+
+PNG load & texture creation (assets/eevee/walk.png) took 326729 µs
+Render FPS: 39
+PNG load & texture creation (assets/eevee/idle.png) took 124282 µs
+Render FPS: 52
+PNG load & texture creation (assets/eevee/walk.png) took 327639 µs
+Render FPS: 59
+PNG load & texture creation (assets/eevee/idle.png) took 126528 µs
+
+I don't even need to test the execution time for copying this data to the texture array, it's already clear that almost all of that execution
+time is spent on loading the PNG and initialising the texture
+This is when loading from a fairly new SSD, this delay is likely worse on an older disk or a HDD.
+
+The best solution would be to cache all the sprite sheets an entity could need when the Scene creates the Entity.
+swapSprite can then copy the pre-loaded texture data from the entity's cache to the renderer's texture array instead of loading from disk
+The trade-off here is a slightly longer load time for a Scene, but that is better than laggy gameplay. Also, considering the small number of AnimEvents an Entity can have,
+this only adds a few seconds. I can optimise this later on so the pre-load is done on a separate thread, that way once the Idle animation is loaded, the scene
+can be immediately rendered while the other sprite sheets are cached in the background
+
+TODO: Create this pre-cache system
+TODO: Modify existing movement system to use more standard interpolation method
+
+The cache will be owned by the Renderer, since Entity is not meant to be handling anything related to graphics directly
+This cache will be a vector of equally-sized texture arrays, with each index belonging to one entity. These texture arrays will
+be created for all entities on calling setScene(), those texture arrays will be of size m_maxSpriteDimensions * sizeof(AnimEvents)
+The indices in the tex arrays correspond to the enumerators in AnimEvent
+
+This cache will be a map, where the keys are the filepaths for the JSON defining an entity's associated sprite sheets (This is since
+two entities might use the same sprite sheets, so both can be associated with on tex array rather than storing two duplicate arrays)
+and the values are smart pointers to the tex arrays

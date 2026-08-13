@@ -158,6 +158,9 @@ private:
     /* Contains entity translations that are currently being run */
     std::vector<EntityTransl> m_entityTransls;
 
+    /* Stores all pre-loaded sprite sheets for the current scene's entities */
+    std::unordered_map<std::string, Diligent::RefCntAutoPtr<Diligent::ITexture>> m_entitySpriteCache;
+
     void createSharedUniformBuffer();
 
     void createPerSpriteUniformBuffer(); // per-sprite UBO
@@ -182,6 +185,8 @@ private:
 
     void updateUniformBuffer();
 
+    // creates a texture array to function as a sprite sheet cache for one entity and returns it
+    Diligent::RefCntAutoPtr<Diligent::ITexture> createEntitySpriteCache(const int& entityIndex);
     void createSpriteTextureArray();
 
     void update();
