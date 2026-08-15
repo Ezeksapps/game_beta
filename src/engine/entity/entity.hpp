@@ -9,12 +9,10 @@
 
 using namespace glm;
 
-enum AnimEvent : uint8_t { // TODO: Add Idle animation as well
+enum AnimEvent : uint8_t {
     ANIM_EVENT_IDLE  = 0,
     ANIM_EVENT_WALK  = 1,
-    ANIM_EVENT_RUN   = 2,
-    ANIM_EVENT_SLEEP = 3,
-    ANIM_EVENT_WAKE  = 4
+    ANIM_EVENT_COUNT = 2      // Number of enumerators in AnimEvent, used to create properly-sized texture caches in renderer
 };
 
 // TODO: Some sprites have only one anim row, as they are direction-independent, accomodate these as well
@@ -36,7 +34,7 @@ public:
     Entity(const std::string& animJsonFilepath, const int& index);
     ~Entity();
 
-    void setSpriteChangeCallback(std::function<void(std::shared_ptr<Sprite> newSprite)> callback);
+    void setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback);
     void setMovementCallback(std::function<void(const int& index, vec3 translVec, const float& animFrames)> callback);
 
     void doAnimEvent(const AnimEvent& event);
@@ -46,11 +44,15 @@ public:
     // update frame timing data based on the delta time of the renderer
     void update(const float& deltaTime);
 
+    // used by renderer, returns a read-only reference to the sprite map
+    const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& getSpriteMap();
+
     // move entity by one square in one direction, with a specified mode of transport (walking/running)
     void move(const Direction& direction, const AnimEvent& mode);
 
     // CHECK: Should be private members?
     Direction m_direction;
+    AnimEvent m_event;        // current event
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
 
@@ -60,7 +62,7 @@ public:
 private:
 
     /* callback for sprite sheet animation changes */
-    std::function<void(std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;
+    std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;
     /* Callback for movement */
     std::function<void(const int& index, vec3 translVec, const float& animFrames)> m_movementCallback;
 

@@ -1,4 +1,6 @@
 #include "renderer.hpp"
+#include "DiligentCore/Graphics/GraphicsEngine/interface/DeviceContext.h"
+#include <cstdint>
 
 /* Contains renderer functions relevant to the sprites' pipeline only */
 
@@ -183,156 +185,100 @@ void Renderer::createSpriteTextureArray() {
 
 /* --- LOADERS --- */
 
-int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite) {
-     auto start = std::chrono::high_resolution_clock::now();
+// TODO: Use CopyTexture() instead
+void Renderer::loadSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
+    // fetch ref to needed cache
+    const Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray = m_entitySpriteCache[cacheKey];
+
+    for (int row = 0; row < sprite->framesPerCol; ++row) {
+        for (int col = 0; col < sprite->framesPerRow; ++col) {
+
+            int cacheSliceIndex = (event * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index in cache tex array
+            int sliceIndex = (sprite->index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index in renderer tex array
+
+            Diligent::Box srcBox;
+            srcBox.MinX = 0;
+            srcBox.MinY = 0;
+            srcBox.MinZ = 0;
+            srcBox.MaxX = 192;
+            srcBox.MaxY = 192;
+            srcBox.MaxZ = 1;
+
+            Diligent::CopyTextureAttribs texCopyAttribs;
+            texCopyAttribs.pSrcTexture = texArray;
+            texCopyAttribs.SrcSlice = cacheSliceIndex;
+            texCopyAttribs.SrcMipLevel = 0;
+            texCopyAttribs.pSrcBox = &srcBox;
+            texCopyAttribs.SrcTextureTransitionMode = Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+
+            texCopyAttribs.pDstTexture = m_pSpriteTextureArray;
+            texCopyAttribs.DstSlice = sliceIndex;
+            texCopyAttribs.DstMipLevel = 0;
+            texCopyAttribs.DstX = 0;
+            texCopyAttribs.DstY = 0;
+            texCopyAttribs.DstZ = 0;
+            texCopyAttribs.DstTextureTransitionMode = Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
+
+            m_pImmediateContext->CopyTexture(texCopyAttribs);
+
+        }
+    }
+}
+
+int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
+
     if (m_numSprites + 1 > m_maxInstances) return -1;
 
     sprite->index = m_numSprites; // first time sprite is being used, so assign the index
 
-    Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
-    Diligent::TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
-
-    // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
-    // UPDATE: Can also only update from a region in the source texture equal to the size of the dest texture (192 * 192),
-    // and cannot access any region in the src texture whose x & y coords are higher than the texture maxX and maxY (so any frame past the first, starting at the coord origin)
-    // which explains why only the first frame got loaded to the tex array initially.
-    // FIX: Temporarily load each frame into an intermediate buffer (sized for a 192*192 tex) then copy that to the texture array
-
-    sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
-    int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
-
-    /* Get full texture data */
-    Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-    const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
-    int rowStride = subResData.Stride;  // Bytes per row in the source data
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "registerSprite (" << sprite->filepath << ") took " << duration << " µs" << std::endl;
-
-    // copy each frame into its own slice of the texture array
-    for (int row = 0; row < framesPerCol; ++row) {
-        for (int col = 0; col < sprite->framesPerRow; ++col) {
-
-            int sliceIndex = (sprite->index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index
-
-            /* Create an empty buffer for this frame's image data */
-            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
-            std::vector<unsigned char> frameBuffer(frameDataSize);
-
-            /* Copy current frame to temp frame buffer */
-            for (int y = 0; y < 192; ++y) {
-                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
-                int dstOffset = y * 192 * 4;
-                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
-            }
-
-            /* update slice in main texture array */
-            Diligent::Box updateBox;
-            updateBox.MinX = 0;
-            updateBox.MinY = 0;
-            updateBox.MinZ = 0;
-            updateBox.MaxX = 192;
-            updateBox.MaxY = 192;
-            updateBox.MaxZ = 1;
-
-            Diligent::TextureSubResData frameSubRes;
-            frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
-            frameSubRes.Stride = 192 * 4;
-            frameSubRes.DepthStride = 0;
-
-            m_pImmediateContext->UpdateTexture(
-                m_pSpriteTextureArray,
-                0,
-                sliceIndex,
-                updateBox,
-                frameSubRes,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-            );
-        }
-    }
+    // TODO: Get cache key and event from entity
+    loadSprite(sprite, cacheKey, event);
 
     m_instanceData.push_back(InstanceData()); // allocate a new empty slot in instance data vector
 
     ++m_numSprites;
 
-
-
-    return m_numSprites - 1; // unused return?
+    return m_numSprites - 1; // << UNUSED RETURN, TODO: REMOVE
 }
 
-void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite) {
-     auto start = std::chrono::high_resolution_clock::now();
-    // NOTE: sprite->index refers to the Entity 'number' that Sprite belongs to. The start index in the tex array
-    // the Sprite's texture exists in can be found with index * m_maxSpriteDimensions
-    Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
-    Diligent::TextureLoadInfo loadInfo;
-    loadInfo.IsSRGB = true;
-    Diligent::CreateTextureLoaderFromFile(newSprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event) {
 
-    // UPDATE: all slices can't be updated in one go by one box, they must be individually updated
-    // UPDATE: Can also only update from a region in the source texture equal to the size of the dest texture (192 * 192),
-    // and cannot access any region in the src texture whose x & y coords are higher than the texture maxX and maxY (so any frame past the first, starting at the coord origin)
-    // which explains why only the first frame got loaded to the tex array initially.
-    // FIX: Temporarily load each frame into an intermediate buffer (sized for a 192*192 tex) then copy that to the texture array
-
-    newSprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
-    int framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
-
-    /* Get full texture data */
-    Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
-    const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
-    int rowStride = subResData.Stride;  // Bytes per row in the source data
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "swapSprite (to " << newSprite->filepath << ") took " << duration << " µs" << std::endl;
+    // fetch ref to needed cache
+    const Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray = m_entitySpriteCache[cacheKey];
 
     // copy each frame into its own slice of the texture array
-    for (int row = 0; row < framesPerCol; ++row) {
+    for (int row = 0; row < newSprite->framesPerCol; ++row) {
         for (int col = 0; col < newSprite->framesPerRow; ++col) {
 
-            int sliceIndex = oldSpriteIndex * m_maxSpriteDimensions + (row * newSprite->framesPerRow) + col;
+            int cacheSliceIndex = (event * m_maxSpriteDimensions) + (row * newSprite->framesPerRow) + col; // current slice index in cache tex array
+            int sliceIndex = (oldSpriteIndex * m_maxSpriteDimensions) + (row * newSprite->framesPerRow) + col; // current slice index in renderer tex array
 
-            /* Create an empty buffer for this frame's image data */
-            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
-            std::vector<unsigned char> frameBuffer(frameDataSize);
+            Diligent::Box srcBox;
+            srcBox.MinX = 0;
+            srcBox.MinY = 0;
+            srcBox.MinZ = 0;
+            srcBox.MaxX = 192;
+            srcBox.MaxY = 192;
+            srcBox.MaxZ = 1;
 
-            /* Copy current frame to temp frame buffer */
-            for (int y = 0; y < 192; ++y) {
-                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
-                int dstOffset = y * 192 * 4;
-                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
-            }
-            /* update slice in main texture array */
-            Diligent::Box updateBox;
-            updateBox.MinX = 0;
-            updateBox.MinY = 0;
-            updateBox.MinZ = 0;
-            updateBox.MaxX = 192;
-            updateBox.MaxY = 192;
-            updateBox.MaxZ = 1;
+            Diligent::CopyTextureAttribs texCopyAttribs;
+            texCopyAttribs.pSrcTexture = texArray;
+            texCopyAttribs.SrcSlice = cacheSliceIndex;
+            texCopyAttribs.SrcMipLevel = 0;
+            texCopyAttribs.pSrcBox = &srcBox;
+            texCopyAttribs.SrcTextureTransitionMode = Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
-            Diligent::TextureSubResData frameSubRes;
-            frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
-            frameSubRes.Stride = 192 * 4;
-            frameSubRes.DepthStride = 0;
+            texCopyAttribs.pDstTexture = m_pSpriteTextureArray;
+            texCopyAttribs.DstSlice = sliceIndex;
+            texCopyAttribs.DstMipLevel = 0;
+            texCopyAttribs.DstX = 0;
+            texCopyAttribs.DstY = 0;
+            texCopyAttribs.DstZ = 0;
+            texCopyAttribs.DstTextureTransitionMode = Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION;
 
-            m_pImmediateContext->UpdateTexture(
-                m_pSpriteTextureArray,
-                0,
-                sliceIndex,
-                updateBox,
-                frameSubRes,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
-                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
-            );
+            m_pImmediateContext->CopyTexture(texCopyAttribs);
         }
     }
-
 }
 
 /* --- DRAW CALLS --- */

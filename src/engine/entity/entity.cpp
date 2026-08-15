@@ -1,6 +1,5 @@
 #include "entity.hpp"
 #include "../fileio.hpp"
-#include <iostream>
 
 #include <json.hpp>
 
@@ -16,6 +15,8 @@ Entity::Entity(const std::string& animJsonFilepath, const int& index) {
 
     for (const json& anim : anims) {
 
+        int typeValue = anim["type"];
+
         Sprite sprite {
             .filepath = anim["filepath"],
             .frameDurations = anim["durations"]
@@ -26,7 +27,6 @@ Entity::Entity(const std::string& animJsonFilepath, const int& index) {
 
     doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
     m_direction = DIRECTION_WEST; // default direction
-
 }
 
 
@@ -48,16 +48,19 @@ void Entity::update(const float& deltaTime) {
 }
 
 void Entity::doAnimEvent(const AnimEvent& event) {
+    m_event = event;
+    int oldSpriteIndex = 0;
+    if (m_pActiveSprite) oldSpriteIndex = m_pActiveSprite->index;
     m_pActiveSprite = m_spriteMap[event];
     // also called to set default anim before setting callback
-    if (m_spriteChangeCallback) m_spriteChangeCallback(m_pActiveSprite);
+    if (m_spriteChangeCallback) m_spriteChangeCallback(oldSpriteIndex, m_pActiveSprite);
 }
 
 const std::shared_ptr<Sprite>& Entity::getActiveSprite() {
     return m_pActiveSprite;
 }
 
-void Entity::setSpriteChangeCallback(std::function<void(std::shared_ptr<Sprite> newSprite)> callback) {
+void Entity::setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback) {
     m_spriteChangeCallback = callback;
 }
 
@@ -69,6 +72,10 @@ void Entity::setDirection(const Direction& direction) {
     m_direction = direction;
 }
 
+const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteMap() {
+    return m_spriteMap;
+}
+
 // TODO: Must not alter Z-axis, only checkCollision() should update Z
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
     doAnimEvent(mode);
@@ -76,9 +83,8 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
     m_direction = direction;
 
     // find total number of frames accompanying movement animation runs for
-    int animFrames = 46;
-    //for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
-    //std::cout << "Animation lasts for " << animFrames << " frames\n";
+    int animFrames = 0;
+    for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
 
     vec3 translVec;
 

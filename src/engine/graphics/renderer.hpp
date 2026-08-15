@@ -44,16 +44,7 @@ public:
     void setScene(const std::string& sceneDir);
     std::vector<std::shared_ptr<Entity>>& getEntities();
 
-    // create a texture for a specified Sprite object and add it to the texture array
-    // NOTE: Space in that array is limited to m_maxInstances, this function should be used
-    // to occupy the top-most slot with a spritesheet belonging to an Entity that is not yet being rendered
-    // If you need to switch the spritesheet used for an entity already using the renderer, use swapSprite()
-    // Returns the index of this Sprite in the texture array
-    int registerSprite(const std::shared_ptr<Sprite>& sprite);
 
-    // If an Entity already using the renderer for its sprite needs to switch to another sprite sheet,
-    // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
-    void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite);
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
@@ -184,6 +175,22 @@ private:
     void renderSprites();
 
     void updateUniformBuffer();
+
+    // create a texture for a specified Sprite object and add it to the texture array
+    // NOTE: Space in that array is limited to m_maxInstances, this function should be used
+    // to occupy the top-most slot with a spritesheet belonging to an Entity that is not yet being rendered
+    // If you need to switch the spritesheet used for an entity already using the renderer, use swapSprite()
+    // Returns the index of this Sprite in the texture array
+    int registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
+
+    // If an Entity already using the renderer for its sprite needs to switch to another sprite sheet,
+    // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
+    void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event);
+
+    // loads a Sprite into a given texture array at the specified index
+    void loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);
+    // gets sprite sheet texture data from an entity texture array in the cache and copies it to the main texture array
+    void loadSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
 
     // creates a texture array to function as a sprite sheet cache for one entity and returns it
     Diligent::RefCntAutoPtr<Diligent::ITexture> createEntitySpriteCache(const int& entityIndex);

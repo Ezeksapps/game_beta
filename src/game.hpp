@@ -25,21 +25,27 @@
 // sprite billboards' positioning relative to camera
 // separate game and engine code
 // sprite sheet animation system, complete with directions
+// movement system, which syncs with movement animations
 
-// FIX BUG: Camera system unstable and for some reason randomises its position every time program opened
-// FIX BUG: Camera functions for rotation do work but do not apply properly as they are in Renderer for some reason
+// FIX BUG: Camera system unstable and for some reason randomises its position every time program opened [high pri]
+// FIX BUG: Camera functions for rotation do work but do not apply properly as they are in Renderer for some reason [med pri]
 
 // ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
 
-// NEXT TODO: Movement -- DEBUGGING
+// TODO (low pri): Make entity translation system use lerp instead
+
+// NEXT TODO: Sprite sheets (from PMD repo) have different scales, make them appear the same size when rendering
+// FIX: GLFW only detecting keydown event and sending one command for movement. This is wrong, movement should continue afrer keydown
+// until key is released (dont stop mid movement though, that violates grid system, stop at nearest tile (ceil))
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
  * Map pipeline renders 3D environment. Camera system is properly set up and can rotate with yaw, pitch and roll
  * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
  * Sprite sheet system fully implemented, but needs to accomodate directionless sprite sheets as well.
- * Entitiy movement operational, but animation not played properly and movement lags
+ * Entitiy movement operational, corresponding movement animation plays with it and is synced so that moving one tile will run one exactly cycle
+ * of that animation
  */
 
 #include "engine/engine.hpp"

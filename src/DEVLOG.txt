@@ -195,3 +195,47 @@ The indices in the tex arrays correspond to the enumerators in AnimEvent
 This cache will be a map, where the keys are the filepaths for the JSON defining an entity's associated sprite sheets (This is since
 two entities might use the same sprite sheets, so both can be associated with on tex array rather than storing two duplicate arrays)
 and the values are smart pointers to the tex arrays
+
+An issue arising though is that the swapSprite() and registerSprite() functions are not supposed to directly interact with entity, just
+the sprite sheet they need to load, but that is now complicated because in order to locate the part of the texture cache with the sprite sheet
+that needs to be copied to the renderer's main texture array, you need the cacheKey, which is in Entity and the current event of Entity
+
+Passing the cacheKey and event as simple extra parameters is not something I would have a problem with but the issue still remains that I need
+to at some point interact with Entity to get those values
+
+The only places where I wanted the renderer to interact with entities is when performing operations with the Scene that contains the entity vector
+setScene() would be an acceptable place to get those values then.
+
+My solution was to use the callback functions, which are declared as lambdas. The capture block can retrieve the cacheKey and entity event without
+breaking the separation in other parts of the code. m_event was also added as a read-only (getter, no setter) member of Entity so that event can be retrieved this way as well
+
+[this, cacheKey = entity->m_animJsonFilepath, event = entity->m_event]
+
+The lambda capture block is now this
+Now the parameters of registerSprite() and swapSprite() can have cacheKey and event added to them without any complication
+
+TODO: Fix lamda capture for consistency
+
+Cache created. Total slices: 160
+  Event 1 -> slices 80 to 135
+  Event 0 -> slices 0 to 15
+loadSprite: event=0, sprite->index=0, framesPerRow=2, framesPerCol=8
+  Copying cache slice 0 -> main slice 0
+  Copying cache slice 1 -> main slice 1
+  Copying cache slice 2 -> main slice 2
+  Copying cache slice 3 -> main slice 3
+  Copying cache slice 4 -> main slice 4
+  Copying cache slice 5 -> main slice 5
+  Copying cache slice 6 -> main slice 6
+  Copying cache slice 7 -> main slice 7
+  Copying cache slice 8 -> main slice 8
+  Copying cache slice 9 -> main slice 9
+  Copying cache slice 10 -> main slice 10
+  Copying cache slice 11 -> main slice 11
+  Copying cache slice 12 -> main slice 12
+  Copying cache slice 13 -> main slice 13
+  Copying cache slice 14 -> main slice 14
+  Copying cache slice 15 -> main slice 15
+registerSprite (assets/eevee/idle.png) took 5020 µs
+
+

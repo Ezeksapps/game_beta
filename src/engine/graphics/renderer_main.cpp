@@ -27,6 +27,7 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
      */
 
     m_lastFrameTime = m_clock.now(); // init last frame time
+    m_timeAcc = 0;                   // init accumulator
 }
 
 Renderer::~Renderer() {
@@ -92,12 +93,71 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
+void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
+
+    Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
+    Diligent::TextureLoadInfo loadInfo;
+    loadInfo.IsSRGB = true;
+    Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+
+    sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
+    sprite->framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
+
+    /* Get full texture data */
+    Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
+    const unsigned char* textureBuffer = static_cast<const unsigned char*>(subResData.pData);
+    int rowStride = subResData.Stride;  // Bytes per row in the source data
+
+    // copy each frame into its own slice of the texture array
+    for (int row = 0; row < sprite->framesPerCol; ++row) {
+        for (int col = 0; col < sprite->framesPerRow; ++col) {
+
+            int sliceIndex = (index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index
+
+            /* Create an empty buffer for this frame's image data */
+            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
+            std::vector<unsigned char> frameBuffer(frameDataSize);
+
+            /* Copy current frame to temp frame buffer */
+            for (int y = 0; y < 192; ++y) {
+                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
+                int dstOffset = y * 192 * 4;
+                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
+            }
+
+            /* update slice in main texture array */
+            Diligent::Box updateBox;
+            updateBox.MinX = 0;
+            updateBox.MinY = 0;
+            updateBox.MinZ = 0;
+            updateBox.MaxX = 192;
+            updateBox.MaxY = 192;
+            updateBox.MaxZ = 1;
+
+            Diligent::TextureSubResData frameSubRes;
+            frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
+            frameSubRes.Stride = 192 * 4;
+            frameSubRes.DepthStride = 0;
+
+            m_pImmediateContext->UpdateTexture(
+                texArray,
+                0,
+                sliceIndex,
+                updateBox,
+                frameSubRes,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE,
+                Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
+            );
+        }
+    }
+}
+
 
 Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(const int& entityIndex) {
     Diligent::RefCntAutoPtr<Diligent::ITexture> texArray;
 
     Diligent::TextureDesc textureArrayDesc;
-    textureArrayDesc.ArraySize = m_maxSpriteDimensions * sizeof(AnimEvent);
+    textureArrayDesc.ArraySize = m_maxSpriteDimensions * ANIM_EVENT_COUNT;
     // 2D array
     textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
     /* All sprite dimensions are 192 x 192 */
@@ -110,11 +170,19 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     textureArrayDesc.Usage     = Diligent::USAGE_DEFAULT;
     textureArrayDesc.BindFlags = Diligent::BIND_SHADER_RESOURCE;
 
-    m_pDevice->CreateTexture(textureArrayDesc, nullptr /* No initial data */, &texArray);
+    m_pDevice->CreateTexture(textureArrayDesc, nullptr, &texArray);
 
     // no SRV or SRB since this array is not for rendering
 
-    const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[entityIndex];
+    const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[entityIndex]; // maybe just pass this directly from setScene?
+    const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& spriteMap = entity->getSpriteMap();
+
+    /* Loop through entity sprite map and load all Sprite objects into tex array */
+    for (const auto& entry : spriteMap) {
+        loadSpriteToTextureArray(texArray /* Tex array */, entry.second /* Sprite */, entry.first  /* load to index */);
+    }
+
+    return texArray;
 }
 
 void Renderer::setScene(const std::string& sceneDir) {
@@ -122,15 +190,17 @@ void Renderer::setScene(const std::string& sceneDir) {
 
     for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities /* TODO: CHANGE TO GETTER */) {
 
+        // only add a new texture array to the cache if one doesn't already exist for the required sprite sheets
+        // NOTE: use try_emplace() since checking the index requires operator[], which will always create that index if it doesnt exist
+        m_entitySpriteCache.try_emplace(entity->m_animJsonFilepath, createEntitySpriteCache(entity->m_index));
+
         /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
-        if (entity->getActiveSprite()) {
-            registerSprite(entity->getActiveSprite());
-        }
+        if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->m_animJsonFilepath, entity->m_event);
 
         /* Callback, runs whenever active sprite is changed */
-        entity->setSpriteChangeCallback([this](std::shared_ptr<Sprite> newSprite) {
+        entity->setSpriteChangeCallback([this, entity](const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite) {
             /* Swap sprite for new sprite */
-            this->swapSprite(newSprite->index, newSprite);
+            this->swapSprite(oldSpriteIndex, newSprite, entity->m_animJsonFilepath, entity->m_event);
         });
 
         // CHECK: Might work better in another location
@@ -251,7 +321,7 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 
 /* --- GAME DATA UPDATE FUNC --- */
 
-void Renderer::update() {
+void Renderer::update() { // TODO: Make more efficient
 
     if (!m_entityTransls.empty()) {
         for (int i = 0; i < m_entityTransls.size();) {
@@ -288,6 +358,7 @@ void Renderer::update() {
         m_instanceData.push_back(InstanceData(transform, texArrayIndex));
         ++i;
     }
+
 }
 
 /* --- DRAW CALLS --- */
@@ -315,7 +386,6 @@ void Renderer::renderFrame() {
     ---------
     */
 
-
     m_deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(m_clock.now() - m_lastFrameTime).count();
     m_timeAcc += m_deltaTime;
     m_lastFrameTime = m_clock.now(); // update last frame time for next frame
@@ -328,19 +398,7 @@ void Renderer::renderFrame() {
      */
 
 
-    static int frameCount = 0;
-    static auto lastLog = std::chrono::steady_clock::now();
-    frameCount++;
-
-    auto now = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - lastLog);
-    if (elapsed >= std::chrono::seconds(1)) {
-        std::cout << "Render FPS: " << frameCount << std::endl;
-        frameCount = 0;
-        lastLog = now;
-    }
-
-    while (m_timeAcc >= m_timePerFrame) {
+    while (m_timeAcc >= m_timePerFrame) { // now infinite loop for some reason?
         update();  // update entities and other relevant variable data
         m_timeAcc -= m_timePerFrame;
     }
@@ -394,8 +452,6 @@ void Renderer::renderFrame() {
         if (mappedData) {
             // Copy only the active instances to the beginning of the buffer
             memcpy(mappedData, m_instanceData.data(), dataSize);
-            m_pImmediateContext->Flush();
-            m_pImmediateContext->WaitForIdle();
         }
     }
 
