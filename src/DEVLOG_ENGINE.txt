@@ -63,12 +63,8 @@ Pushing new entity position: [x = -2.92308, y = 2, z = 0]
 Pushing new entity position: [x = -2.96154, y = 2, z = 0]
 Pushing new entity position: [x = -3, y = 2, z = 0]       << END POSITION
 
-Movement lagging
-Geometry shader running as needed, and updates to model matrix running at correct speed
-walk animation is seen for barely a second and smooth movement isnt seen, more like teleportation to the next tile
-Issue might be the fact that geometry shader regrows the quad whenever position is changed rather than modifying an existing quad?
-Moving quad gen to C++ not a good idea, but would be better to only grow a quad one then re-use it
----
+Movement lag
+-=-=-=-=-=-=-=-
 
 The instance data upload is technically computationally expensive but there is currently only one entity which means instance data only has
 one index at all times. considering that this isn't a low-end PC and the draw calls are all relatively simple, there is no reason to conclude that
@@ -206,10 +202,10 @@ to at some point interact with Entity to get those values
 The only places where I wanted the renderer to interact with entities is when performing operations with the Scene that contains the entity vector
 setScene() would be an acceptable place to get those values then.
 
-My solution was to use the callback functions, which are declared as lambdas. The capture block can retrieve the cacheKey and entity event without
-breaking the separation in other parts of the code. m_event was also added as a read-only (getter, no setter) member of Entity so that event can be retrieved this way as well
+My solution was to use the callback functions, which are declared as lambdas. The capture block can retrieve the entity's shared pointer without
+breaking the separation in other parts of the code.
 
-[this, cacheKey = entity->m_animJsonFilepath, event = entity->m_event]
+[this, entity]
 
 The lambda capture block is now this
 Now the parameters of registerSprite() and swapSprite() can have cacheKey and event added to them without any complication
@@ -237,5 +233,45 @@ loadSprite: event=0, sprite->index=0, framesPerRow=2, framesPerCol=8
   Copying cache slice 14 -> main slice 14
   Copying cache slice 15 -> main slice 15
 registerSprite (assets/eevee/idle.png) took 5020 µs
+
+These logs from testing the transfer from cache to main tex array show that this is a massive success, there is no noticeable lag
+anymore when switching. To the user, it appears instant
+
+
+Scaling issues
+-=-=-=-=-=-=-=-=-
+
+Now that most of the essential components of the renderer are finished and stable, there is another problem that needs to be dealt with.
+All overworld Pokemon sprites used in this projects are taken from the PMD sprite repo.
+The format of these sprites is essentially the baseline for the sprite format in this game, but one part of this is that the sprites can have
+different frame dimensions. For example, in the test sprite sheets I was using, the walk sprite is 48 x 40 and the idle sprite 32 x 24
+
+up until this point, I had been upscaling all the sprites so the frames were 192 x 192 (so they fit perfectly into the tex array), but
+that won't work anymore. Even if I upscale both of those the original frame dimensions are still different. These are being stuck on a quad that
+is always the same size, no matter what. This means the smaller idle sprite looks larger than the walk sprite
+
+This is not desireable, the billboard geometry will need to be scaled so that the percieved size of the sprites is consistent
+
+Also, a small modification will need to be made to the tex array. Now 192 needs to be switched to a constant, so if i ever need it changed, I can
+do that without editing the multiple places it appears. Two constants will be used, one for width and one for height, where the height has a higher allowance
+The reason for this is simply because the PMD sprites are usually taller than they are wide
+The two new constants will be m_maxSpriteFrameHeight and m_maxSpriteFrameWidth
+
+Of course, this is now a max -- not all sprites will be those dimensions. Dimensions will now become properties of the Sprite struct as well,
+stored as 'frameWidth' and 'frameHeight'. (entity will set these in the constructor when it loads the sprite sheet JSON)
+The math for the copying and loading into the tex arrays will need to be adjusted to use the actual dimensions instead of assuming
+all sprites carry the max dimensions. The tex arrays are still sized to allow sprites with frame sizes up to the max capacity,
+just that if the sprites a lower than max capacity, that extra space will go unused
+
+[https://www.reddit.com/r/opengl/comments/hkno6c/can_i_create_an_2d_texture_array_with_different/]
+[https://gamedev.stackexchange.com/questions/121215/can-i-create-an-2d-texture-array-with-different-sizes-for-each-textures]
+
+It also needs to use UVs that map only to the section of the slice actually being used (since frames will almost always be smaller than slice dimensions)
+The OpenGL code from the stackexchange post can be adapted for that. The minimum UV coordinates are always 0, 0. The maximum UVs can be calculated
+C++-side and uploaded as instance data to the geometry shader
+
+
+
+
 
 

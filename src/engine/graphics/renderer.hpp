@@ -45,7 +45,6 @@ public:
     std::vector<std::shared_ptr<Entity>>& getEntities();
 
 
-
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
@@ -62,6 +61,8 @@ private:
     struct InstanceData {
         mat4 modelMatrix;
         float texArrayIndex;
+        float maxU;
+        float maxV;
     };
 
     struct EntityTransl {
@@ -134,9 +135,13 @@ private:
     /* the maximum dimensions of a sprite sheet */
     static constexpr int m_maxSpriteDimensions = 8 * 10;
 
+    /* The maximum dimensions a single sprite sheet frame can have, used when initialising texture arrays */
+    static const int m_maxSpriteFrameWidth = 192;
+    static const int m_maxSpriteFrameHeight = 192;
+
     /* Frame rate */
     static constexpr float m_fps = 60.0f;
-    /* Duration of each frame with a constant FPS value, in milliseconds */
+    /* Duration of each frame with a constant FPS value, in microseconds */
     static constexpr float m_timePerFrame = 1000000.0f / m_fps;
 
     /* Equal to the time taken between the previous and current invokation of renderFrame() */

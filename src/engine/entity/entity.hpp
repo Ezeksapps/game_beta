@@ -50,6 +50,8 @@ public:
     // move entity by one square in one direction, with a specified mode of transport (walking/running)
     void move(const Direction& direction, const AnimEvent& mode);
 
+    bool isMoving(); // getter, checks movement status of Entity
+
     // CHECK: Should be private members?
     Direction m_direction;
     AnimEvent m_event;        // current event
@@ -73,4 +75,5 @@ private:
     std::shared_ptr<Sprite> m_pActiveSprite;
 
     float m_frameTimer;
+    bool m_isMoving; // controls movement, move() can only be called if there is no existing movement
 };

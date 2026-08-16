@@ -1,7 +1,10 @@
 #include "camera.hpp"
 #include "glm/ext/quaternion_trigonometric.hpp"
 
-Camera::Camera() {}
+Camera::Camera() : m_orientation(1.0f, 0.0f, 0.0f, 0.0f),
+                   m_rotationAcc(0.0f),
+                   m_targetPos(0.0f),
+                   m_offset(0.0f, -3.0f, 4.0f) {}
 
 Camera::~Camera() {}
 

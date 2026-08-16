@@ -7,7 +7,6 @@ std::vector<std::shared_ptr<Entity>>* entities = nullptr;
 void handleInput(GameCmd* input) {
     switch(*input) {
         case ENTITY_MOVE_FORWARD:
-            //std::cout << "W press";
             (*entities)[0]->move(DIRECTION_NORTH, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_LEFT:

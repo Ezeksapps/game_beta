@@ -151,7 +151,7 @@ void Renderer::createSpritePipelineState() {
 void Renderer::createPerSpriteUniformBuffer() {
     Diligent::BufferDesc uniformBufferDesc;
     uniformBufferDesc.Name           = "sprite constants desc";
-    uniformBufferDesc.Size           = sizeof(InstanceData);
+    uniformBufferDesc.Size           = sizeof(InstanceData) * m_maxInstances;
     uniformBufferDesc.Usage          = Diligent::USAGE_DYNAMIC;
     uniformBufferDesc.BindFlags      = Diligent::BIND_UNIFORM_BUFFER;
     uniformBufferDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
@@ -167,8 +167,8 @@ void Renderer::createSpriteTextureArray() {
     // 2D array
     textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
     /* All sprite dimensions are 192 x 192 */
-    textureArrayDesc.Width  = 192;
-    textureArrayDesc.Height = 192;
+    textureArrayDesc.Width  = m_maxSpriteFrameWidth;
+    textureArrayDesc.Height = m_maxSpriteFrameHeight;
     /* NOTE: Mip levels refer to number of smaller-sized versions of the texture to create (used for efficiency when rendering faraway objs)
      * this is irrelevant here, only take 1, that is, the original image */
     textureArrayDesc.MipLevels = 1;
@@ -297,7 +297,7 @@ void Renderer::renderSprites() {
     //drawAttribs.IndexType = Diligent::VT_UINT16; /* sprite indices are 16-bit uint */
     //drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
     drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
-    drawAttribs.NumInstances = m_numSprites;
+    drawAttribs.NumInstances = m_pScene->m_pEntities.size();;
     drawAttribs.NumVertices = 1;
     m_pImmediateContext->Draw(drawAttribs);
 

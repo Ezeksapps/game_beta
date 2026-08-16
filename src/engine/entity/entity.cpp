@@ -19,7 +19,9 @@ Entity::Entity(const std::string& animJsonFilepath, const int& index) {
 
         Sprite sprite {
             .filepath = anim["filepath"],
-            .frameDurations = anim["durations"]
+            .frameDurations = anim["durations"],
+            .frameWidth = anim["frameWidth"],
+            .frameHeight = anim["frameHeight"]
         };
 
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
@@ -72,15 +74,21 @@ void Entity::setDirection(const Direction& direction) {
     m_direction = direction;
 }
 
+bool Entity::isMoving() { return m_isMoving; }
+
 const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteMap() {
     return m_spriteMap;
 }
 
 // TODO: Must not alter Z-axis, only checkCollision() should update Z
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
-    doAnimEvent(mode);
 
+    if (m_isMoving) return;
+
+    m_isMoving = true;
     m_direction = direction;
+
+    doAnimEvent(mode);
 
     // find total number of frames accompanying movement animation runs for
     int animFrames = 0;
@@ -132,4 +140,6 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
         default:
             break;
     }
+
+    m_isMoving = false;
 }

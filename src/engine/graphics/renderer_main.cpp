@@ -26,6 +26,8 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
      target pos and offset are preserved, as is proj matrix
      */
 
+     m_viewMatrix = m_pCamera->getViewMatrix();
+
     m_lastFrameTime = m_clock.now(); // init last frame time
     m_timeAcc = 0;                   // init accumulator
 }
@@ -93,6 +95,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
+// idx = event
 void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
@@ -100,8 +103,8 @@ void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITextu
     loadInfo.IsSRGB = true;
     Diligent::CreateTextureLoaderFromFile(sprite->filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
-    sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / 192;
-    sprite->framesPerCol = textureLoader->GetTextureDesc().GetHeight() / 192;
+    sprite->framesPerRow = textureLoader->GetTextureDesc().GetWidth() / sprite->frameWidth;
+    sprite->framesPerCol = textureLoader->GetTextureDesc().GetHeight() / sprite->frameHeight;
 
     /* Get full texture data */
     Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
@@ -115,14 +118,14 @@ void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITextu
             int sliceIndex = (index * m_maxSpriteDimensions) + (row * sprite->framesPerRow) + col; // current slice index
 
             /* Create an empty buffer for this frame's image data */
-            uint32_t frameDataSize = 192 * 192 * 4;  // RGBA = 4 bytes
+            uint32_t frameDataSize = sprite->frameWidth * sprite->frameHeight * 4;  // RGBA = 4 bytes
             std::vector<unsigned char> frameBuffer(frameDataSize);
 
             /* Copy current frame to temp frame buffer */
-            for (int y = 0; y < 192; ++y) {
-                int srcOffset = ((row * 192 + y) * rowStride) + (col * 192 * 4);
-                int dstOffset = y * 192 * 4;
-                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, 192 * 4);
+            for (int y = 0; y < sprite->frameHeight; ++y) {
+                int srcOffset = ((row * sprite->frameHeight + y) * rowStride) + (col * sprite->frameWidth * 4);
+                int dstOffset = y * sprite->frameWidth * 4;
+                memcpy(frameBuffer.data() + dstOffset, textureBuffer + srcOffset, sprite->frameWidth * 4);
             }
 
             /* update slice in main texture array */
@@ -130,13 +133,13 @@ void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITextu
             updateBox.MinX = 0;
             updateBox.MinY = 0;
             updateBox.MinZ = 0;
-            updateBox.MaxX = 192;
-            updateBox.MaxY = 192;
+            updateBox.MaxX = sprite->frameWidth;
+            updateBox.MaxY = sprite->frameHeight;
             updateBox.MaxZ = 1;
 
             Diligent::TextureSubResData frameSubRes;
             frameSubRes.pData = frameBuffer.data(); // set the update box data to the frame
-            frameSubRes.Stride = 192 * 4;
+            frameSubRes.Stride = sprite->frameWidth * 4;
             frameSubRes.DepthStride = 0;
 
             m_pImmediateContext->UpdateTexture(
@@ -161,8 +164,8 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     // 2D array
     textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
     /* All sprite dimensions are 192 x 192 */
-    textureArrayDesc.Width  = 192;
-    textureArrayDesc.Height = 192;
+    textureArrayDesc.Width  = m_maxSpriteFrameWidth;
+    textureArrayDesc.Height = m_maxSpriteFrameHeight;
     /* NOTE: Mip levels refer to number of smaller-sized versions of the texture to create (used for efficiency when rendering faraway objs)
      * this is irrelevant here, only take 1, that is, the original image */
     textureArrayDesc.MipLevels = 1;
@@ -203,7 +206,6 @@ void Renderer::setScene(const std::string& sceneDir) {
             this->swapSprite(oldSpriteIndex, newSprite, entity->m_animJsonFilepath, entity->m_event);
         });
 
-        // CHECK: Might work better in another location
         /* Callback, runs whenever an entity needs to be moved on-screen */
         entity->setMovementCallback([this](const int& index, vec3 translVec, const float& animFrames) {
             m_entityTransls.push_back(EntityTransl{
@@ -351,11 +353,18 @@ void Renderer::update() { // TODO: Make more efficient
     // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
     int i = 0;
     for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
+
         entity->update(1.0f);
         const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
+
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
         mat4 transform = translate(mat4(1.0f), entity->m_pos);
-        m_instanceData.push_back(InstanceData(transform, texArrayIndex));
+
+        // cast to float is necessary here, otherwise maxU and maxV = 0 from precision loss
+        float maxU = activeSprite->frameWidth / static_cast<float>(m_maxSpriteFrameWidth);
+        float maxV = activeSprite->frameHeight / static_cast<float>(m_maxSpriteFrameHeight);
+
+        m_instanceData.push_back(InstanceData(transform, texArrayIndex, maxU, maxV));
         ++i;
     }
 

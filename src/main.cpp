@@ -29,8 +29,10 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        g_pEngine->handleInput(key);  // Send raw keycode
+    if (action != GLFW_RELEASE) g_pEngine->handleInput(key);
+
+    // -- DEBUG -- //
+   /* if (action == GLFW_PRESS) {
         switch (key) {
             case GLFW_KEY_UP:
                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));
@@ -47,11 +49,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             default:
                 break;
         }
-    }
+    }*/
 }
 
 void initWindow() {
-   // glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);  // ENABLE only when needing to debug shaders (RenderDoc doesn't support Wayland)
     if (glfwInit() != GLFW_TRUE) return;
 
     if (glfwVulkanSupported()) {

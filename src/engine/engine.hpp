@@ -65,8 +65,9 @@ public:
     // This just acts as a public-access way to call renderer's renderFrame()
     void renderFrame();
 
-      std::unique_ptr<Renderer> m_pRenderer; // TEMP MEASURE!
-      // std::unique_ptr<Scene> m_pScene; // TEMP MEASURE!
+    std::unique_ptr<Renderer> m_pRenderer; // TEMP MEASURE!
+
+//
 
 private:
 

@@ -6,6 +6,8 @@ layout(binding = 0) uniform Constants {
 struct InstanceData {
     mat4 modelMatrix;
     float texArrayIndex;
+    float maxU;
+    float maxV;
 };
 
 layout(binding = 1) uniform SpriteConstants {
@@ -28,9 +30,13 @@ out vec2 uv;
 out flat float texArrayIndex;
 
 void main() {
-    /* Generate billboard & calculate matrix based on camera position */
 
     int instID = instanceID[0];
+
+    float maxU = g_instData[instID].maxU;
+    float maxV = g_instData[instID].maxV;
+
+    /* Generate billboard & calculate matrix based on camera position */
     texArrayIndex = g_instData[instID].texArrayIndex;
 
     mat4 model = g_instData[instID].modelMatrix;
@@ -47,7 +53,7 @@ void main() {
     float size = 0.5;
 
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(0.0, 1.0);
+    uv = vec2(0.0, maxV);
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * size + cameraUp * size, 1.0);
@@ -55,11 +61,11 @@ void main() {
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(1.0, 1.0);
+    uv = vec2(maxU, maxV);
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * size + cameraUp * size, 1.0);
-    uv = vec2(1.0, 0.0);
+    uv = vec2(maxU, 0.0);
     EmitVertex();
 
     EndPrimitive();
