@@ -89,6 +89,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createSpritePipelineState();
 
     //createIndexBuffer();
+    createInstanceBuffer();
 
     createSpriteTextureArray();
 
@@ -345,29 +346,7 @@ void Renderer::update() { // TODO: Make more efficient
         }
     }
 
-    // issue, will fail if no pre-exisiting instance data exists, as indices not allocated until pushed to vector
-
-    m_instanceData.clear();
-    //m_instanceData.reserve(m_pScene->m_pEntities.size());
-
-    // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
-    int i = 0;
-    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
-
-        entity->update(1.0f);
-        const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
-
-        int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
-        mat4 transform = translate(mat4(1.0f), entity->m_pos);
-
-        // cast to float is necessary here, otherwise maxU and maxV = 0 from precision loss
-        float maxU = activeSprite->frameWidth / static_cast<float>(m_maxSpriteFrameWidth);
-        float maxV = activeSprite->frameHeight / static_cast<float>(m_maxSpriteFrameHeight);
-
-        m_instanceData.push_back(InstanceData(transform, texArrayIndex, maxU, maxV));
-        ++i;
-    }
-
+    populateInstanceBuffer();
 }
 
 /* --- DRAW CALLS --- */

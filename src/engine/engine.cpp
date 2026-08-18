@@ -15,7 +15,7 @@ std::unordered_map<int, GameCmd> keyMap = {};
 
 /* Read keybind config & map all game commands to the respective enumerated GLFW keys */
 void initInputHandler() {
-    const char* keybindsJson = readJsonAsset("config/input_config.json"); // TODO: change to a better format (non C-str)
+    const char* keybindsJson = readJsonAsset("assets/config/input_config.json"); // TODO: change to a better format (non C-str)
 
     json root = json::parse(keybindsJson);
     for (json::iterator it = root.begin(); it != root.end(); ++it) {

@@ -31,7 +31,7 @@ class Entity {
 
 public:
 
-    Entity(const std::string& animJsonFilepath, const int& index);
+    Entity(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index);
     ~Entity();
 
     void setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback);
@@ -61,7 +61,7 @@ public:
     // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
     std::string m_animJsonFilepath;
 
-private:
+protected:
 
     /* callback for sprite sheet animation changes */
     std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;

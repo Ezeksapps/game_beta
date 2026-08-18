@@ -1,0 +1,34 @@
+{
+    "anims": [
+         {
+            "type": 0,
+            "frameWidth": 40,
+            "frameHeight": 48,
+            "filepath": "assets/sprites/shinx/idle.png",
+            "durations": [
+                30,
+                2,
+                2,
+                4,
+                4,
+                2,
+                2
+            ]
+        },
+        {
+            "type": 1,
+            "frameWidth": 40,
+            "frameHeight": 48,
+            "filepath": "assets/sprites/shinx/walk.png",
+            "durations": [
+                6,
+                4,
+                6,
+                6,
+                4,
+                6,
+                4
+            ]
+        }
+    ]
+}

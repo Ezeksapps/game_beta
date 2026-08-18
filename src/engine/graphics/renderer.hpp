@@ -53,6 +53,8 @@ public:
 
 private:
 
+    // https://wikis.khronos.org/opengl/Interface_Block_(GLSL)#Memory_layout
+
     struct FrameConstants {
         mat4 projMatrix;
         mat4 viewMatrix;
@@ -105,7 +107,7 @@ private:
 
     /* ---- Sprite pipeline buffers & textures ---- */
     //Diligent::RefCntAutoPtr<Diligent::IBuffer>       m_pSpriteIndexBuffer;
-    //Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;

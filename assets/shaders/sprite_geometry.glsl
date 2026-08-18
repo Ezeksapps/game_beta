@@ -1,18 +1,9 @@
-layout(binding = 0) uniform Constants {
+layout(binding = 0, std140) uniform Constants {
     mat4 g_projMatrix;
     mat4 g_viewMatrix;
 };
 
-struct InstanceData {
-    mat4 modelMatrix;
-    float texArrayIndex;
-    float maxU;
-    float maxV;
-};
 
-layout(binding = 1) uniform SpriteConstants {
-    InstanceData g_instData[32];
-};
 
 /* Refs for implementation:
  * https://gamedev.stackexchange.com/questions/113147/rotate-billboard-towards-camera
@@ -24,25 +15,30 @@ layout(binding = 1) uniform SpriteConstants {
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-flat in int instanceID[];
+in mat4 modelMatrix[];
+in flat float texArrayIndx[];
+in flat float maxU[];
+in flat float maxV[];
+in flat int instanceID[];
 
 out vec2 uv;
 out flat float texArrayIndex;
+out flat int instIdFS;
+//out vec3 inputPoint;
 
 void main() {
 
-    int instID = instanceID[0];
+    int instID = 0;
 
-    float maxU = g_instData[instID].maxU;
-    float maxV = g_instData[instID].maxV;
+    instIdFS = instID;
+    //instID = 0;
 
     /* Generate billboard & calculate matrix based on camera position */
-    texArrayIndex = g_instData[instID].texArrayIndex;
-
-    mat4 model = g_instData[instID].modelMatrix;
+    mat4 model = modelMatrix[instID];
 
     // World‑space position
-    vec3 pos = (g_instData[instID].modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec3 pos = (model * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    //inputPoint = pos;
 
     // Camera axes
     vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
@@ -52,20 +48,25 @@ void main() {
 
     float size = 0.5;
 
+    texArrayIndex = texArrayIndx[instID];
+
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(0.0, maxV);
+    uv = vec2(0.0, maxV[instID]);
     EmitVertex();
 
+      //  texArrayIndex = texIdx;
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * size + cameraUp * size, 1.0);
     uv = vec2(0.0, 0.0);
     EmitVertex();
 
+       // texArrayIndex = texIdx;
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(maxU, maxV);
+    uv = vec2(maxU[instID], maxV[instID]);
     EmitVertex();
 
+       // texArrayIndex = texIdx;
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * size + cameraUp * size, 1.0);
-    uv = vec2(maxU, 0.0);
+    uv = vec2(maxU[instID], 0.0);
     EmitVertex();
 
     EndPrimitive();

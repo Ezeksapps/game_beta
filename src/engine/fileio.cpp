@@ -15,7 +15,7 @@ std::vector<uint8_t> readBinAsset(const std::string& filename) {
 }
 
 char* readJsonAsset(const char* filename) {
-    std::string fullPath = "assets/" + std::string(filename);
+    std::string fullPath = std::string(filename);
     std::ifstream file(fullPath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) return nullptr;
 

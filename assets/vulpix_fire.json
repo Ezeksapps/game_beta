@@ -1,0 +1,29 @@
+{
+    "anims": [
+         {
+            "type": 0,
+            "frameWidth": 32,
+            "frameHeight": 32,
+            "filepath": "assets/sprites/vulpix_fire/idle.png",
+            "durations": [
+                40,
+                12,
+                20,
+                12
+            ]
+        },
+        {
+            "type": 1,
+            "frameWidth": 32,
+            "frameHeight": 40,
+            "filepath": "assets/sprites/vulpix_fire/walk.png",
+            "durations": [
+                6,
+                4,
+                4,
+                4,
+                6
+            ]
+        }
+    ]
+}

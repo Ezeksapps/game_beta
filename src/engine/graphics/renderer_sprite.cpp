@@ -83,15 +83,30 @@ void Renderer::createSpritePipelineState() {
         m_pDevice->CreateShader(shaderCreateInfo, &pSpriteFragmentShader);
     }
 
-    // --- NO SHADER INPUT LAYOUT, AS PIPELINE TAKES NO INPUT FOR VERTEX SHADER --- //
+    Diligent::LayoutElement layoutElems[] = {
+
+        /* LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
+         */
+
+        {0, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 0
+        {1, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 1
+        {2, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 2
+        {3, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 3
+        {4, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // texArrayIndex
+        {5, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // maxU
+        {6, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // maxV
+    };
+
 
     /* Create pipeline state */
 
     /* Set shaders */
-    PipelineStateObjCreateInfo.pVS                                         = pSpriteVertexShader; // may be redundant?
+    PipelineStateObjCreateInfo.pVS                                         = pSpriteVertexShader;
     PipelineStateObjCreateInfo.pGS                                         = pSpriteGeometryShader;
     PipelineStateObjCreateInfo.pPS                                         = pSpriteFragmentShader;
-
+    /* Layout of input elements to shader pipeline */
+    PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = layoutElems;
+    PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(layoutElems);
     /* Referring to variables in the GLSL shader code */
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = Diligent::SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
@@ -125,7 +140,7 @@ void Renderer::createSpritePipelineState() {
     /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
     m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "Constants")->Set(m_pFrameConstants);
     /* Set SpriteConstants for all shaders */
-    m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "SpriteConstants")->Set(m_pSpriteConstants);
+  //  m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "SpriteConstants")->Set(m_pSpriteConstants);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pSpritePipelineStateObj->CreateShaderResourceBinding(&m_pSpriteShaderResourceBinding, true);
@@ -147,6 +162,53 @@ void Renderer::createSpritePipelineState() {
     indexBufferData.DataSize = billboardIndices.size() * sizeof(uint16_t);
     m_pDevice->CreateBuffer(indexBufferDesc, &indexBufferData, &m_pSpriteIndexBuffer);
 }*/
+
+/* Instance buffer for billboards */
+void Renderer::createInstanceBuffer() {
+    Diligent::BufferDesc instanceBufferDesc;
+    instanceBufferDesc.Name = "instance data buffer";
+    /* Default usage, as buffer is only updated when grid size changes */
+    instanceBufferDesc.Usage     = Diligent::USAGE_DEFAULT;
+    instanceBufferDesc.BindFlags = Diligent::BIND_VERTEX_BUFFER;
+    instanceBufferDesc.Size      = sizeof(InstanceData) * m_maxInstances;
+    m_pDevice->CreateBuffer(instanceBufferDesc, nullptr, &m_pSpriteInstanceBuffer);
+    /* NOTE: instance buffer holds no data until sprites are added, no need to populate upon creation */
+}
+
+void Renderer::populateInstanceBuffer() {
+
+    m_instanceData.clear();
+    //m_instanceData.reserve(m_pScene->m_pEntities.size());
+
+    // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
+    int i = 0;
+    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
+
+        entity->update(1.0f);
+        const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
+
+        int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
+        mat4 transform = translate(mat4(1.0f), entity->m_pos);
+
+
+        // cast to float is necessary here, otherwise maxU and maxV = 0 from precision loss
+        float maxU = activeSprite->frameWidth / static_cast<float>(m_maxSpriteFrameWidth);
+        float maxV = activeSprite->frameHeight / static_cast<float>(m_maxSpriteFrameHeight);
+
+        m_instanceData.push_back(InstanceData(transform, texArrayIndex, maxU, maxV));
+        ++i;
+    }
+
+    uint32_t dataSize = static_cast<uint32_t>(sizeof(InstanceData) * m_instanceData.size());
+    /* NOTE: IBuffer::UpdateData() is no longer a function, use IDeviceContext::UpdateBuffer() now (see patch notes for v2.4) */
+    m_pImmediateContext->UpdateBuffer(m_pSpriteInstanceBuffer, 0, dataSize, m_instanceData.data(), Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
+
+    /* Updating the buffer causes a resource state change, update back to a vertex buffer prior to render pass */
+    Diligent::StateTransitionDesc barrier{
+        m_pSpriteInstanceBuffer, Diligent::RESOURCE_STATE_UNKNOWN, Diligent::RESOURCE_STATE_VERTEX_BUFFER, Diligent::STATE_TRANSITION_FLAG_UPDATE_STATE
+    };
+    m_pImmediateContext->TransitionResourceStates(1, &barrier);
+}
 
 void Renderer::createPerSpriteUniformBuffer() {
     Diligent::BufferDesc uniformBufferDesc;
@@ -285,7 +347,9 @@ void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprit
 
 void Renderer::renderSprites() {
 
-    // NO VERTEX BUFFER
+    uint64_t offsets[] = {0};
+    Diligent::IBuffer* pBuffers[] = {m_pSpriteInstanceBuffer};
+    m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffers), pBuffers, offsets, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
 
     /* Index buffer may be re-enabled in future, left commented out for now */
 
@@ -293,12 +357,13 @@ void Renderer::renderSprites() {
     m_pImmediateContext->SetPipelineState(m_pSpritePipelineStateObj); // set pipeline to use
     m_pImmediateContext->CommitShaderResources(m_pSpriteShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
 
+
     Diligent::DrawAttribs drawAttribs;
     //drawAttribs.IndexType = Diligent::VT_UINT16; /* sprite indices are 16-bit uint */
     //drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
     drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
-    drawAttribs.NumInstances = m_pScene->m_pEntities.size();;
-    drawAttribs.NumVertices = 1;
+    drawAttribs.NumInstances = 3;
+    drawAttribs.NumVertices = 3;
     m_pImmediateContext->Draw(drawAttribs);
 
 }

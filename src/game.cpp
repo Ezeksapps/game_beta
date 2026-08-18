@@ -46,7 +46,7 @@ void gameUpdate(void) {
 
 void gameInit() {
 
-    g_pEngine->setScene(""); // blank since set scene will just use test scene for now anyway
+    g_pEngine->setScene("assets/scenes/debugScene"); // blank since set scene will just use test scene for now anyway
     entities = &g_pEngine->getEntities();
 }
 

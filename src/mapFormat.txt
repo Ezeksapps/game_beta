@@ -1,0 +1,11 @@
+{
+    "exits": [
+        {
+            "linkedMap": <filepath>
+            ""
+        }
+    ],
+    "entities": [
+
+    ]
+}

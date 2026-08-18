@@ -1,6 +1,6 @@
 #pragma once
 
-#include "entity/entity.hpp"
+#include "../entity/entity.hpp"
 #include <array>
 
 enum Ability { // list kept short for now, only holds abilities of placeholders

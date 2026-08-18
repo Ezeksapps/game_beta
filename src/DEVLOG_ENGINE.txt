@@ -271,7 +271,10 @@ The OpenGL code from the stackexchange post can be adapted for that. The minimum
 C++-side and uploaded as instance data to the geometry shader
 
 
+Entity subclasses and loading
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
+Entity is a baseclass, all Entities will have a 'type' which is the actual subclass of Entity used to represent them
 
 

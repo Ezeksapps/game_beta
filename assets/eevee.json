@@ -4,7 +4,7 @@
             "type": 0,
             "frameWidth": 24,
             "frameHeight": 32,
-            "filepath": "assets/eevee/idle.png",
+            "filepath": "assets/sprites/eevee/idle.png",
             "durations": [
                 16,
                 16
@@ -14,7 +14,7 @@
             "type": 1,
             "frameWidth": 40,
             "frameHeight": 48,
-            "filepath": "assets/eevee/walk.png",
+            "filepath": "assets/sprites/eevee/walk.png",
             "durations": [
                 4,
                 4,

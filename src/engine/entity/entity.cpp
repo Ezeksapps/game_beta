@@ -1,13 +1,16 @@
 #include "entity.hpp"
 #include "../fileio.hpp"
-
+#include <iostream>
 #include <json.hpp>
 
 using json = nlohmann::json;
 
-Entity::Entity(const std::string& animJsonFilepath, const int& index) {
+Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index) {
 
     m_index = index;
+    m_animJsonFilepath = animJsonFilepath;
+
+    // TODO: use JSON from first param to load overworld events/interactions and behaviour
 
     const char* spriteJson = readJsonAsset(animJsonFilepath.c_str()); // TODO: Fix these functions
 
@@ -41,10 +44,12 @@ void Entity::update(const float& deltaTime) {
     // intended duration of current frame of sprite sheet in frames
     float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
 
+
     // if the timer shows that the currently rendered frame has been rendered for a time exceeding the intended duration,
     // reset the timer and advance to next frame
     if (m_frameTimer >= duration) {
         m_frameTimer           = 0.0f;
+
         m_pActiveSprite->frame = (m_pActiveSprite->frame + 1) % m_pActiveSprite->framesPerRow;
     }
 }

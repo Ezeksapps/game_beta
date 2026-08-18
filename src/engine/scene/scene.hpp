@@ -21,6 +21,7 @@ public:
 
 private:
 
+    void loadSceneJson(const std::string& sceneFilepath);
 
     std::string m_glbFilepath;
 
