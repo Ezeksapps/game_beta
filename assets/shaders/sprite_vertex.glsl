@@ -1,7 +1,7 @@
-in mat4 mdlMatrix;
-in float texArrayIdx;
-in float mxU;
-in float mxV;
+in layout(location = 0) mat4 mdlMatrix;
+in layout(location = 4) float texArrayIdx;
+in layout(location = 5) float mxU;
+in layout(location = 6) float mxV;
 
 
 out mat4 modelMatrix;

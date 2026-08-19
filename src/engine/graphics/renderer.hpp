@@ -31,6 +31,8 @@
 
 using namespace glm;
 
+// TODO: Rename some functions to better describe their purpose, also update the describing comments
+
 class Renderer {
 
 public:

@@ -270,9 +270,41 @@ It also needs to use UVs that map only to the section of the slice actually bein
 The OpenGL code from the stackexchange post can be adapted for that. The minimum UV coordinates are always 0, 0. The maximum UVs can be calculated
 C++-side and uploaded as instance data to the geometry shader
 
+Multiple entities
+-=-=-=-=-=-=-=-=-=-
+
+Theoretically, the engine was in a state where multiple entities could be properly rendered at once. After all, the back end C++
+code was complete and fully tested, so the values being set in m_instanceData should be correct and thus the data the shader recieves should be correct.
+
+Testing multiple entities following the creation of the basic Scene JSON format (so entities can now be added/removed without hard-coding and needing to recompile every time)
+showed that this was not the case. Initially, I only saw the first entity. When I tried to debug the shader I got other weird results like another quad forming,
+but in the wrong location and showing the same sprite as the first entity. Since it appeared the geometry itself was never being formed, i tested the geometry shader's logic
+by implementing it C++ side just before the instance data upload and printing (std::cout) the results. These were completly fine
+
+A test in the geometry shader where i overrode the input matrix completely and set it to depend on the instance ID showed that all the shader pipeline was indeed
+running for 3 instances (Which was expected behaviour, I was testing rendering for three entities), three quads were drawn side-by-side.
+
+pos = vec3(float(instID) * 2.0, 0.0, 0.0);
+
+If setting the centre position of the billboard in the geometry shader fixed the issue, then that meant the inputs were incorrect for everything that wasn't the first entity
+This showed that the issue was input layout.
+
+To test, I tried setting the input layout in the PSO creation with manual relative offsets and strides. I did make a small syntax error when I first did it
+(this being misunderstanding how to use the stride parameter), but that syntax error ended up revealing the problem through the debug logs:
+
+Diligent Engine: ERROR: Inconsistent strides are specified for buffer slot 0. Input element at index 4 explicitly specifies stride 4, while current value is 16. Specify consistent strides or use LAYOUT_ELEMENT_AUTO_STRIDE to allow the engine compute strides automatically.
+Diligent Engine: ERROR: Stride 4 explicitly specified for slot 0 is smaller than the minimum stride 76 required to accommodate all input elements.
+
+Diligent was previously simply allowed to automatically set stride, which these logs show was being treated as 16. The size in bytes of one instance of InstanceData is actually 76
+This explains why the other two entities did not display or even have their quads form, the shaders were being given the data with incorrect stride information
+
+[Note to self, a similar thing already happened when first making the Scene/map renderer pipeline. Remember, always check the input layout (so you don't spend
+2 days thinking you've gone crazy)]
 
 Entity subclasses and loading
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
 
 
 Entity is a baseclass, all Entities will have a 'type' which is the actual subclass of Entity used to represent them

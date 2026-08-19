@@ -88,13 +88,13 @@ void Renderer::createSpritePipelineState() {
         /* LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
          */
 
-        {0, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 0
-        {1, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 1
-        {2, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 2
-        {3, 0, 4, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // Matrix row 3
-        {4, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // texArrayIndex
-        {5, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // maxU
-        {6, 0, 1, Diligent::VT_FLOAT32, false, Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE}, // maxV
+        {0, 0, 4, Diligent::VT_FLOAT32, false,  0, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {1, 0, 4, Diligent::VT_FLOAT32, false, 16, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {2, 0, 4, Diligent::VT_FLOAT32, false, 32, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {3, 0, 4, Diligent::VT_FLOAT32, false, 48, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {4, 0, 1, Diligent::VT_FLOAT32, false, 64, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {5, 0, 1, Diligent::VT_FLOAT32, false, 68, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {6, 0, 1, Diligent::VT_FLOAT32, false, 72, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     };
 
 
@@ -363,7 +363,7 @@ void Renderer::renderSprites() {
     //drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
     drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
     drawAttribs.NumInstances = 3;
-    drawAttribs.NumVertices = 3;
+    drawAttribs.NumVertices = 1;
     m_pImmediateContext->Draw(drawAttribs);
 
 }

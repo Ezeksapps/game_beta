@@ -1,20 +1,12 @@
 layout(binding = 0, std140) uniform Constants {
-    mat4 g_projMatrix;
-    mat4 g_viewMatrix;
+  mat4 g_projMatrix;
+  mat4 g_viewMatrix;
 };
 
-
-
-/* Refs for implementation:
- * https://gamedev.stackexchange.com/questions/113147/rotate-billboard-towards-camera
- * https://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
- * https://ogldev.org/www/tutorial27/tutorial27.html
- */
-
-// for sprites, geometry shader calculates and creates the billboard quad
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
+// Inputs from vertex shader – these are arrays of size 1 (since it's a point)
 in mat4 modelMatrix[];
 in flat float texArrayIndx[];
 in flat float maxU[];
@@ -24,50 +16,45 @@ in flat int instanceID[];
 out vec2 uv;
 out flat float texArrayIndex;
 out flat int instIdFS;
-//out vec3 inputPoint;
 
 void main() {
+  // Get the actual instance ID (0, 1, 2, ...)
+  int instID = instanceID[0];
+  instIdFS = instID;
 
-    int instID = 0;
+  // The data for this point is at index 0 because there's only one vertex
+  mat4 model = modelMatrix[0];
+  float maxUVal = maxU[0];
+  float maxVVal = maxV[0];
+  texArrayIndex = texArrayIndx[0];
 
-    instIdFS = instID;
-    //instID = 0;
+  // World-space position from the model matrix
+  vec3 pos = (model * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+  // pos = vec3(float(instID) * 2.0, 0.0, 0.0);
 
-    /* Generate billboard & calculate matrix based on camera position */
-    mat4 model = modelMatrix[instID];
+  // Camera axes
+  vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
+  vec3 cameraUp = vec3(g_viewMatrix[0][1], g_viewMatrix[1][1], g_viewMatrix[2][1]);
 
-    // World‑space position
-    vec3 pos = (model * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-    //inputPoint = pos;
+  mat4 viewProjMatrix = g_projMatrix * g_viewMatrix;
+  float size = 0.5;
 
-    // Camera axes
-    vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
-    vec3 cameraUp = vec3(g_viewMatrix[0][1], g_viewMatrix[1][1], g_viewMatrix[2][1]);
+  // Generate billboard quad – use maxUVal and maxVVal, not arrays
+  gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
+  uv = vec2(0.0, maxVVal);
+  EmitVertex();
 
-    mat4 viewProjMatrix = g_projMatrix * g_viewMatrix;
+  gl_Position = viewProjMatrix * vec4(pos - cameraRight * size + cameraUp * size, 1.0);
+  uv = vec2(0.0, 0.0);
+  EmitVertex();
 
-    float size = 0.5;
+  gl_Position = viewProjMatrix * vec4(pos + cameraRight * size - cameraUp * size, 1.0);
+  uv = vec2(maxUVal, maxVVal);
+  EmitVertex();
 
-    texArrayIndex = texArrayIndx[instID];
+  gl_Position = viewProjMatrix * vec4(pos + cameraRight * size + cameraUp * size, 1.0);
+  uv = vec2(maxUVal, 0.0);
+  EmitVertex();
 
-    gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(0.0, maxV[instID]);
-    EmitVertex();
-
-      //  texArrayIndex = texIdx;
-    gl_Position = viewProjMatrix * vec4(pos - cameraRight * size + cameraUp * size, 1.0);
-    uv = vec2(0.0, 0.0);
-    EmitVertex();
-
-       // texArrayIndex = texIdx;
-    gl_Position = viewProjMatrix * vec4(pos + cameraRight * size - cameraUp * size, 1.0);
-    uv = vec2(maxU[instID], maxV[instID]);
-    EmitVertex();
-
-       // texArrayIndex = texIdx;
-    gl_Position = viewProjMatrix * vec4(pos + cameraRight * size + cameraUp * size, 1.0);
-    uv = vec2(maxU[instID], 0.0);
-    EmitVertex();
-
-    EndPrimitive();
+  EndPrimitive();
 }

@@ -96,7 +96,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
-// idx = event
+// CHECK: Maybe rename index to event?
 void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
@@ -396,7 +396,7 @@ void Renderer::renderFrame() {
     clearValues[0].SetColor(m_pSwapChain->GetDesc().ColorBufferFormat, 0.0f, 0.0f, 0.0f, 1.0f);  // Colour attachment
     clearValues[1].SetDepthStencil(Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB, 1.0f, 0);              // Depth attachment
 
-
+    populateInstanceBuffer();
     {
         updateUniformBuffer(); // for now just updates camera, since proj matrix is constant unless FOV is changed
 

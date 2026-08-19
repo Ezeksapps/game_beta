@@ -5,8 +5,6 @@
 // [Engine code]
 // set one entity as the player, others as NPCs (Likely classes extending Entity)
 // Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
-// X & Y coords should work like a 2D grid system
-// Along w/ GLB, map also defined by a JSON giving NPCs in map and exits/links to other areas within map
 // Create dialogue system and UI Renderer (defined by XML reader, then render in here, maybe in separate subpass?)
 
 // [Game code]
@@ -23,20 +21,24 @@
 // Camera system
 // sprite billboards' positioning relative to camera
 // separation of game and engine code
+// sprites owned by Entity objects (distinct types of entities such as NPCs will later extend that class)
 // sprite sheet animation system, complete with directions
 // sprite sheet cache
-// ability to load sprite sheets with any frame size, as long as that is below the maximums defined in Renderer
+// ability to load sprite sheets with any frame size, as long as they are below the maximums defined in Renderer
 // movement system, which syncs with movement animations
+// Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 
 
 // ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
 
-// TODO (low pri): Make entity translation system use lerp instead
+// FIX (med pri): movement behaviour doesn't match expected (stop moving when not holding any movement key), maybe cmd queue not best format?
 
-// NEXT TODO: Sprite sheets (from PMD repo) have different scales, make them appear the same size when rendering
-// FIX: GLFW only detecting keydown event and sending one command for movement. This is wrong, movement should continue after keydown
-// until key is released (dont stop mid movement though, that violates grid system, stop at nearest tile (ceil))
+// TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
+// TODO: Camera should be linked to 'Player' Entity's position and follow them along all axes
+// TODO (low pri): Make entity translation system use lerp instead
+// TODO: Decide on global game res and set proj matrix to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
+
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
