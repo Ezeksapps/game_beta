@@ -1,0 +1,28 @@
+{
+    "exits": [
+
+    ],
+    "entities": [
+        {
+            "type": 0,
+            "sprites": "assets/eevee.json",
+            "json": "placeholder.json",
+            "posX": 0,
+            "posY": 0
+        },
+        {
+            "type": 0,
+            "sprites": "assets/shinx.json",
+            "json": "placeholder.json",
+            "posX": 3,
+            "posY": 1
+        },
+        {
+            "type": 0,
+            "sprites": "assets/vulpix_fire.json",
+            "json": "placeholder.json",
+            "posX": -2,
+            "posY": -3
+        }
+    ]
+}

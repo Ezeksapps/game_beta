@@ -1,0 +1,9 @@
+Engine contains all general-purpose code. Game contains code for functions specific to this game
+
+/entity holds the base Entity class and its functions and the sprite structure
+/events holds code releated to the handling of distinct game events, such as story events or entering/exiting battle
+/graphics holds the Renderer and the Camera
+/pokemon holds code for handling Pokemon (a subclass of Entity)
+/scene holds code that handles loading scene data from the JSON
+/ui holds the implementation for the UI engine
+common.hpp holds the unique pointer to the engine and platform-specific macro declarations

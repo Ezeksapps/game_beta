@@ -83,12 +83,10 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createRenderPass();
 
     createSharedUniformBuffer();
-    createPerSpriteUniformBuffer();
 
     createMapPipelineState();
     createSpritePipelineState();
 
-    //createIndexBuffer();
     createInstanceBuffer();
 
     createSpriteTextureArray();
@@ -310,12 +308,10 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
     m_pSwapChain->GetCurrentBackBufferRTV();
 
     auto fb_it = m_frameBufferMap.find(pCurrentBackBufferRTV);
-    if (fb_it != m_frameBufferMap.end())
-    {
+    if (fb_it != m_frameBufferMap.end()) {
         return fb_it->second;
     }
-    else
-    {
+    else {
         auto it = m_frameBufferMap.emplace(pCurrentBackBufferRTV, createFrameBuffer());
         VERIFY_EXPR(it.second);
         return it.first->second;
@@ -413,36 +409,6 @@ void Renderer::renderFrame() {
         *uniformConstants = constants;
     }
 
-
-    // BEGIN NEEDS WORK
-
-
-    std::vector<InstanceData> spriteData;
-    spriteData.reserve(m_instanceData.size());
-
-    for (const auto& data : m_instanceData) {
-        InstanceData psd;
-        psd.modelMatrix = data.modelMatrix;
-        psd.texArrayIndex = static_cast<float>(data.texArrayIndex);
-        spriteData.push_back(psd);
-    }
-
-    if (!m_instanceData.empty()) {
-        uint32_t dataSize = static_cast<uint32_t>(sizeof(InstanceData) * m_instanceData.size());
-
-        Diligent::MapHelper<InstanceData> mappedData(
-            m_pImmediateContext,
-            m_pSpriteConstants,
-            Diligent::MAP_WRITE,
-            Diligent::MAP_FLAG_DISCARD
-        );
-
-        if (mappedData) {
-            // Copy only the active instances to the beginning of the buffer
-            memcpy(mappedData, m_instanceData.data(), dataSize);
-        }
-    }
-
     m_pImmediateContext->BeginRenderPass({
         m_pRenderPass,
         getCurrentFrameBuffer(),
@@ -451,11 +417,9 @@ void Renderer::renderFrame() {
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
     });
 
-    // --- END NEEDS WORK
-
-
     renderMap();
     renderSprites();
+    // renderUI();
 
     m_pImmediateContext->EndRenderPass();
 

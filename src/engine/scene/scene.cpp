@@ -64,6 +64,9 @@ void Scene::loadSceneJson(const std::string& sceneFilepath) {
          * "posY":    <position in y-axis>
          */
 
+        // should be able to create, based on 'type' an object of Entity's subclasses,
+        // for example  if type = "p", then make shared Pokemon
+        // Though the m_pEntities takes Entity types, so will this approach even still work?
         std::shared_ptr<Entity> pEntity = std::make_shared<Entity>(entity["json"], entity["sprites"], entityIndex);
         pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
         m_pEntities.push_back(pEntity);

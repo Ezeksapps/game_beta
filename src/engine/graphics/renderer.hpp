@@ -31,7 +31,7 @@
 
 using namespace glm;
 
-// TODO: Rename some functions to better describe their purpose, also update the describing comments
+// TODO: Rename 'map' to scene
 
 class Renderer {
 
@@ -54,8 +54,6 @@ public:
     std::unique_ptr<Camera>                           m_pCamera;
 
 private:
-
-    // https://wikis.khronos.org/opengl/Interface_Block_(GLSL)#Memory_layout
 
     struct FrameConstants {
         mat4 projMatrix;
@@ -108,7 +106,6 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pSpritePipelineStateObj;
 
     /* ---- Sprite pipeline buffers & textures ---- */
-    //Diligent::RefCntAutoPtr<Diligent::IBuffer>       m_pSpriteIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
@@ -163,13 +160,9 @@ private:
 
     void createSharedUniformBuffer();
 
-    void createPerSpriteUniformBuffer(); // per-sprite UBO
-
     void createMapPipelineState();
     void createSpritePipelineState();
 
-    void createVertexBuffer();
-    void createIndexBuffer();
     void createInstanceBuffer();
     void populateInstanceBuffer();
 
@@ -178,23 +171,21 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IFramebuffer> createFrameBuffer();
     Diligent::IFramebuffer* getCurrentFrameBuffer();
 
-    void loadGLB(const std::string& filename);
+    void loadGLB(const std::string& filename); // rename to loadGlTF
 
     void renderMap();
     void renderSprites();
 
     void updateUniformBuffer();
 
-    // create a texture for a specified Sprite object and add it to the texture array
-    // NOTE: Space in that array is limited to m_maxInstances, this function should be used
-    // to occupy the top-most slot with a spritesheet belonging to an Entity that is not yet being rendered
-    // If you need to switch the spritesheet used for an entity already using the renderer, use swapSprite()
-    // Returns the index of this Sprite in the texture array
-    int registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
+    // fetch a texture from the sprite cache and register it to the main texture array, will occupy the top-most available slot
+    void registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
 
     // If an Entity already using the renderer for its sprite needs to switch to another sprite sheet,
     // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
     void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event);
+
+    // rename to cacheSprite and retrieveSprite
 
     // loads a Sprite into a given texture array at the specified index
     void loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);

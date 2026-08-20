@@ -7,9 +7,6 @@
 // Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
 // Create dialogue system and UI Renderer (defined by XML reader, then render in here, maybe in separate subpass?)
 
-// [Game code]
-// Create other systems, assign to game events
-
 // CURRENTLY COMPLETE:
 // Renderer init
 // glTF loader
@@ -28,6 +25,7 @@
 // movement system, which syncs with movement animations
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 
+// WIP: Pokemon back-end mechanics
 
 // ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
@@ -39,6 +37,7 @@
 // TODO (low pri): Make entity translation system use lerp instead
 // TODO: Decide on global game res and set proj matrix to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 
+// TODO: Make UI skin (also add missing glyphs to font)
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.

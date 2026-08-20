@@ -11,16 +11,11 @@ in mat4 modelMatrix[];
 in flat float texArrayIndx[];
 in flat float maxU[];
 in flat float maxV[];
-in flat int instanceID[];
 
 out vec2 uv;
 out flat float texArrayIndex;
-out flat int instIdFS;
 
 void main() {
-  // Get the actual instance ID (0, 1, 2, ...)
-  int instID = instanceID[0];
-  instIdFS = instID;
 
   // The data for this point is at index 0 because there's only one vertex
   mat4 model = modelMatrix[0];

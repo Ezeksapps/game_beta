@@ -4,14 +4,6 @@
 
 /* Contains renderer functions relevant to the sprites' pipeline only */
 
-// index buffer removed, unused.
-// TODO: input layout not working properly, all calculations setting instance data seem fine
-
-/* Indices are always the same for a quad, so this is fine as a constant */
-const std::vector<uint16_t> billboardIndices = {
-    0, 1, 2, 3, 0
-};
-
 /* --- PIPELINE --- */
 
 /* Sprite PSO creation, needs manual vertex and index buffer creation and includes per-instance data such as texture array index and transforms */
@@ -148,21 +140,6 @@ void Renderer::createSpritePipelineState() {
 
 /* --- BUFFERS --- */
 
-/* Index buffer for billboards */
-/*void Renderer::createIndexBuffer() {
-
-    Diligent::BufferDesc indexBufferDesc;
-    indexBufferDesc.Name      = "billboard index buffer";
-    indexBufferDesc.Usage     = Diligent::USAGE_IMMUTABLE;
-    indexBufferDesc.BindFlags = Diligent::BIND_INDEX_BUFFER;
-    indexBufferDesc.Size      = billboardIndices.size() * sizeof(uint16_t);
-
-    Diligent::BufferData indexBufferData;
-    indexBufferData.pData    = billboardIndices.data();
-    indexBufferData.DataSize = billboardIndices.size() * sizeof(uint16_t);
-    m_pDevice->CreateBuffer(indexBufferDesc, &indexBufferData, &m_pSpriteIndexBuffer);
-}*/
-
 /* Instance buffer for billboards */
 void Renderer::createInstanceBuffer() {
     Diligent::BufferDesc instanceBufferDesc;
@@ -210,15 +187,6 @@ void Renderer::populateInstanceBuffer() {
     m_pImmediateContext->TransitionResourceStates(1, &barrier);
 }
 
-void Renderer::createPerSpriteUniformBuffer() {
-    Diligent::BufferDesc uniformBufferDesc;
-    uniformBufferDesc.Name           = "sprite constants desc";
-    uniformBufferDesc.Size           = sizeof(InstanceData) * m_maxInstances;
-    uniformBufferDesc.Usage          = Diligent::USAGE_DYNAMIC;
-    uniformBufferDesc.BindFlags      = Diligent::BIND_UNIFORM_BUFFER;
-    uniformBufferDesc.CPUAccessFlags = Diligent::CPU_ACCESS_WRITE;
-    m_pDevice->CreateBuffer(uniformBufferDesc, nullptr, &m_pSpriteConstants);
-}
 
 /* --- TEXTURES --- */
 
@@ -247,7 +215,6 @@ void Renderer::createSpriteTextureArray() {
 
 /* --- LOADERS --- */
 
-// TODO: Use CopyTexture() instead
 void Renderer::loadSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
     // fetch ref to needed cache
     const Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray = m_entitySpriteCache[cacheKey];
@@ -287,9 +254,9 @@ void Renderer::loadSprite(const std::shared_ptr<Sprite>& sprite, const std::stri
     }
 }
 
-int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
+void Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
 
-    if (m_numSprites + 1 > m_maxInstances) return -1;
+    if (m_numSprites + 1 > m_maxInstances) return; // reject any attempt to register more sprites than the array is able to handle
 
     sprite->index = m_numSprites; // first time sprite is being used, so assign the index
 
@@ -299,8 +266,6 @@ int Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite, const std::s
     m_instanceData.push_back(InstanceData()); // allocate a new empty slot in instance data vector
 
     ++m_numSprites;
-
-    return m_numSprites - 1; // << UNUSED RETURN, TODO: REMOVE
 }
 
 void Renderer::swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event) {
@@ -351,18 +316,12 @@ void Renderer::renderSprites() {
     Diligent::IBuffer* pBuffers[] = {m_pSpriteInstanceBuffer};
     m_pImmediateContext->SetVertexBuffers(0, _countof(pBuffers), pBuffers, offsets, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
 
-    /* Index buffer may be re-enabled in future, left commented out for now */
-
-    // m_pImmediateContext->SetIndexBuffer(m_pSpriteIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pSpritePipelineStateObj); // set pipeline to use
     m_pImmediateContext->CommitShaderResources(m_pSpriteShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
 
-
     Diligent::DrawAttribs drawAttribs;
-    //drawAttribs.IndexType = Diligent::VT_UINT16; /* sprite indices are 16-bit uint */
-    //drawAttribs.NumIndices = m_pSpriteIndexBuffer->GetDesc().Size / sizeof(uint16_t);
     drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
-    drawAttribs.NumInstances = 3;
+    drawAttribs.NumInstances = m_numSprites;
     drawAttribs.NumVertices = 1;
     m_pImmediateContext->Draw(drawAttribs);
 

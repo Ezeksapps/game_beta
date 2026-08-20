@@ -2,8 +2,6 @@ uniform sampler2DArray g_texture;
 
 in vec2 uv;
 in flat float texArrayIndex;
-in flat int instIdFS;
-in vec3 inputPoint;
 
 out vec4 color;
 
