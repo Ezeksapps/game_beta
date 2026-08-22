@@ -104,6 +104,7 @@ private:
     /* ---- Pipeline state objects (PSOs) ---- */
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pMapPipelineStateObj;
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pSpritePipelineStateObj;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pUiPipelineStateObj;
 
     /* ---- Sprite pipeline buffers & textures ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
@@ -162,6 +163,7 @@ private:
 
     void createMapPipelineState();
     void createSpritePipelineState();
+    void createUiPipelineState();
 
     void createInstanceBuffer();
     void populateInstanceBuffer();
@@ -175,6 +177,7 @@ private:
 
     void renderMap();
     void renderSprites();
+    void renderUi();
 
     void updateUniformBuffer();
 

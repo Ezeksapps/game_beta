@@ -1,0 +1,40 @@
+Peer-to-peer connection is established using Steam's library GameNetworkingSockets(https://github.com/ValveSoftware/GameNetworkingSockets)
+
+The peer-to-peer connection is simple enough when done between two IPv6 devices, because there are no additional
+systems that could interfere with the ability to establish a connection.
+
+IPv4 however is problematic. Due to the limited range of addresses, ISPs using an IPv4 system will use NAT
+so that only one IP address is publically available for connection from the external internet. That IP address
+points to the router, not any other device that makes up that LAN. This means establishing a connection
+between two devices under IPv4 networks using NAT (which almost all of them will) is not straightforward
+The only way true peer-to-peer connections can be established is for the true addresses of both devices to
+be known so that a direct, uninterrupted connection may be created. So, for cases where NAT blocks such a connection
+a technique called ICE is employed. That however, requires some kind of third-party service to perform the NAT traversal.
+This could include STUN servers or using a TURN relay network as a last resort.
+
+All of these services count as third-party services, external to the program, which would then become a dependency,
+necessary for a user on an IPv4-based network to use multiplayer services in the case of their integration.
+
+This is not acceptable and violates the core principle behind why I am using a peer-to-peer system in the first place.
+Specifcally, I am highly opposed to any situation where the continued survival of a game's ability to establish connections with another user
+(whether multiplayer or some chat system) is dependant on a single centralised service that may go out at any time or simply be terminated
+by the developer(s) themselves. Additionally, I do not have the current capacity to host any always-on service for myself or utilise a paid service.
+(Free providers will, by default, be unacceptable because they must make a profit somehow and will therefore operate on a 'user is the product' scheme.
+Any violation, especially uninformed, of the privacy of any user of my game is not something that I will allow, ever)
+
+Because of the strict requirement for pure peer-to-peer, that is not reliant on any external fallible system, apart from the users' own machines,
+using ICE to establish the connection when faced with an IPv4-based network using NAT is not an appropriate solution
+
+Instead, I will use an approach similar to what Minecraft does, where anyone who wishes to host their own server must make that server's
+IP address available for other users to connect to through port forwarding. This requires the host of the server to alter their router settings
+so that the specific port which all Minecraft servers use (25565) may recieve incoming requests.
+
+Specifcally, the system for IPv4 networks will be to attempt UPnP first. If that fails, the game will direct the user to set up port forwarding.
+UPnP stands for Universal Plug and Play and is a system through which devices in a LAN may directly connect to and discover each other with no user input.
+The UPnP system is relevant here because I can use it to request that the router open the required port. If UPnP is either disabled, not present in the LAN, or for any other
+reason fails, then port forwarding must be manually set up
+
+IPv6 networks do not have any such problem. If both parties are on a network using IPv6, then peer-to-peer can be established through the IP addresses alone.
+
+NOTE: Game will eventually support a client-server system, where a community-hosted server may be used to relay messages, but
+the p2p system will be the only initial option
