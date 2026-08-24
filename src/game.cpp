@@ -23,8 +23,10 @@ void handleInput(GameCmd* input) {
         case UI_PROGRESS:
             break;
         case UI_ESCAPE:
+            // send message pop back UI stack to handler, ignored if no UI elem(s) active
             break;
         case UI_OPEN:
+            // pauseMenu(), only used in overworld
             break;
         case SHORTCUT_BAG_OPEN:
             break;
@@ -46,7 +48,7 @@ void gameUpdate(void) {
 
 void gameInit() {
 
-    g_pEngine->setScene("assets/scenes/debugScene"); // blank since set scene will just use test scene for now anyway
+    g_pEngine->setScene("assets/scenes/debugScene");
     entities = &g_pEngine->getEntities();
 }
 

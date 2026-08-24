@@ -215,7 +215,7 @@ void Renderer::createSpriteTextureArray() {
 
 /* --- LOADERS --- */
 
-void Renderer::loadSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
+void Renderer::retrieveSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event) {
     // fetch ref to needed cache
     const Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray = m_entitySpriteCache[cacheKey];
 
@@ -260,8 +260,7 @@ void Renderer::registerSprite(const std::shared_ptr<Sprite>& sprite, const std::
 
     sprite->index = m_numSprites; // first time sprite is being used, so assign the index
 
-    // TODO: Get cache key and event from entity
-    loadSprite(sprite, cacheKey, event);
+    retrieveSprite(sprite, cacheKey, event);
 
     m_instanceData.push_back(InstanceData()); // allocate a new empty slot in instance data vector
 

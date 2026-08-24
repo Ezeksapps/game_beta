@@ -94,7 +94,7 @@ void Renderer::createUiPipelineState() {
     m_pDevice->CreateGraphicsPipelineState(PipelineStateObjCreateInfo, &m_pUiPipelineStateObj);
 
     /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
-    m_pMapPipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(m_pFrameConstants);
+    //m_pMapPipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(m_pFrameConstants);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
   //  m_pMapPipelineStateObj->CreateShaderResourceBinding(&m_pMapShaderResourceBinding, true);

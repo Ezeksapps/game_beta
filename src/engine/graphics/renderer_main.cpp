@@ -84,7 +84,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
 
     createSharedUniformBuffer();
 
-    createMapPipelineState();
+    createScenePipelineState();
     createSpritePipelineState();
 
     createInstanceBuffer();
@@ -95,7 +95,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
 }
 
 // CHECK: Maybe rename index to event?
-void Renderer::loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
+void Renderer::cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
     Diligent::TextureLoadInfo loadInfo;
@@ -181,7 +181,7 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
 
     /* Loop through entity sprite map and load all Sprite objects into tex array */
     for (const auto& entry : spriteMap) {
-        loadSpriteToTextureArray(texArray /* Tex array */, entry.second /* Sprite */, entry.first  /* load to index */);
+        cacheSprite(texArray /* Tex array */, entry.second /* Sprite */, entry.first  /* load to index */);
     }
 
     return texArray;
@@ -382,7 +382,7 @@ void Renderer::renderFrame() {
      */
 
 
-    while (m_timeAcc >= m_timePerFrame) { // now infinite loop for some reason?
+    while (m_timeAcc >= m_timePerFrame) {
         update();  // update entities and other relevant variable data
         m_timeAcc -= m_timePerFrame;
     }
@@ -417,7 +417,7 @@ void Renderer::renderFrame() {
         Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION
     });
 
-    renderMap();
+    renderScene();
     renderSprites();
     // renderUI();
 

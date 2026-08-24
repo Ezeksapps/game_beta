@@ -19,21 +19,10 @@ public:
     /* Establish a connection with another client at the specified IP address (which can either be IPv4 or IPV6)
      * that is in a network of the specified type (LAN or global internet)
      */
-   // void establishConnection(const & addr, const NetworkType& networkType);
-
+    void establishConnection(const std::string& addr, const NetworkType& networkType);
+    void disconnect(const std::string& addr);
 
 private:
-
-    //void pollIncomingMessages();
-    //void pollLocalUserInput();
-    //void onConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* pInfo);
-    //static void connectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* pInfo);
-    //void pollConnectionStateChanges();
-
-    //HSteamNetConnection m_connection;
-    //HSteamListenSocket m_listenerSocket;
-    // ISteamNetworkingSockets* m_pInterface;
-    //static P2PClient* m_pCallbackInstance;
 
     std::unique_ptr<Node> m_pNode;
 };

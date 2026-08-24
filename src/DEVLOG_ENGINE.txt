@@ -306,26 +306,28 @@ Entity subclasses and loading
 
 Entity is a baseclass, all Entities will have a 'type' which is the actual subclass of Entity used to represent them
 
-CHECK:
 
-                Stack trace of thread 312071:
-                #0  0x00007fb18e29fef4 __pthread_kill_implementation (libc.so.6 + 0x9fef4)
-                #1  0x00007fb18e243046 raise (libc.so.6 + 0x43046)
-                #2  0x00007fb18f996281 _ZN8Diligent10LinuxDebug15AssertionFailedEPKcS2_S2_i (libGraphicsEngineVk.so + 0x796281)
-                #3  0x00007fb18f9963a1 _ZN8Diligent20DebugAssertionFailedEPKcS1_S1_i (libGraphicsEngineVk.so + 0x7963a1)
-                #4  0x00007fb18f460930 _ZN8Diligent13SwapChainBaseINS_12ISwapChainVkEEC2EPNS_18IReferenceCountersEPNS_13IRenderDeviceEPNS_14IDeviceContextERKNS_13SwapChainDescE (libGraphicsEngineVk.so + 0x260930)
-                #5  0x00007fb18f45c3c8 _ZN8Diligent15SwapChainVkImplC2EPNS_18IReferenceCountersERKNS_13SwapChainDescEPNS_18RenderDeviceVkImplEPNS_19DeviceContextVkImplERKNS_17LinuxNativeWindowE (libGraphicsEngineVk.so + 0x25c3c8)
-                #6  0x00007fb18f37dfc5 _ZN8Diligent12MakeNewRCObjINS_15SwapChainVkImplENS_16IMemoryAllocatorEEclIJRKNS_13SwapChainDescERPNS_18RenderDeviceVkImplERPNS_19DeviceContextVkImplERKNS_17LinuxNativeWindowEEEEPS1_DpOT_ (libGraphicsEngineVk.so + 0x17dfc5)
-                #7  0x00007fb18f37833a CreateSwapChainVk (libGraphicsEngineVk.so + 0x17833a)
-                #8  0x000000000043bf78 _ZN8Renderer12initRendererERKN8Diligent17LinuxNativeWindowERKNS0_18RENDER_DEVICE_TYPEE (game_d + 0x3bf78)
-                #9  0x000000000040f247 _ZN6EngineC2ERK12EngineConfig (game_d + 0xf247)
-                #10 0x00000000004a98a4 _ZSt11make_uniqueI6EngineJR12EngineConfigEENSt8__detail9_MakeUniqIT_E15__single_objectEDpOT0_ (game_d + 0xa98a4)
-                #11 0x00000000004a9657 main (game_d + 0xa9657)
-                #12 0x00007fb18e22b4fe __libc_start_call_main (libc.so.6 + 0x2b4fe)
-                #13 0x00007fb18e22b62b __libc_start_main@@GLIBC_2.34 (libc.so.6 + 0x2b62b)
-                #14 0x000000000040efa5 _start (game_d + 0xefa5)
 
-Error when attempting to run executable built with CMake + shared libs instead of raw GCC C++ with static libs
-possibly from inability to find or load said .so libraries
+
+
+
+All shared libraries (.so) are accounted for and found by executable
+
+ezek@localhost:~/Projects/pkmn> ldd game_d
+        linux-vdso.so.1 (0x00007f5060a4a000)
+        libGraphicsEngineOpenGL.so => /home/ezek/Projects/pkmn/build/deps/DiligentCore/Graphics/GraphicsEngineOpenGL/libGraphicsEngineOpenGL.so (0x00007f5060800000)
+        libGraphicsEngineVk.so => /home/ezek/Projects/pkmn/build/deps/DiligentCore/Graphics/GraphicsEngineVulkan/libGraphicsEngineVk.so (0x00007f505fc00000)
+        librats.so.2 => /home/ezek/Projects/pkmn/build/deps/librats/lib/librats.so.2 (0x00007f505f800000)
+        libGL.so.1 => /lib64/libGL.so.1 (0x00007f5060773000)
+        libX11.so.6 => /lib64/libX11.so.6 (0x00007f505faa0000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007f505f6e1000)
+        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007f505f400000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f5060745000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f505f000000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f5060a4c000)
+        libGLX.so.0 => /lib64/libGLX.so.0 (0x00007f5060712000)
+        libGLdispatch.so.0 => /lib64/libGLdispatch.so.0 (0x00007f505f348000)
+        libxcb.so.1 => /lib64/libxcb.so.1 (0x00007f50606e5000)
+        libXau.so.6 => /lib64/libXau.so.6 (0x00007f5060a19000)
 
 

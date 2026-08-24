@@ -50,8 +50,7 @@ public:
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 
-    /* Camera instance */
-    std::unique_ptr<Camera>                           m_pCamera;
+
 
 private:
 
@@ -81,6 +80,9 @@ private:
     /* Rendered scene */
     std::unique_ptr<Scene> m_pScene;
 
+    /* Camera instance */
+    std::unique_ptr<Camera> m_pCamera;
+
     /* ---- Core components ---- */
     Diligent::RefCntAutoPtr<Diligent::IEngineFactory> m_pEngineFactory;
     Diligent::RefCntAutoPtr<Diligent::IRenderDevice>  m_pDevice;
@@ -92,7 +94,7 @@ private:
 
     std::unordered_map<Diligent::ITextureView*, Diligent::RefCntAutoPtr<Diligent::IFramebuffer>> m_frameBufferMap;
 
-    /* Map file data */
+    /* Scene glTF file data */
     std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
 
 
@@ -102,7 +104,7 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteConstants;
 
     /* ---- Pipeline state objects (PSOs) ---- */
-    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pMapPipelineStateObj;
+    Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pScenePipelineStateObj;
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pSpritePipelineStateObj;
     Diligent::RefCntAutoPtr<Diligent::IPipelineState> m_pUiPipelineStateObj;
 
@@ -112,15 +114,15 @@ private:
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
 
-    /* ---- Map pipeline buffers & textures ---- */
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pMapVertexBuffer;
-    std::vector<Diligent::ITexture*>                  m_pMapTextures;
-    Diligent::IBuffer*                                m_pMapIndexBuffer;
+    /* ---- Scene pipeline buffers & textures ---- */
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSceneVertexBuffer;
+    std::vector<Diligent::ITexture*>                  m_pSceneTextures;
+    Diligent::IBuffer*                                m_pSceneIndexBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pMapShaderResourceView;
 
     /* Pipeline SRBs */
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pMapShaderResourceBinding;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSceneShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSpriteShaderResourceBinding;
 
     /* Matrices */
@@ -161,7 +163,7 @@ private:
 
     void createSharedUniformBuffer();
 
-    void createMapPipelineState();
+    void createScenePipelineState();
     void createSpritePipelineState();
     void createUiPipelineState();
 
@@ -175,7 +177,7 @@ private:
 
     void loadGLB(const std::string& filename); // rename to loadGlTF
 
-    void renderMap();
+    void renderScene();
     void renderSprites();
     void renderUi();
 
@@ -191,9 +193,9 @@ private:
     // rename to cacheSprite and retrieveSprite
 
     // loads a Sprite into a given texture array at the specified index
-    void loadSpriteToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);
+    void cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);
     // gets sprite sheet texture data from an entity texture array in the cache and copies it to the main texture array
-    void loadSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
+    void retrieveSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
 
     // creates a texture array to function as a sprite sheet cache for one entity and returns it
     Diligent::RefCntAutoPtr<Diligent::ITexture> createEntitySpriteCache(const int& entityIndex);

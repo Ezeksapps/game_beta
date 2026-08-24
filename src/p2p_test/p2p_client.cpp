@@ -1,5 +1,7 @@
 #include "p2p_client.hpp"
+#include "librats/subsystems/file_transfer.h"
 #include <assert.h>
+#include <stdexcept>
 
 P2PClient::P2PClient() {
     NodeConfig cfg;
@@ -7,13 +9,22 @@ P2PClient::P2PClient() {
     cfg.bind_address = "::";
 
     m_pNode = std::make_unique<Node>(cfg);
+    m_pNode->add_subsystem(std::make_unique<FileTransfer>());
+
+    m_pNode->on_peer_connected([](const Peer& peer) {
+
+    });
+    m_pNode->on("rcvData", [](const Peer& peer, ByteView data) {
+
+    });
+
+    if (!m_pNode->start()) throw std::runtime_error("Could not start a node");
 }
 
 P2PClient::~P2PClient() {}
 
-bool g_bQuit = false;
+void P2PClient::establishConnection(const std::string& addr, const NetworkType& networkType) {
+    m_pNode->connect(addr, 8081);
 
-//void P2PClient::establishConnection(const & serverAddr, const NetworkType& networkType) {
-  //  m_listenerSocket = CreateListenSocketP2P()
-//}
+}
 

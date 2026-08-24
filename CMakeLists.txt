@@ -1,12 +1,12 @@
 cmake_minimum_required (VERSION 4.0)
 
-project (game_d)
-
-# CHECK: Why are some libs coming out excessively large?
-# CHECK: Exactly how does the executable want to link to shared obj libs
+project (game)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O1")
 
 # dependencies
 set(DILIGENT_NO_ARCHIVER ON CACHE BOOL "" FORCE)
@@ -14,8 +14,6 @@ set(DILIGENT_NO_HLSL ON CACHE BOOL "" FORCE)
 add_subdirectory(deps/DiligentCore)
 
 add_subdirectory(deps/DiligentTools)
-
-# CHECK: Archiver and super resolution probably not needed, also disable HLSL functionality and converters
 
 set(RATS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(RATS_BUILD_CLIENT OFF CACHE BOOL "" FORCE)
@@ -35,9 +33,9 @@ file(GLOB_RECURSE SRC
     "src/*.c"
 )
 
-add_executable(game_d ${SRC})
+add_executable(game ${SRC})
 
-target_link_libraries(game_d
+target_link_libraries(game
 PRIVATE
     Diligent-GraphicsEngineOpenGL-shared
     Diligent-GraphicsEngineVk-shared
