@@ -185,7 +185,11 @@ private:
 
     void renderScene();
     void renderSprites();
+
+    // draw all UI
     void renderUi();
+    // execute current draw command recieved from Nuklear
+    void execDrawCmd(struct nk_rect clipRect, void* texPtr, unsigned int elemCount);
 
     void updateUniformBuffer();
 

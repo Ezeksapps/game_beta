@@ -1,16 +1,30 @@
 #include "renderer.hpp"
 #include "../ui/ui.h"
 
-Diligent::Viewport g_viewport;
+/* adapted from DiligentSamples Nuklear Demo (NkDiligent.cpp) */
 
-struct nk_rect {float x,y,w,h;};
+Diligent::Viewport g_viewport;
+uint32_t g_offset = 0;
+
+struct nk_rect {float x,y,w,h;}; // matches Nuklear's version
+
+mat4 getUiProjMatrix(const float& width, const float& height) { // CHECK: use glm::ortho instead?
+
+    const float L = 0.0f;
+    const float R = static_cast<float>(width);
+    const float T = 0.0f;
+    const float B = static_cast<float>(height);
+
+    return mat4 {
+        // COL 0          | COL 1             | COL 2 | COL 3
+        2.0f / (R - L),     0.0f,               0.0f,   0.0f,
+        0.0f,               2.0f / (T - B),     0.0f,   0.0f,
+        0.0f,               0.0f,               0.5f,   0.0f,
+        (R + L) / (L - R),  (T + B) / (B - T),  0.5f,   1.0f
+    };
+}
 
 void Renderer::createUiPipelineState() {
-
-    //nk_diligent_context* nk_dlg_ctx = new nk_diligent_context;
-
-   //nk_init_default(&nk_dlg_ctx->ctx, 0);
-   // nk_buffer_init_default(&nk_dlg_ctx->cmds);
 
     Diligent::GraphicsPipelineStateCreateInfo PipelineStateObjCreateInfo;
 
@@ -75,7 +89,7 @@ void Renderer::createUiPipelineState() {
     PipelineStateObjCreateInfo.pPS                                         = pMapFragmentShader;
     /* Layout of input elements to shader pipeline */
     PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.LayoutElements = layoutElems;
-    //PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(layoutElems);
+    PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(layoutElems);
     /* Referring to variables in the GLSL shader code */
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = Diligent::SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
 
@@ -106,8 +120,22 @@ void Renderer::createUiPipelineState() {
     /* Create pipeline with obj create info */
     m_pDevice->CreateGraphicsPipelineState(PipelineStateObjCreateInfo, &m_pUiPipelineStateObj);
 
-    /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
-    m_pUiPipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(m_pFrameConstants);
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> constantsBuffer;
+    {
+        mat4 proj = getUiProjMatrix(static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
+
+        Diligent::BufferDesc constantsBufferDesc;
+        constantsBufferDesc.BindFlags = Diligent::BIND_UNIFORM_BUFFER;
+        constantsBufferDesc.Size      = sizeof(proj);
+        constantsBufferDesc.Usage     = Diligent::USAGE_DEFAULT;
+        Diligent::BufferData initData(&proj, sizeof(proj));
+
+        m_pDevice->CreateBuffer(constantsBufferDesc, &initData, &constantsBuffer);
+    }
+
+    /* Set Constants variable (holds UI ortho proj matrix) for all shaders that use it */
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> projMatrix;
+    m_pUiPipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(constantsBuffer);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pUiPipelineStateObj->CreateShaderResourceBinding(&m_pUiShaderResourceBinding, true);
@@ -141,6 +169,66 @@ void Renderer::createUiPipelineState() {
 
 }
 
+/*    --- NEXT FUNC TO ADAPT ---    //
+NK_API void
+nk_diligent_font_stash_end(nk_diligent_context* nk_dlg_ctx,
+                           IDeviceContext*      device_ctx)
+{
+    VERIFY_EXPR(nk_dlg_ctx != nullptr && nk_dlg_ctx->device != nullptr);
+
+    const void* image;
+    int         w, h;
+    image = nk_font_atlas_bake(&nk_dlg_ctx->atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
+
+    // upload font to texture and create texture view
+    RefCntAutoPtr<ITexture> font_texture;
+
+    TextureDesc desc;
+    desc.Name      = "Nuklear font texture";
+    desc.Type      = RESOURCE_DIM_TEX_2D;
+    desc.Width     = static_cast<Uint32>(w);
+    desc.Height    = static_cast<Uint32>(h);
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format    = TEX_FORMAT_RGBA8_UNORM;
+    desc.Usage     = USAGE_IMMUTABLE;
+    desc.BindFlags = BIND_SHADER_RESOURCE;
+
+    TextureSubResData mip0data[] =
+    {
+        {image, size_t{desc.Width} * 4u}};
+        TextureData data(mip0data, _countof(mip0data));
+        nk_dlg_ctx->device->CreateTexture(desc, &data, &font_texture);
+
+        nk_dlg_ctx->font_texture_view = font_texture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+
+        nk_font_atlas_end(&nk_dlg_ctx->atlas, nk_handle_ptr(nk_dlg_ctx->font_texture_view), &nk_dlg_ctx->null);
+        if (nk_dlg_ctx->atlas.default_font)
+            nk_style_set_font(&nk_dlg_ctx->ctx, &nk_dlg_ctx->atlas.default_font->handle);
+
+    nk_dlg_ctx->pso->CreateShaderResourceBinding(&nk_dlg_ctx->srb, true);
+    nk_dlg_ctx->srb->GetVariableByName(SHADER_TYPE_PIXEL, "texture0")->Set(nk_dlg_ctx->font_texture_view);
+}*/
+
+void Renderer::execDrawCmd(struct nk_rect clipRect, void* texPtr, unsigned int elemCount) {
+    Diligent::ITextureView* textureView = reinterpret_cast<Diligent::ITextureView*>(texPtr);
+
+    Diligent::Rect scissor;
+    scissor.left   = std::max(static_cast<int32_t>(clipRect.x), 0);
+    scissor.right  = std::max(static_cast<int32_t>(clipRect.x + clipRect.w), scissor.left);
+    scissor.top    = std::max(static_cast<int32_t>(clipRect.y), 0);
+    scissor.bottom = std::max(static_cast<int32_t>(clipRect.y + clipRect.h), scissor.top);
+
+    Diligent::DrawIndexedAttribs attribs;
+    attribs.Flags     = Diligent::DRAW_FLAG_VERIFY_STATES;
+    attribs.IndexType = Diligent::VT_UINT16;
+    attribs.NumIndices         = static_cast<uint32_t>(elemCount);
+    attribs.FirstIndexLocation = g_offset;
+    m_pImmediateContext->SetScissorRects(1, &scissor, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
+    m_pImmediateContext->DrawIndexed(attribs);
+    g_offset += elemCount;
+}
+
 void Renderer::renderUi() {
     const float blendFactors[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     Diligent::IBuffer*    pBuffers[]           = {m_pUiVertexBuffer};
@@ -150,18 +238,12 @@ void Renderer::renderUi() {
     m_pImmediateContext->CommitShaderResources(m_pUiShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
     m_pImmediateContext->SetBlendFactors(blendFactors);
 
-    Diligent::DrawIndexedAttribs attribs;
-    attribs.Flags     = Diligent::DRAW_FLAG_VERIFY_STATES;
-    attribs.IndexType = Diligent::VT_UINT16;
-
     m_pImmediateContext->SetViewports(1, &g_viewport, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
-
 
     // Convert from command queue into draw list and draw to screen
     // Load draw vertices & elements directly into vertex + element buffer
     const struct nk_draw_command* cmd = nullptr;
 
-    uint32_t offset = 0;
     {
         Diligent::MapHelper<UiVertex> vertices(m_pImmediateContext, m_pUiVertexBuffer, Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
         Diligent::MapHelper<uint16_t> indices(m_pImmediateContext, m_pUiIndexBuffer, Diligent::MAP_WRITE, Diligent::MAP_FLAG_DISCARD);
@@ -169,20 +251,7 @@ void Renderer::renderUi() {
         convertVertices(vertices, indices);
     }
 
-    execDrawCmds([this, attribs](struct nk_rect clipRect, void* texPtr, unsigned int elemCount) { // resolve issue: Lambda not ideal here
-        Diligent::ITextureView* textureView = reinterpret_cast<Diligent::ITextureView*>(texPtr);
-
-
-        Diligent::Rect scissor;
-        scissor.left   = std::max(static_cast<int32_t>(clipRect.x), 0);
-        scissor.right  = std::max(static_cast<int32_t>(clipRect.x + clipRect.w), scissor.left);
-        scissor.top    = std::max(static_cast<int32_t>(clipRect.y), 0);
-        scissor.bottom = std::max(static_cast<int32_t>(clipRect.y + clipRect.h), scissor.top);
-
-        attribs.NumIndices         = static_cast<uint32_t>(elemCount);
-        attribs.FirstIndexLocation = offset;
-        m_pImmediateContext->SetScissorRects(1, &scissor, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
-        m_pImmediateContext->DrawIndexed(attribs);
-        offset += cmd->elem_count;
+    drawCmdsForEach(this, [](void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount) {
+        static_cast<Renderer*>(_this)->execDrawCmd(clipRect, texPtr, elemCount);
     });
 }

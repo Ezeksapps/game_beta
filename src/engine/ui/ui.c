@@ -10,10 +10,7 @@
 #define NK_IMPLEMENTATION
 #include "nuklear.h"
 
-struct nk_font* font;
-struct nk_context ctx;
-
-struct media {
+struct media { // UI Skin
     int id;
     struct nk_image menu;
     struct nk_image check;
@@ -34,12 +31,17 @@ struct media {
     struct nk_image slider_active;
 };
 
+
+
+struct nk_context ctx;
+
+int numFontTextures;
+struct nk_font* font;
+struct nk_font_atlas atlas;
+
 struct nk_buffer cmds;
 struct nk_draw_null_texture texNull;
 
-int numFontTextures;
-
-struct nk_font_atlas atlas;
 struct media media;
 
 
@@ -68,6 +70,7 @@ void initUi() {
 
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 
+// adapted from DiligentSamples Nuklear Demo (NkDiligent.cpp)
 int convertVertices(void* vertexBufferMem, void* indexBufferMem) {
 
     struct nk_convert_config config;
@@ -99,13 +102,14 @@ int convertVertices(void* vertexBufferMem, void* indexBufferMem) {
     return nk_convert(&ctx, &cmds, &vertexBuffer, &indexBuffer, &config);
 }
 
-void execDrawCmds(void (*callback)(struct nk_rect clipRect, void* texPtr, unsigned int elemCount)) {
+// adapted from DiligentSamples Nuklear Demo (NkDiligent.cpp)
+void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount)) {
 
     const struct nk_draw_command* cmd = nullptr;
 
     nk_draw_foreach(cmd, &ctx, &cmds) {
         if (!cmd->elem_count) continue;
-        callback(cmd->clip_rect, cmd->texture.ptr, cmd->elem_count);
+        execDrawCmd(_this, cmd->clip_rect, cmd->texture.ptr, cmd->elem_count);
     }
     nk_clear(&ctx);
 }

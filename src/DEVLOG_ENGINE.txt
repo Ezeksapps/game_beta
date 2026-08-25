@@ -305,11 +305,3 @@ Entity subclasses and loading
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 Entity is a baseclass, all Entities will have a 'type' which is the actual subclass of Entity used to represent them
-
-
-
-
-
-
-
-

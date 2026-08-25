@@ -22,4 +22,4 @@ void saveMenu();
 void mapView();
 
 int convertVertices(void* vertexBufferMem, void* indexBufferMem);
-void execDrawCmds(void (*callback)(struct nk_rect clipRect, void* texPtr, unsigned int elemCount));
+void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount));
