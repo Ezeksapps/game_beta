@@ -119,11 +119,17 @@ private:
     std::vector<Diligent::ITexture*>                  m_pSceneTextures;
     Diligent::IBuffer*                                m_pSceneIndexBuffer;
 
+    /* ---- UI pipeline buffers & textures ---- */
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiVertexBuffer;
+    //std::vector<Diligent::ITexture*>                  m_pSceneTextures;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiIndexBuffer;
+
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pMapShaderResourceView;
 
     /* Pipeline SRBs */
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSceneShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSpriteShaderResourceBinding;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pUiShaderResourceBinding;
 
     /* Matrices */
     mat4 m_projMatrix; // The world space's projection matrix

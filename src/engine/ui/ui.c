@@ -68,6 +68,48 @@ void initUi() {
 
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 
+int convertVertices(void* vertexBufferMem, void* indexBufferMem) {
+
+    struct nk_convert_config config;
+
+    NK_STORAGE const struct nk_draw_vertex_layout_element vertexLayout[] =
+    {
+        {NK_VERTEX_POSITION, NK_FORMAT_FLOAT,    NK_OFFSETOF(struct UiVertex, pos)},
+        {NK_VERTEX_TEXCOORD, NK_FORMAT_FLOAT,    NK_OFFSETOF(struct UiVertex, uv)},
+        {NK_VERTEX_COLOR,    NK_FORMAT_R8G8B8A8, NK_OFFSETOF(struct UiVertex, col)},
+        {NK_VERTEX_LAYOUT_END}
+    };
+
+    memset(&config, 0, sizeof(config));
+    config.vertex_layout        = vertexLayout;
+    config.vertex_size          = sizeof(struct UiVertex);
+    config.vertex_alignment     = NK_ALIGNOF(struct UiVertex);
+    config.global_alpha         = 1.0f;
+    config.shape_AA             = NK_ANTI_ALIASING_ON;
+    config.line_AA              = NK_ANTI_ALIASING_ON;
+    config.circle_segment_count = 22;
+    config.curve_segment_count  = 22;
+    config.arc_segment_count    = 22;
+    config.tex_null             = texNull;
+
+    // setup buffers to load vertices and elements
+    struct nk_buffer vertexBuffer, indexBuffer;
+    nk_buffer_init_fixed(&vertexBuffer, vertexBufferMem, (size_t)512 * 1024);
+    nk_buffer_init_fixed(&indexBuffer, indexBufferMem, (size_t)128 * 1024);
+    return nk_convert(&ctx, &cmds, &vertexBuffer, &indexBuffer, &config);
+}
+
+void execDrawCmds(void (*callback)(struct nk_rect clipRect, void* texPtr, unsigned int elemCount)) {
+
+    const struct nk_draw_command* cmd = nullptr;
+
+    nk_draw_foreach(cmd, &ctx, &cmds) {
+        if (!cmd->elem_count) continue;
+        callback(cmd->clip_rect, cmd->texture.ptr, cmd->elem_count);
+    }
+    nk_clear(&ctx);
+}
+
 /* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
 /* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
 

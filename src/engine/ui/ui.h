@@ -1,6 +1,14 @@
 #pragma once
 
-/* Definitions of UI-related functions. Nuklear structs cannot be in here, as that would create a multiple definition */
+#include <cstdint>
+
+/* Definitions of UI-related functions. Nuklear functions cannot be in here, as that would create a multiple definition */
+
+struct UiVertex {
+    float   pos[2];
+    float   uv[2];
+    uint8_t col[4];
+};
 
 void initUi();
 
@@ -13,3 +21,5 @@ void multiplayerView();
 void saveMenu();
 void mapView();
 
+int convertVertices(void* vertexBufferMem, void* indexBufferMem);
+void execDrawCmds(void (*callback)(struct nk_rect clipRect, void* texPtr, unsigned int elemCount));

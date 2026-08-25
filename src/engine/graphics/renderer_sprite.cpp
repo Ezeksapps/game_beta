@@ -30,7 +30,7 @@ void Renderer::createSpritePipelineState() {
     blendDesc.SrcBlend = Diligent::BLEND_FACTOR_SRC_ALPHA;
     blendDesc.DestBlend = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
     blendDesc.BlendOp = Diligent::BLEND_OPERATION_ADD;
-    blendDesc.SrcBlendAlpha = Diligent::BLEND_FACTOR_ONE;
+    blendDesc.SrcBlendAlpha = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
     blendDesc.DestBlendAlpha = Diligent::BLEND_FACTOR_ZERO;
     blendDesc.BlendOpAlpha = Diligent::BLEND_OPERATION_ADD;
     blendDesc.RenderTargetWriteMask = Diligent::COLOR_MASK_ALL;

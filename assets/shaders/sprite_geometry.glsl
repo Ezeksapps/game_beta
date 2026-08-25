@@ -1,4 +1,4 @@
-layout(binding = 0, std140) uniform Constants {
+layout(binding = 0) uniform Constants {
   mat4 g_projMatrix;
   mat4 g_viewMatrix;
 };

@@ -311,23 +311,5 @@ Entity is a baseclass, all Entities will have a 'type' which is the actual subcl
 
 
 
-All shared libraries (.so) are accounted for and found by executable
-
-ezek@localhost:~/Projects/pkmn> ldd game_d
-        linux-vdso.so.1 (0x00007f5060a4a000)
-        libGraphicsEngineOpenGL.so => /home/ezek/Projects/pkmn/build/deps/DiligentCore/Graphics/GraphicsEngineOpenGL/libGraphicsEngineOpenGL.so (0x00007f5060800000)
-        libGraphicsEngineVk.so => /home/ezek/Projects/pkmn/build/deps/DiligentCore/Graphics/GraphicsEngineVulkan/libGraphicsEngineVk.so (0x00007f505fc00000)
-        librats.so.2 => /home/ezek/Projects/pkmn/build/deps/librats/lib/librats.so.2 (0x00007f505f800000)
-        libGL.so.1 => /lib64/libGL.so.1 (0x00007f5060773000)
-        libX11.so.6 => /lib64/libX11.so.6 (0x00007f505faa0000)
-        libm.so.6 => /lib64/libm.so.6 (0x00007f505f6e1000)
-        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007f505f400000)
-        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f5060745000)
-        libc.so.6 => /lib64/libc.so.6 (0x00007f505f000000)
-        /lib64/ld-linux-x86-64.so.2 (0x00007f5060a4c000)
-        libGLX.so.0 => /lib64/libGLX.so.0 (0x00007f5060712000)
-        libGLdispatch.so.0 => /lib64/libGLdispatch.so.0 (0x00007f505f348000)
-        libxcb.so.1 => /lib64/libxcb.so.1 (0x00007f50606e5000)
-        libXau.so.6 => /lib64/libXau.so.6 (0x00007f5060a19000)
 
 
