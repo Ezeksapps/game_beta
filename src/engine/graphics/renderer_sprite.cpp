@@ -131,8 +131,6 @@ void Renderer::createSpritePipelineState() {
 
     /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
     m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "Constants")->Set(m_pFrameConstants);
-    /* Set SpriteConstants for all shaders */
-  //  m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "SpriteConstants")->Set(m_pSpriteConstants);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pSpritePipelineStateObj->CreateShaderResourceBinding(&m_pSpriteShaderResourceBinding, true);

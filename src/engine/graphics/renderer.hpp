@@ -31,7 +31,7 @@
 
 using namespace glm;
 
-// TODO: Rename 'map' to scene
+// TODO: Add ability to re-create swap chain and frame buffers on window resize (connect to GLFW's callback)
 
 class Renderer {
 
@@ -49,8 +49,6 @@ public:
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
-
-
 
 private:
 
@@ -121,8 +119,9 @@ private:
 
     /* ---- UI pipeline buffers & textures ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiVertexBuffer;
-    //std::vector<Diligent::ITexture*>                  m_pSceneTextures;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiIndexBuffer;
+    Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pFontTexture;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pFontTextureView;
 
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pMapShaderResourceView;
 
@@ -176,12 +175,14 @@ private:
     void createInstanceBuffer();
     void populateInstanceBuffer();
 
+    void createFontTexture();
+
     void createRenderPass();
 
     Diligent::RefCntAutoPtr<Diligent::IFramebuffer> createFrameBuffer();
     Diligent::IFramebuffer* getCurrentFrameBuffer();
 
-    void loadGLB(const std::string& filename); // rename to loadGlTF
+    void loadGLB(const std::string& filename); // TODO: rename to loadGlTF
 
     void renderScene();
     void renderSprites();
@@ -191,7 +192,7 @@ private:
     // execute current draw command recieved from Nuklear
     void execDrawCmd(struct nk_rect clipRect, void* texPtr, unsigned int elemCount);
 
-    void updateUniformBuffer();
+    void updateUniformBuffer(); // currently only used to update view (camera) matrix
 
     // fetch a texture from the sprite cache and register it to the main texture array, will occupy the top-most available slot
     void registerSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
@@ -199,8 +200,6 @@ private:
     // If an Entity already using the renderer for its sprite needs to switch to another sprite sheet,
     // use this function to swap the Sprite object stored at the index of the old Sprite to the new one
     void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event);
-
-    // rename to cacheSprite and retrieveSprite
 
     // loads a Sprite into a given texture array at the specified index
     void cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);

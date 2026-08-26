@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "../ui/ui.h"
 
 #include <chrono>
 #include <cstdint>
@@ -33,6 +34,8 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
 }
 
 Renderer::~Renderer() {
+    cleanupUi();
+
     if (m_pImmediateContext) m_pImmediateContext->Flush();
 
     m_pSwapChain        = nullptr;

@@ -137,9 +137,6 @@ void Renderer::createUiPipelineState() {
     Diligent::RefCntAutoPtr<Diligent::IBuffer> projMatrix;
     m_pUiPipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_VERTEX, "Constants")->Set(constantsBuffer);
 
-    /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
-    m_pUiPipelineStateObj->CreateShaderResourceBinding(&m_pUiShaderResourceBinding, true);
-
     {
         Diligent::BufferDesc vertexBufferDesc;
         vertexBufferDesc.Name           = "Nuklear vertex buffer";
@@ -169,46 +166,34 @@ void Renderer::createUiPipelineState() {
 
 }
 
-/*    --- NEXT FUNC TO ADAPT ---    //
-NK_API void
-nk_diligent_font_stash_end(nk_diligent_context* nk_dlg_ctx,
-                           IDeviceContext*      device_ctx)
-{
-    VERIFY_EXPR(nk_dlg_ctx != nullptr && nk_dlg_ctx->device != nullptr);
+void Renderer::createFontTexture() {
 
-    const void* image;
-    int         w, h;
-    image = nk_font_atlas_bake(&nk_dlg_ctx->atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
+    FontAtlasData* fontAtlasData = getFontAtlasData();
 
-    // upload font to texture and create texture view
-    RefCntAutoPtr<ITexture> font_texture;
-
-    TextureDesc desc;
+    Diligent::TextureDesc desc;
     desc.Name      = "Nuklear font texture";
-    desc.Type      = RESOURCE_DIM_TEX_2D;
-    desc.Width     = static_cast<Uint32>(w);
-    desc.Height    = static_cast<Uint32>(h);
+    desc.Type      = Diligent::RESOURCE_DIM_TEX_2D;
+    desc.Width     = static_cast<uint32_t>(fontAtlasData->w);
+    desc.Height    = static_cast<uint32_t>(fontAtlasData->h);
     desc.MipLevels = 1;
     desc.ArraySize = 1;
-    desc.Format    = TEX_FORMAT_RGBA8_UNORM;
-    desc.Usage     = USAGE_IMMUTABLE;
-    desc.BindFlags = BIND_SHADER_RESOURCE;
+    desc.Format    = Diligent::TEX_FORMAT_RGBA8_UNORM;
+    desc.Usage     = Diligent::USAGE_IMMUTABLE;
+    desc.BindFlags = Diligent::BIND_SHADER_RESOURCE;
 
-    TextureSubResData mip0data[] =
-    {
-        {image, size_t{desc.Width} * 4u}};
-        TextureData data(mip0data, _countof(mip0data));
-        nk_dlg_ctx->device->CreateTexture(desc, &data, &font_texture);
+    Diligent::TextureSubResData mip0data[] = {
+        {fontAtlasData->image, size_t{desc.Width} * 4u}
+    };
+    Diligent::TextureData data(mip0data, _countof(mip0data));
+    m_pDevice->CreateTexture(desc, &data, &m_pFontTexture);
 
-        nk_dlg_ctx->font_texture_view = font_texture->GetDefaultView(TEXTURE_VIEW_SHADER_RESOURCE);
+    m_pFontTextureView = m_pFontTexture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+    endFontAtlas(&m_pFontTextureView);
 
-        nk_font_atlas_end(&nk_dlg_ctx->atlas, nk_handle_ptr(nk_dlg_ctx->font_texture_view), &nk_dlg_ctx->null);
-        if (nk_dlg_ctx->atlas.default_font)
-            nk_style_set_font(&nk_dlg_ctx->ctx, &nk_dlg_ctx->atlas.default_font->handle);
-
-    nk_dlg_ctx->pso->CreateShaderResourceBinding(&nk_dlg_ctx->srb, true);
-    nk_dlg_ctx->srb->GetVariableByName(SHADER_TYPE_PIXEL, "texture0")->Set(nk_dlg_ctx->font_texture_view);
-}*/
+    /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
+    m_pUiPipelineStateObj->CreateShaderResourceBinding(&m_pUiShaderResourceBinding, true);
+    m_pUiShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(m_pFontTextureView);
+}
 
 void Renderer::execDrawCmd(struct nk_rect clipRect, void* texPtr, unsigned int elemCount) {
     Diligent::ITextureView* textureView = reinterpret_cast<Diligent::ITextureView*>(texPtr);
@@ -220,8 +205,8 @@ void Renderer::execDrawCmd(struct nk_rect clipRect, void* texPtr, unsigned int e
     scissor.bottom = std::max(static_cast<int32_t>(clipRect.y + clipRect.h), scissor.top);
 
     Diligent::DrawIndexedAttribs attribs;
-    attribs.Flags     = Diligent::DRAW_FLAG_VERIFY_STATES;
-    attribs.IndexType = Diligent::VT_UINT16;
+    attribs.Flags              = Diligent::DRAW_FLAG_VERIFY_STATES;
+    attribs.IndexType          = Diligent::VT_UINT16;
     attribs.NumIndices         = static_cast<uint32_t>(elemCount);
     attribs.FirstIndexLocation = g_offset;
     m_pImmediateContext->SetScissorRects(1, &scissor, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
