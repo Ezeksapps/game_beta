@@ -22,6 +22,9 @@ public:
     void establishConnection(const std::string& addr, const NetworkType& networkType);
     void disconnect(const std::string& addr);
 
+    // template func, since the actual data struct being sent won't always be the same (could be a file or TurnData object)
+    template<typename T> void sendData(T data);
+
 private:
 
     std::unique_ptr<Node> m_pNode;

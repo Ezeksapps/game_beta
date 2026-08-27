@@ -176,6 +176,7 @@ private:
     void populateInstanceBuffer();
 
     void createFontTexture();
+    int32_t createUiSkinTexture(const char* skinFilepath);
 
     void createRenderPass();
 

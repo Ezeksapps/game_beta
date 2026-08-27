@@ -222,11 +222,6 @@ void Renderer::setScene(const std::string& sceneDir) {
 }
 
 std::vector<std::shared_ptr<Entity>>& Renderer::getEntities() {
-    // If no scene exists, return empty vector or throw
-    if (!m_pScene) {
-        static std::vector<std::shared_ptr<Entity>> empty;
-        return empty;
-    }
     return m_pScene->m_pEntities;
 }
 

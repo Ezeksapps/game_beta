@@ -2,8 +2,6 @@
 
 #include "ui.h"
 
-#include "stylesheet_parser.hpp"
-
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -13,24 +11,16 @@
 #include "nuklear.h"
 
 struct media { // UI Skin
-    int id;
-    struct nk_image menu;
+    int skinId;
     struct nk_image check;
     struct nk_image check_cursor;
     struct nk_image option;
     struct nk_image option_cursor;
-    struct nk_image header;
+    // struct nk_image header;
     struct nk_image window;
-    struct nk_image scrollbar_inc_button;
-    struct nk_image scrollbar_inc_button_hover;
-    struct nk_image scrollbar_dec_button;
-    struct nk_image scrollbar_dec_button_hover;
     struct nk_image button;
     struct nk_image button_hover;
     struct nk_image button_active;
-    struct nk_image slider;
-    struct nk_image slider_hover;
-    struct nk_image slider_active;
 };
 
 struct nk_context ctx;
@@ -46,19 +36,27 @@ struct media media;
 struct nk_font_atlas atlas;
 struct FontAtlasData fontAtlasData;
 
-struct nk_color setColor(const int* data, int* currentIndex) { // convenience function
-    // check why array indices not valid? (Needs to be const expr apparently)
-    struct nk_color color =  nk_color {
+/* Convenience function
+ * makes setting the colour shorter and avoids needing to manually specify the exact index
+ *
+ * For example: ctx.style.text.color = setColor(stylesheetData, &currentIndex);
+ * Instead of: ctx.style.text.color = nk_rgba(stylesheetData[0], stylesheetData[1], stylesheetData[2], stylesheetData[3]);
+ *
+ * (this also means it's easier if needing to re-order or add settings to the JSON,
+ * as all index numbers do not need to be manually retyped to match the new positions.
+ */
+struct nk_color setColor(const uint8_t* data, int* currentIndex) {
+    struct nk_color color = {
         .r = data[*currentIndex],
         .g = data[*currentIndex + 1],
         .b = data[*currentIndex + 2],
         .a = data[*currentIndex + 3]
     };
-    currentIndex += 4;
+    *currentIndex += 4;
     return color;
 }
 
-void initUi() {
+void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFilepath)) {
 
     {
         // load font(s) and initialise font atlas image data
@@ -70,7 +68,7 @@ void initUi() {
 
         int w, h;
         const void* image = nk_font_atlas_bake(&atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
-        fontAtlasData = FontAtlasData {
+        fontAtlasData = (FontAtlasData) {
             .image = image,
             .w = w, .h = h
         };
@@ -82,71 +80,67 @@ void initUi() {
     nk_init_default(&ctx, &font->handle); // init context with font
     {
 
-        const int* stylesheetData = loadStylesheet();
-        // TODO: Implement proper skin in addition to custom colour theme
-        // media.id = //image_load("assets/ui/skin.png"); << SKIN WIP
-        //  media.check = nk_subimage_id(media.id, 512,512, nk_rect(464,32,15,15));
+        /* --- Skin --- */
+        media.skinId = loadSkinTex(_this, "assets/ui/skin.png"); // TODO: Edit skin to only include required objects and update rect sections
 
-        // missing property, chart, combo button, contextual button, progress bar, slider, selectable and tree (Not currently needed in UI)
+        media.check = nk_subimage_id(media.skinId, 512,512, nk_rect(464,32,15,15));
+        media.check_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(450,34,11,11));
+        media.option = nk_subimage_id(media.skinId, 512,512, nk_rect(464,64,15,15));
+        media.option_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(451,67,9,9));
+        //media.header = nk_subimage_id(media.skin, 512,512, nk_rect(128,0,127,24)); // UNUSED
+        media.window = nk_subimage_id(media.skinId, 512,512, nk_rect(128,23,127,104));
+        media.button = nk_subimage_id(media.skinId, 512,512, nk_rect(384,336,127,31));
+        media.button_hover = nk_subimage_id(media.skinId, 512,512, nk_rect(384,368,127,31));
+        media.button_active = nk_subimage_id(media.skinId, 512,512, nk_rect(384,400,127,31));
 
-        // TODO: Create some mechanism that prevents the need to hard-code indices (convenience func)
+        /* --- colour styles and padding --- */
+
+        // NOTE: missing property, chart, combo button, contextual button, progress bar, slider, selectable and tree (Not currently needed in UI)
+
+        const uint8_t* stylesheetData = loadStylesheet();
+
+        // counter for current index in data array to access, auto-incremented by 4 whenever setColor() is called
+        // the order of the setColor invokations must match the order of the settings in the JSON
+        int currentIndex = 0;
 
         /* default text colour */
-        ctx.style.text.color = nk_rgba();
+        ctx.style.text.color = setColor(stylesheetData, &currentIndex);
 
         /* window */
-        ctx.style.window.background = nk_rgba(stylesheetData[0], stylesheetData[1], stylesheetData[2], stylesheetData[3]);
-        //ctx.style.window.fixed_background = nk_style_item_image(media.window);
-        ctx.style.window.border_color = nk_rgb(67,67,67);
-        ctx.style.window.border_color = nk_rgba(stylesheetData[4], stylesheetData[5], stylesheetData[6], stylesheetData[7]);
-        //ctx.style.window.combo_border_color = nk_rgb(67,67,67);
-        ctx.style.window.background = nk_rgba(stylesheetData[0], stylesheetData[1], stylesheetData[2], stylesheetData[3]);
-        ctx.style.window.background = nk_rgba(stylesheetData[0], stylesheetData[1], stylesheetData[2], stylesheetData[3]);
+        ctx.style.window.background = setColor(stylesheetData, &currentIndex);
+        ctx.style.window.border_color = setColor(stylesheetData, &currentIndex);
 
-        ctx.style.window.contextual_border_color = nk_rgb(67,67,67);
-        ctx.style.window.menu_border_color = nk_rgb(67,67,67);
-        ctx.style.window.group_border_color = nk_rgb(67,67,67);
-        ctx.style.window.tooltip_border_color = nk_rgb(67,67,67);
-        ctx.style.window.scrollbar_size = nk_vec2(16,16);
-        ctx.style.window.border_color = nk_rgba(0,0,0,0);
-        ctx.style.window.padding = nk_vec2(8,4);
-        ctx.style.window.border = 3;
+        ctx.style.window.padding = nk_vec2(8,4); // px
+        ctx.style.window.border = 3; // px
 
-        /* window header */
-        ctx.style.window.header.normal = nk_style_item_image(media.header);
-        ctx.style.window.header.hover = nk_style_item_image(media.header);
-        ctx.style.window.header.active = nk_style_item_image(media.header);
-        ctx.style.window.header.label_normal = nk_rgb(95,95,95);
-        ctx.style.window.header.label_hover = nk_rgb(95,95,95);
-        ctx.style.window.header.label_active = nk_rgb(95,95,95);
+        /* window header omitted */
 
         /* checkbox toggle */
         {
-            struct nk_style_toggle *toggle;
+            struct nk_style_toggle* toggle;
             toggle = &ctx.style.checkbox;
             toggle->normal          = nk_style_item_image(media.check);
             toggle->hover           = nk_style_item_image(media.check);
             toggle->active          = nk_style_item_image(media.check);
             toggle->cursor_normal   = nk_style_item_image(media.check_cursor);
             toggle->cursor_hover    = nk_style_item_image(media.check_cursor);
-            toggle->text_normal     = nk_rgb(95,95,95);
-            toggle->text_hover      = nk_rgb(95,95,95);
-            toggle->text_active     = nk_rgb(95,95,95);
-
+            toggle->text_normal     = setColor(stylesheetData, &currentIndex);
+            toggle->text_hover      = setColor(stylesheetData, &currentIndex);
+            toggle->text_active     = setColor(stylesheetData, &currentIndex);
         }
 
         /* option toggle */
         {
-            struct nk_style_toggle *toggle;
+            struct nk_style_toggle* toggle;
             toggle = &ctx.style.option;
             toggle->normal          = nk_style_item_image(media.option);
             toggle->hover           = nk_style_item_image(media.option);
             toggle->active          = nk_style_item_image(media.option);
             toggle->cursor_normal   = nk_style_item_image(media.option_cursor);
             toggle->cursor_hover    = nk_style_item_image(media.option_cursor);
-            toggle->text_normal     = nk_rgb(95,95,95);
-            toggle->text_hover      = nk_rgb(95,95,95);
-            toggle->text_active     = nk_rgb(95,95,95);
+            toggle->text_normal     = setColor(stylesheetData, &currentIndex);
+            toggle->text_hover      = setColor(stylesheetData, &currentIndex);
+            toggle->text_active     = setColor(stylesheetData, &currentIndex);;
 
         }
 
@@ -154,41 +148,27 @@ void initUi() {
         ctx.style.button.normal = nk_style_item_image(media.button);
         ctx.style.button.hover = nk_style_item_image(media.button_hover);
         ctx.style.button.active = nk_style_item_image(media.button_active);
-        ctx.style.button.border_color = nk_rgba(0,0,0,0);
-        ctx.style.button.text_background = nk_rgba(0,0,0,0);
-        ctx.style.button.text_normal = nk_rgb(95,95,95);
-        ctx.style.button.text_hover = nk_rgb(95,95,95);
-        ctx.style.button.text_active = nk_rgb(95,95,95);
-
-
-
-        /* menu button */
-        ctx.style.menu_button.normal = nk_style_item_color(nk_rgb(206,206,206));
-        ctx.style.menu_button.hover = nk_style_item_color(nk_rgb(229,229,229));
-        ctx.style.menu_button.active = nk_style_item_color(nk_rgb(99,202,255));
-        ctx.style.menu_button.border_color = nk_rgba(0,0,0,0);
-        ctx.style.menu_button.text_background = nk_rgba(0,0,0,0);
-        ctx.style.menu_button.text_normal = nk_rgb(95,95,95);
-        ctx.style.menu_button.text_hover = nk_rgb(95,95,95);
-        ctx.style.menu_button.text_active = nk_rgb(95,95,95);
+        ctx.style.button.border_color = setColor(stylesheetData, &currentIndex);
+        ctx.style.button.text_background = setColor(stylesheetData, &currentIndex);
+        ctx.style.button.text_normal = setColor(stylesheetData, &currentIndex);
+        ctx.style.button.text_hover = setColor(stylesheetData, &currentIndex);
+        ctx.style.button.text_active = setColor(stylesheetData, &currentIndex);
 
         /* edit */
-        ctx.style.edit.normal = nk_style_item_color(nk_rgb(240,240,240));
-        ctx.style.edit.hover = nk_style_item_color(nk_rgb(240,240,240));
-        ctx.style.edit.active = nk_style_item_color(nk_rgb(240,240,240));
-        ctx.style.edit.border_color = nk_rgb(62,62,62);
-        ctx.style.edit.cursor_normal = nk_rgb(99,202,255);
-        ctx.style.edit.cursor_hover = nk_rgb(99,202,255);
-        ctx.style.edit.cursor_text_normal = nk_rgb(95,95,95);
-        ctx.style.edit.cursor_text_hover = nk_rgb(95,95,95);
-        ctx.style.edit.text_normal = nk_rgb(95,95,95);
-        ctx.style.edit.text_hover = nk_rgb(95,95,95);
-        ctx.style.edit.text_active = nk_rgb(95,95,95);
-        ctx.style.edit.selected_normal = nk_rgb(99,202,255);
-        ctx.style.edit.selected_hover = nk_rgb(99,202,255);
-        ctx.style.edit.selected_text_normal = nk_rgb(95,95,95);
-        ctx.style.edit.selected_text_hover = nk_rgb(95,95,95);
-        ctx.style.edit.border = 1;
+        ctx.style.edit.normal = nk_style_item_color(setColor(stylesheetData, &currentIndex));
+        ctx.style.edit.hover = nk_style_item_color(setColor(stylesheetData, &currentIndex));
+        ctx.style.edit.active = nk_style_item_color(setColor(stylesheetData, &currentIndex));
+
+        ctx.style.edit.border_color = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.cursor_normal = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.cursor_hover = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.cursor_text_normal = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.cursor_text_hover = setColor(stylesheetData, &currentIndex);;
+        ctx.style.edit.text_normal = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.text_hover = setColor(stylesheetData, &currentIndex);
+        ctx.style.edit.text_active = setColor(stylesheetData, &currentIndex);
+        // no selected
+        ctx.style.edit.border = 1; // px
         ctx.style.edit.rounding = 0; // round corners are a disease
 
     }
@@ -204,10 +184,7 @@ FontAtlasData* getFontAtlasData() { return &fontAtlasData; }
 
 void endFontAtlas(void* texView) {
     nk_font_atlas_end(&atlas, nk_handle_ptr(texView), &texNull);
-   // if (nk_dlg_ctx->atlas.default_font) nk_style_set_font(&nk_dlg_ctx->ctx, &nk_dlg_ctx->atlas.default_font->handle);
 }
-
-// nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 
 // adapted from DiligentSamples Nuklear Demo (NkDiligent.cpp)
 int convertVertices(void* vertexBufferMem, void* indexBufferMem) {
@@ -264,6 +241,7 @@ void multiplayerView() {}
 void saveMenu() {}
 void mapView() {}
 
+// nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 
 // in-game pause menu
 void pauseMenu() {

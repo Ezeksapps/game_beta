@@ -9,7 +9,7 @@ P2PClient::P2PClient() {
     cfg.bind_address = "::";
 
     m_pNode = std::make_unique<Node>(cfg);
-    m_pNode->add_subsystem(std::make_unique<FileTransfer>());
+    m_pNode->add_subsystem(std::make_unique<FileTransfer>()); // will be used later for save file transfers
 
     m_pNode->on_peer_connected([](const Peer& peer) {
 
@@ -25,6 +25,9 @@ P2PClient::~P2PClient() {}
 
 void P2PClient::establishConnection(const std::string& addr, const NetworkType& networkType) {
     m_pNode->connect(addr, 8081);
+}
 
+template<typename T> void P2PClient::sendData(T data) {
+  //  m_pNode->send(, , )
 }
 

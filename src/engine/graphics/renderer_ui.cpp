@@ -1,3 +1,4 @@
+#include "DiligentCore/Graphics/GraphicsEngine/interface/GraphicsTypes.h"
 #include "renderer.hpp"
 #include "../ui/ui.h"
 
@@ -164,6 +165,35 @@ void Renderer::createUiPipelineState() {
     g_viewport.MinDepth = 0.0f;
     g_viewport.MaxDepth = 1.0f;
 
+
+    initUi(this, [](void* _this, const char* skinFilepath) { // CHECK: How is this faulty exactly?
+        static_cast<Renderer*>(_this)->createUiSkinTexture(skinFilepath);
+    });
+}
+
+int32_t Renderer::createUiSkinTexture(const char* skinFilepath) {
+    Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
+    Diligent::TextureLoadInfo loadInfo;
+    loadInfo.IsSRGB = true;
+    Diligent::CreateTextureLoaderFromFile(skinFilepath, Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+
+    /* Get full texture data */
+    Diligent::TextureSubResData subResData = textureLoader->GetSubresourceData(0, 0);
+
+    Diligent::ITexture* skinTex;
+
+    Diligent::TextureDesc textureDesc;
+    textureDesc.Type = Diligent::RESOURCE_DIM_TEX_2D;
+    textureDesc.Width  = textureLoader->GetTextureDesc().GetWidth();
+    textureDesc.Height = textureLoader->GetTextureDesc().GetHeight();
+    textureDesc.MipLevels = 1;
+    textureDesc.Format    = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB; // TODO: Set to swap chain's format instead
+    textureDesc.Usage     = Diligent::USAGE_DEFAULT;
+    textureDesc.BindFlags = Diligent::BIND_SHADER_RESOURCE;
+
+    this->m_pDevice->CreateTexture(textureDesc, nullptr, &skinTex);
+
+    return skinTex->GetUniqueID(); // return type int32_t
 }
 
 void Renderer::createFontTexture() {
