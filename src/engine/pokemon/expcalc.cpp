@@ -1,5 +1,7 @@
 #include <cmath>
 
+// will eventually be part of move checks, though still kept in separate file
+
 const int MAX_LEVEL = 100;
 
 typedef enum ExpClass {

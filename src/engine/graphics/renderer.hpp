@@ -90,6 +90,11 @@ private:
 
     Diligent::RefCntAutoPtr<Diligent::IRenderPass>    m_pRenderPass;
 
+    /* Holds frame buffers for all swap chain images
+     * SIDE NOTE: This is probably not the best way to do this. I would rather do what I'd do in vulkan and just
+     * keep these in either a vector or a C array sized to match number of swap chain images.
+     * For the sake of saving time, I'll deal with this post-release
+     */
     std::unordered_map<Diligent::ITextureView*, Diligent::RefCntAutoPtr<Diligent::IFramebuffer>> m_frameBufferMap;
 
     /* Scene glTF file data */

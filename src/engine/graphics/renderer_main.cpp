@@ -14,7 +14,7 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
     m_pCamera = std::make_unique<Camera>();
 
     /* Perspective projection matrix */
-    float aspectRatio = static_cast<float>(m_windowWidth) / static_cast<float>(m_windowHeight);
+    float aspectRatio = static_cast<float>(m_windowWidth) / static_cast<float>(m_windowHeight); // should be 16:9 for all desktops using standard resolutions
     float fov = 75.0f * (std::numbers::pi_v<float> / 180); /* TODO: make adjustable? */
     m_projMatrix = perspective(fov, aspectRatio, /* Z-near */ 0.1f, /* Z-far */ 100.0f);
 
@@ -22,18 +22,23 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
     m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
     m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
     /* Only applies effect when in update UBO?
-     If camera is made public member, applying rotation incrementally by running rotate() on every keypress of 'ENTER'
-     will properly do rotation, but any rotation applied in constructor is cleared and never seen
-     target pos and offset are preserved, as is proj matrix
+     * If camera is made public member, applying rotation incrementally by running rotate() on every keypress of 'ENTER'
+     * will properly do rotation, (UPDATE: Also just setting one rotation after calling gameInit()),
+     * but any rotation applied in constructor is cleared and never seen
+     * target pos and offset are preserved, as is proj matrix
      */
 
-     m_viewMatrix = m_pCamera->getViewMatrix();
+    m_viewMatrix = m_pCamera->getViewMatrix(); // get initial view matrix (which won't have any rotations I put in here??)
 
     m_lastFrameTime = m_clock.now(); // init last frame time
     m_timeAcc = 0;                   // init accumulator
 }
 
 Renderer::~Renderer() {
+
+    // CHECK: Some cleanup is missing from here, as program will always close with a seg fault
+    // TODO: determine what this is
+
     cleanupUi();
 
     if (m_pImmediateContext) m_pImmediateContext->Flush();
@@ -91,8 +96,10 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createSpritePipelineState();
 
     createInstanceBuffer();
-
     createSpriteTextureArray();
+
+    createUiPipelineState();
+    createFontTexture();
 
     return true;
 }
@@ -348,14 +355,17 @@ void Renderer::update() { // TODO: Make more efficient
 
 void Renderer::renderFrame() {
 
-    /* Render frame must run in two steps:
-     * 1. Render the buffers and textures associated with the main 3D map
+    /* Render frame must run in three steps:
+     * 1. Render the buffers and textures associated with the main 3D scene (loaded from glTF)
      * 2. Render the buffers and textures associated with the 2D sprites
+     * 3. Render the buffers and textures associated with the UI
      *
-     * These will both be done in one subpass
+     * These will all be done in one subpass
      */
 
-    // TODO: Add the third step (The UI's pipeline, which renders buffers and textures associated with the UI and draws over the other two pipelines)
+    // SIDE NOTE: Eventually, another pipeline might be introduced for weather effects or other effects that are visibly applied to the entire viewport
+    // the projection matrix used for this can be shared with the UI pipeline as they'll both be a standard ortho proj
+    // This is a future feature not planned for initial release
 
     /*
     ISSUE:
@@ -378,7 +388,6 @@ void Renderer::renderFrame() {
      * which then runs the game update after its proper constant interval.
      * Because of this, the frame rate technically still fluctuates, but the frames that matter are always at the constant rate of 60fps
      */
-
 
     while (m_timeAcc >= m_timePerFrame) {
         update();  // update entities and other relevant variable data
@@ -417,7 +426,7 @@ void Renderer::renderFrame() {
 
     renderScene();
     renderSprites();
-    // renderUI();
+    renderUi();
 
     m_pImmediateContext->EndRenderPass();
 
@@ -427,6 +436,9 @@ void Renderer::renderFrame() {
 }
 
 void Renderer::updateUniformBuffer() {
+    // TODO: Create proper Player designation, this isn't good enough (The player won't get defined in scene JSON)
+    m_pCamera->setTargetPos(m_pScene->m_pEntities[0]->m_pos);
+    // calculate new view matrix after pending changes
     m_viewMatrix = m_pCamera->getViewMatrix();
 }
 

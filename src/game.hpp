@@ -3,9 +3,9 @@
 // TODO:
 
 // [Engine code]
-// set one entity as the player, others as NPCs (Likely classes extending Entity)
+// set one entity as the player, others as their corresponding subclass of entity
 // Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
-// Create dialogue system and UI Renderer (defined by XML reader, then render in here, maybe in separate subpass?)
+// Create dialogue system
 
 // CURRENTLY COMPLETE:
 // Renderer init
@@ -24,8 +24,9 @@
 // ability to load sprite sheets with any frame size, as long as they are below the maximums defined in Renderer
 // movement system, which syncs with movement animations
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
+// Camera linked to player's movement and follows them around the map on all axes at a fixed offset
 
-// WIP: Pokemon back-end mechanics, UI renderer, P2P initial tests
+// WIP: Pokemon back-end mechanics (starting), UI renderer (mostly complete), P2P initial tests (class and base code setup, needs integration and testing)
 
 // ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
@@ -33,11 +34,12 @@
 // FIX (med pri): movement behaviour doesn't match expected (stop moving when not holding any movement key), maybe cmd queue not best format?
 
 // TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
-// TODO: Camera should be linked to 'Player' Entity's position and follow them along all axes
 // TODO (low pri): Make entity translation system use lerp instead
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 
 // TODO: Make UI skin (also add missing glyphs to font)
+
+// TODO: COLLISION DETECTION (HIGH PRI, needed for most mechanics)
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.

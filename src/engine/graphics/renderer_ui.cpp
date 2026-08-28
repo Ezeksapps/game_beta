@@ -1,4 +1,3 @@
-#include "DiligentCore/Graphics/GraphicsEngine/interface/GraphicsTypes.h"
 #include "renderer.hpp"
 #include "../ui/ui.h"
 
@@ -166,8 +165,8 @@ void Renderer::createUiPipelineState() {
     g_viewport.MaxDepth = 1.0f;
 
 
-    initUi(this, [](void* _this, const char* skinFilepath) { // CHECK: How is this faulty exactly?
-        static_cast<Renderer*>(_this)->createUiSkinTexture(skinFilepath);
+    initUi(this, [](void* _this, const char* skinFilepath) -> int32_t {
+        return static_cast<Renderer*>(_this)->createUiSkinTexture(skinFilepath);
     });
 }
 

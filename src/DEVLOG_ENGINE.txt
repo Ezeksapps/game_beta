@@ -305,3 +305,22 @@ Entity subclasses and loading
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 Entity is a baseclass, all Entities will have a 'type' which is the actual subclass of Entity used to represent them
+
+
+Events
+-=-=-=-=-=-
+
+The most important game event (aside from the game story events which will be developed separately)
+is the one that triggers the start of a battle.
+All basic game events like NPC interaction and starting a battle will be enumerated as GameEvent
+All story events (which will be defined through JSON most likely) will not be enumerated
+but instead dealt with either through a class or struct, as the behaviour of each story event varies greatly
+and needs more specialised handling.
+
+For now the GameEvent enumerators will be:
+
+GAME_EVENT_INTERACT
+GAME_EVENT_BATTLE_START
+GAME_EVENT_BATTLE_END
+GAME_EVENT_ENTER_SCENE (triggered when approaching an exit in a scene)
+// add more as gameplay becomes clearer

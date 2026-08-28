@@ -44,7 +44,6 @@ void Entity::update(const float& deltaTime) {
     // intended duration of current frame of sprite sheet in frames
     float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
 
-
     // if the timer shows that the currently rendered frame has been rendered for a time exceeding the intended duration,
     // reset the timer and advance to next frame
     if (m_frameTimer >= duration) {
