@@ -1,5 +1,10 @@
 #pragma once
 
+// do not mangle func names when including from .cpp sources
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /* Definitions of UI-related functions. Nuklear functions cannot be in here, as that would create a multiple definition */
@@ -51,3 +56,7 @@ void optionsMenu();
 void multiplayerView();
 void saveMenu();
 void mapView();
+
+#ifdef __cplusplus
+}
+#endif

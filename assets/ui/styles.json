@@ -1,48 +1,41 @@
 {
     "text": {
-        "textDefault": [255, 255, 255, 255],
+        "textDefault": [255, 255, 255, 255]
     },
     "window": {
         "background": [0, 0, 0, 128],
-        "borderColor": [],
-        "comboBorder": [],
-        "contextualBorder": [],
-        "menuBorder": [],
-        "groupBorder": [],
-        "tooltipBorder": [],
-        "padding": []
+        "borderColor": [43, 74, 140, 255]
     },
     "header": {
-        // UNUSED
     },
     "checkbox": {
-        "normal": [],
-        "hover": [],
-        "active": []
+        "normal": [255, 255, 255, 255],
+        "hover": [82, 74, 74, 128],
+        "active": [255, 255, 255, 255]
     },
     "option": {
-        "normal": [],
-        "hover": [],
-        "active": []
+        "normal": [255, 255, 255, 255],
+        "hover": [82, 74, 74, 128],
+        "active": [255, 2555, 255, 255]
     },
     "button": {
-        "borderColor": [],
-        "background": [],
-        "text": [],
-        "textHover": [],
-        "textActive": []
+        "borderColor": [0, 0, 0, 128],
+        "background": [0, 0, 0, 128],
+        "text": [255, 255, 255, 255],
+        "textHover": [82, 74, 74, 128],
+        "textActive": [255, 255, 255, 255]
     },
     "edit": {
-        "normal": [],
-        "hover": [],
-        "active": [],
-        "borderColor": [],
-        "cursorNormal": [],
-        "cursorHover": [],
-        "cursorTextNormal": [],
-        "cursorTextHover": [],
-        "textNormal": [],
-        "textHover": [],
-        "textActive": []
+        "normal": [180, 180, 180, 255],
+        "hover": [180, 180, 180, 255],
+        "active": [180, 180, 180, 255],
+        "borderColor": [180, 180, 180, 255],
+        "cursorNormal": [255, 255, 255, 255],
+        "cursorHover": [255, 255, 255, 255],
+        "cursorTextNormal": [255, 255, 255, 255],
+        "cursorTextHover": [82, 74, 74, 128],
+        "textNormal": [255, 255, 255, 255],
+        "textHover": [82, 74, 74, 128],
+        "textActive": [255, 255, 255, 255]
     }
 }

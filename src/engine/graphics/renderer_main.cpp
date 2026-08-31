@@ -164,7 +164,6 @@ void Renderer::cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray
     }
 }
 
-
 Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(const int& entityIndex) {
     Diligent::RefCntAutoPtr<Diligent::ITexture> texArray;
 
@@ -204,15 +203,15 @@ void Renderer::setScene(const std::string& sceneDir) {
 
         // only add a new texture array to the cache if one doesn't already exist for the required sprite sheets
         // NOTE: use try_emplace() since checking the index requires operator[], which will always create that index if it doesnt exist
-        m_entitySpriteCache.try_emplace(entity->m_animJsonFilepath, createEntitySpriteCache(entity->m_index));
+        m_entitySpriteCache.try_emplace(entity->getCacheKey(), createEntitySpriteCache(entity->m_index));
 
         /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
-        if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->m_animJsonFilepath, entity->m_event);
+        if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->getCacheKey(), entity->m_event);
 
         /* Callback, runs whenever active sprite is changed */
         entity->setSpriteChangeCallback([this, entity](const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite) {
             /* Swap sprite for new sprite */
-            this->swapSprite(oldSpriteIndex, newSprite, entity->m_animJsonFilepath, entity->m_event);
+            this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
         });
 
         /* Callback, runs whenever an entity needs to be moved on-screen */
@@ -333,8 +332,8 @@ void Renderer::update() { // TODO: Make more efficient
             ++transl.animFramesAcc;
 
             // Apply translation to entity's position
-            m_pScene->m_pEntities[transl.index]->m_pos            += transl.translVec;
-          //  m_pScene->m_pEntities[transl.index]->m_pos += lerp(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), 0.5f);
+            m_pScene->m_pEntities[transl.index]->m_pos += transl.translVec;
+            // m_pScene->m_pEntities[transl.index]->m_pos += lerp(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), 0.5f);
             vec3 pos =  m_pScene->m_pEntities[transl.index]->m_pos;
 
             // Check if translation is complete

@@ -42,8 +42,8 @@ struct FontAtlasData fontAtlasData;
  * For example: ctx.style.text.color = setColor(stylesheetData, &currentIndex);
  * Instead of: ctx.style.text.color = nk_rgba(stylesheetData[0], stylesheetData[1], stylesheetData[2], stylesheetData[3]);
  *
- * (this also means it's easier if needing to re-order or add settings to the JSON,
- * as all index numbers do not need to be manually retyped to match the new positions.
+ * This also means it's easier if needing to re-order or add settings to the JSON,
+ * as all index numbers do not need to be manually re-typed to match the new positions.
  */
 struct nk_color setColor(const uint8_t* data, int* currentIndex) {
     struct nk_color color = {

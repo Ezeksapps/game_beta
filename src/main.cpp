@@ -32,7 +32,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (action != GLFW_RELEASE) g_pEngine->handleInput(key);
 
     // -- DEBUG -- //
-   /* if (action == GLFW_PRESS) {
+    /* if (action == GLFW_PRESS) {
         switch (key) {
             case GLFW_KEY_UP:
                 g_pEngine->m_pRenderer->m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.01, 0.0f, 0.0f));

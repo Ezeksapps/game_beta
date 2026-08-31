@@ -324,3 +324,14 @@ GAME_EVENT_BATTLE_START
 GAME_EVENT_BATTLE_END
 GAME_EVENT_ENTER_SCENE (triggered when approaching an exit in a scene)
 // add more as gameplay becomes clearer
+
+
+CHECK: https://stackoverflow.com/questions/46631814/handling-multiple-keys-input-at-once-with-glfw
+TODO: Improve style colours for UI
+
+
+Diligent Engine: ERROR in CreateVulkanObject() (LogicalDevice.cpp, 172): Failed to create Vulkan image 'Nuklear font texture'
+VK Error Code: ERROR_OUT_OF_DEVICE_MEMORY
+Diligent Engine: ERROR in CreateDeviceObject() (RenderDeviceBase.hpp, 463): Failed to create Texture 'Nuklear font texture'
+Tex desc: Type: Texture 2D; size: 533866624x697391072; Format: TEX_FORMAT_RGBA8_UNORM; Mip levels: 1; Sample Count: 1; Usage: USAGE_IMMUTABLE; Bind Flags: BIND_SHADER_RESOURCE; CPU access: 0
+

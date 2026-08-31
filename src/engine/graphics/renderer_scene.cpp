@@ -59,9 +59,12 @@ void Renderer::createScenePipelineState() {
         /* LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
          */
 
-        // vertex position
+        // POSITION vertex
         Diligent::LayoutElement{0, 0, 3, Diligent::VT_FLOAT32, false, 0, 32, Diligent::INPUT_ELEMENT_FREQUENCY_PER_VERTEX},
-        // TEXCOORD_0: offset 24, stride 32
+
+        // skip slot 1, vertex NORMAL unused
+
+        // TEXCOORD_0 vertex
         Diligent::LayoutElement{2, 0, 2, Diligent::VT_FLOAT32, false, 24, 32, Diligent::INPUT_ELEMENT_FREQUENCY_PER_VERTEX}
     };
 

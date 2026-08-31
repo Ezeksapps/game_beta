@@ -14,7 +14,6 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 Scene::Scene(const std::string& sceneDir) {
-    /* TODO: Handle the scene dir name and load the glb (glTF) and JSON in the dir */
 
     // do not accept bad paths
     if (!fs::is_directory(sceneDir)) throw std::runtime_error("Scene constructor was provided with a non-directory");

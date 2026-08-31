@@ -89,7 +89,6 @@ void Renderer::createSpritePipelineState() {
         {6, 0, 1, Diligent::VT_FLOAT32, false, 72, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     };
 
-
     /* Create pipeline state */
 
     /* Set shaders */
@@ -101,7 +100,6 @@ void Renderer::createSpritePipelineState() {
     PipelineStateObjCreateInfo.GraphicsPipeline.InputLayout.NumElements    = _countof(layoutElems);
     /* Referring to variables in the GLSL shader code */
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.DefaultVariableType  = Diligent::SHADER_RESOURCE_VARIABLE_TYPE_STATIC;
-
 
     /* NOTE: mutable shader vars should be used, since they change on a per-instance basis
      * Set shader variables that can be set in this code
@@ -164,7 +162,6 @@ void Renderer::populateInstanceBuffer() {
 
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
         mat4 transform = translate(mat4(1.0f), entity->m_pos);
-
 
         // cast to float is necessary here, otherwise maxU and maxV = 0 from precision loss
         float maxU = activeSprite->frameWidth / static_cast<float>(m_maxSpriteFrameWidth);

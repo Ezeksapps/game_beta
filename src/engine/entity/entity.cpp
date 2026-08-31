@@ -12,7 +12,7 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
 
     // TODO: use JSON from first param to load overworld events/interactions and behaviour
 
-    const char* spriteJson = readJsonAsset(animJsonFilepath.c_str()); // TODO: Fix these functions
+    const char* spriteJson = readJsonAsset(animJsonFilepath.c_str());
 
     json anims = json::parse(spriteJson)["anims"];
 
@@ -34,7 +34,6 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
     m_direction = DIRECTION_WEST; // default direction
 }
 
-
 Entity::~Entity() {}
 
 void Entity::update(const float& deltaTime) {
@@ -48,7 +47,6 @@ void Entity::update(const float& deltaTime) {
     // reset the timer and advance to next frame
     if (m_frameTimer >= duration) {
         m_frameTimer           = 0.0f;
-
         m_pActiveSprite->frame = (m_pActiveSprite->frame + 1) % m_pActiveSprite->framesPerRow;
     }
 }
@@ -74,8 +72,8 @@ void Entity::setMovementCallback(std::function<void(const int& index, vec3 trans
     m_movementCallback = callback;
 }
 
-void Entity::setDirection(const Direction& direction) {
-    m_direction = direction;
+std::string Entity::getCacheKey() {
+    return m_animJsonFilepath;
 }
 
 bool Entity::isMoving() { return m_isMoving; }

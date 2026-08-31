@@ -25,26 +25,24 @@
 // movement system, which syncs with movement animations
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 // Camera linked to player's movement and follows them around the map on all axes at a fixed offset
+// UI system made with Nuklear and accompanying renderer (in testing, needs to be linked to appropriate keypress)
 
-// WIP: Pokemon back-end mechanics (starting), UI renderer (mostly complete), P2P initial tests (class and base code setup, needs integration and testing)
+// WIP: Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
 
-// ISSUE: Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
-// and that the sprites do not properly align with the grid (X & Y axes), figure out how the grid will be dealt with
-
+// FIX (med pri): Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // FIX (med pri): movement behaviour doesn't match expected (stop moving when not holding any movement key), maybe cmd queue not best format?
 
 // TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
-// TODO (low pri): Make entity translation system use lerp instead
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
-
 // TODO: Make UI skin (also add missing glyphs to font)
-
 // TODO: COLLISION DETECTION (HIGH PRI, needed for most mechanics)
+// TODO: Bind all textures for scene renderer (may need tex array) [HIGH PRI]
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
  * Map pipeline renders 3D environment. Camera system is properly set up and can rotate with yaw, pitch and roll
  * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
+ * UI pipeline correctly recieves vertices from Nuklear backend and draws UI with expected behaviour.
  * Sprite sheet system fully implemented, but needs to accomodate directionless sprite sheets as well.
  * All sprite sheets for an entity are cached on load, so the texture data can be switched as needed, meaning no visual lag is seen when switching
  * between sprite sheets. Frame sizes in sprite sheets may be of any size below the maximum dimensions defined in Renderer.

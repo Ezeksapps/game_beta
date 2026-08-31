@@ -42,7 +42,6 @@ public:
     /* General Setters */
 
     void doAnimEvent(const AnimEvent& event);
-    void setDirection(const Direction& direction);
 
     /* Sprite-related funcs */
 
@@ -51,7 +50,11 @@ public:
 
     // used by renderer, returns a read-only reference to the sprite map
     const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& getSpriteMap();
+    // used by renderer, returns a read-only reference to the active sprite
     const std::shared_ptr<Sprite>& getActiveSprite();
+
+    int getIndex();
+    std::string getCacheKey(); // the key being the filepath to the JSON outlining the spritesheets used by this entity
 
     // move entity by one square in one direction, with a specified mode of transport (walking/running)
     void move(const Direction& direction, const AnimEvent& mode);
@@ -66,12 +69,13 @@ public:
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
 
-    // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
-    // (Also should be read-only)
-    std::string m_animJsonFilepath;
+
 
 protected:
 private:
+
+    // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
+    std::string m_animJsonFilepath;
 
     /* callback for sprite sheet animation changes */
     std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;
