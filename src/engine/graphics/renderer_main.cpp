@@ -21,14 +21,9 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
     /* Camera view matrix */
     m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
     m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
-    /* Only applies effect when in update UBO?
-     * If camera is made public member, applying rotation incrementally by running rotate() on every keypress of 'ENTER'
-     * will properly do rotation, (UPDATE: Also just setting one rotation after calling gameInit()),
-     * but any rotation applied in constructor is cleared and never seen
-     * target pos and offset are preserved, as is proj matrix
-     */
+    m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.05, 0.0f, 0.0f));
 
-    m_viewMatrix = m_pCamera->getViewMatrix(); // get initial view matrix (which won't have any rotations I put in here??)
+    m_viewMatrix = m_pCamera->getViewMatrix(); // get initial view matrix
 
     m_lastFrameTime = m_clock.now(); // init last frame time
     m_timeAcc = 0;                   // init accumulator
@@ -37,7 +32,7 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
 Renderer::~Renderer() {
 
     // CHECK: Some cleanup is missing from here, as program will always close with a seg fault
-    // TODO: determine what this is
+    // TODO: determine what this is, seems to occur when releasing swap chain resources
 
     cleanupUi();
 
@@ -102,6 +97,10 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createFontTexture();
 
     return true;
+}
+
+void Renderer::testUiSystem() {
+    pauseMenu();
 }
 
 // CHECK: Maybe rename index to event?
@@ -208,19 +207,23 @@ void Renderer::setScene(const std::string& sceneDir) {
         /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
         if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->getCacheKey(), entity->m_event);
 
-        /* Callback, runs whenever active sprite is changed */
+        /* --- Callbacks --- */
+
         entity->setSpriteChangeCallback([this, entity](const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite) {
             /* Swap sprite for new sprite */
             this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
         });
 
-        /* Callback, runs whenever an entity needs to be moved on-screen */
-        entity->setMovementCallback([this](const int& index, vec3 translVec, const float& animFrames) {
-            m_entityTransls.push_back(EntityTransl{
-                .index = index,
-                .translVec = translVec,
-                .animFrames = animFrames
-            });
+        entity->setStartMovementCallback([this](const int& index, vec3 translVec) {
+            m_translsMap.emplace(index, translVec);
+        });
+
+        entity->setChangeMovementDirectionCallback([this](const int& index, vec3 translVec) {
+            m_translsMap[index] = translVec; // update translation vector for this entity
+        });
+
+        entity->setEndMovementCallback([this](const int& index) {
+            m_translsMap.erase(index); // erase translation vector at index
         });
     }
 
@@ -326,8 +329,8 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 
 void Renderer::update() { // TODO: Make more efficient
 
-    if (!m_entityTransls.empty()) {
-        for (int i = 0; i < m_entityTransls.size();) {
+    if (!m_translsMap.empty()) {
+        /*for (int i = 0; i < m_entityTransls.size();) {
             EntityTransl& transl = m_entityTransls[i];
             ++transl.animFramesAcc;
 
@@ -340,9 +343,12 @@ void Renderer::update() { // TODO: Make more efficient
             if (transl.animFramesAcc >= transl.animFrames) {
                 m_pScene->m_pEntities[transl.index]->doAnimEvent(ANIM_EVENT_IDLE); // reset to idle animation
                 /* Remove complete translation, done by swapping this and the last EntityTransl so that this now complete translation can be popped */
-                if (i < m_entityTransls.size() - 1) std::swap(m_entityTransls[i], m_entityTransls.back());
+                /*if (i < m_entityTransls.size() - 1) std::swap(m_entityTransls[i], m_entityTransls.back());
                 m_entityTransls.pop_back();
             } else ++i;
+        }*/
+        for (const auto& [index, translVec] : m_translsMap) {
+             m_pScene->m_pEntities[index]->m_pos += translVec;
         }
     }
 

@@ -68,8 +68,16 @@ void Entity::setSpriteChangeCallback(std::function<void(const int& oldSpriteInde
     m_spriteChangeCallback = callback;
 }
 
-void Entity::setMovementCallback(std::function<void(const int& index, vec3 translVec, const float& animFrames)> callback) {
-    m_movementCallback = callback;
+void Entity::setStartMovementCallback(std::function<void(const int& index, vec3 translVec)> callback) {
+    m_startMovementCallback = callback;
+}
+
+void Entity::setChangeMovementDirectionCallback(std::function<void(const int& index, vec3 translVec)> callback) {
+    m_changeMovementDirectionCallback = callback;
+}
+
+void Entity::setEndMovementCallback(std::function<void(const int& index)> callback) {
+    m_endMovementCallback = callback;
 }
 
 std::string Entity::getCacheKey() {
@@ -82,7 +90,49 @@ const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteM
     return m_spriteMap;
 }
 
-// TODO: Must not alter Z-axis, only checkCollision() should update Z
+// helper function, calculates per-frame translation vector for a movement in a particular direction
+vec3 getTranslVec(const Direction& direction, const int& animFrames) { // TODO: Should eventually consider mode, so that running increases the translVec
+    vec3 translVec;
+
+    switch (direction) {
+        case DIRECTION_SOUTH:
+            //m_pos += vec3(0.0f, -1.0f, 0.0f);
+            translVec = vec3(0.0f, -1.0 / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_SOUTH_EAST:
+            //m_pos += vec3(1.0f, -1.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_EAST:
+            //m_pos += vec3(1.0f, 0.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_NORTH_EAST:
+            //m_pos += vec3(1.0f, 1.0f, 0.0f);
+            translVec = vec3(1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_NORTH:
+            //m_pos += vec3(0.0f, 1.0f, 0.0f);
+            translVec = vec3(0.0f, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_NORTH_WEST:
+            //m_pos += vec3(-1.0f, 1.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_WEST:
+            //m_pos += vec3(-1.0f, 0.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
+            break;
+        case DIRECTION_SOUTH_WEST:
+            //m_pos += vec3(-1.0f, -1.0f, 0.0f);
+            translVec = vec3(-1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
+            break;
+        default:
+            break;
+    }
+    return translVec;
+}
+
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
 
     if (m_isMoving) return;
@@ -93,55 +143,20 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
     doAnimEvent(mode);
 
     // find total number of frames accompanying movement animation runs for
-    int animFrames = 0;
-    for (const int& i : m_pActiveSprite->frameDurations) animFrames += i;
+    m_animFrames = 0;
+    for (const int& i : m_pActiveSprite->frameDurations) m_animFrames += i;
 
-    vec3 translVec;
+    m_startMovementCallback(m_index, getTranslVec(direction, m_animFrames));
+}
 
-    switch (direction) {
-        case DIRECTION_SOUTH:
-            //m_pos += vec3(0.0f, -1.0f, 0.0f);
-            translVec = vec3(0.0f, -1.0 / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_SOUTH_EAST:
-            //m_pos += vec3(1.0f, -1.0f, 0.0f);
-            translVec = vec3(1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_EAST:
-            //m_pos += vec3(1.0f, 0.0f, 0.0f);
-            translVec = vec3(1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_NORTH_EAST:
-            //m_pos += vec3(1.0f, 1.0f, 0.0f);
-            translVec = vec3(1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_NORTH:
-            //m_pos += vec3(0.0f, 1.0f, 0.0f);
-            translVec = vec3(0.0f, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_NORTH_WEST:
-            //m_pos += vec3(-1.0f, 1.0f, 0.0f);
-            translVec = vec3(-1.0f / animFrames, 1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_WEST:
-            //m_pos += vec3(-1.0f, 0.0f, 0.0f);
-            translVec = vec3(-1.0f / animFrames, 0.0f, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        case DIRECTION_SOUTH_WEST:
-            //m_pos += vec3(-1.0f, -1.0f, 0.0f);
-            translVec = vec3(-1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
-            m_movementCallback(m_index, translVec, animFrames);
-            break;
-        default:
-            break;
-    }
+// NOTE: Running will eventually add further complication, as Renderer also needs to be signalled of a larger translVec
+// in that situation, possibly requiring another similar callback
+void Entity::changeMovementDirection(const Direction& direction) {
+    m_changeMovementDirectionCallback(m_index, getTranslVec(direction, m_animFrames));
+}
 
+void Entity::endMovement() {
+    m_endMovementCallback(m_index);
+    doAnimEvent(ANIM_EVENT_IDLE);
     m_isMoving = false;
 }

@@ -1,15 +1,80 @@
 {
-    "0": 87,
-    "1": 65,
-    "2": 68,
-    "3": 83,
-    "4": 340,
-    "5": 257,
-    "6": 256,
-    "7": 88,
-    "8": 69,
-    "9": 77,
-    "10": 80,
-    "11": 292,
-    "12": 291
+    "commands": [
+        {
+            "keycode": 83,
+            "keypressType": 0
+        },
+        {
+            "keycode": [83, 68],
+            "keypressType": 0
+        },
+        {
+            "keycode": 68,
+            "keypressType": 0
+        },
+        {
+            "keycode": [68, 87],
+            "keypressType": 0
+        },
+        {
+            "keycode": 87,
+            "keypressType": 0
+        },
+        {
+            "keycode": [67, 65],
+            "keypressType": 0
+        },
+        {
+            "keycode": 65,
+            "keypressType": 0
+        },
+        {
+            "keycode": [65, 83],
+            "keypressType": 0
+        },
+        {
+            "keycode": 83,
+            "keypressType": 1
+        },
+        {
+            "keycode": [83, 68],
+            "keypressType": 1
+        },
+        {
+            "keycode": 68,
+            "keypressType": 1
+        },
+        {
+            "keycode": [68, 87],
+            "keypressType": 1
+        },
+        {
+            "keycode": 87,
+            "keypressType": 1
+        },
+        {
+            "keycode": [67, 65],
+            "keypressType": 1
+        },
+        {
+            "keycode": 65,
+            "keypressType": 1
+        },
+        {
+            "keycode": [65, 83],
+            "keypressType": 1
+        },
+        {
+            "keycode": 257,
+            "keypressType": 0
+        },
+        {
+            "keycode": 256,
+            "keypressType": 0
+        },
+        {
+            "keycode": 88,
+            "keypressType": 0
+        }
+    ]
 }

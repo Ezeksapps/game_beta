@@ -59,6 +59,8 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
 void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFilepath)) {
 
     {
+        nk_buffer_init_default(&cmds);
+
         // load font(s) and initialise font atlas image data
 
         const char* font_path = "assets/ui/font.ttf"; // PMD font, TODO: make sure to fill in missing glyphs (could probably just dump off EUR rom)
@@ -245,6 +247,7 @@ void mapView() {}
 
 // in-game pause menu
 void pauseMenu() {
+
     if (nk_begin(&ctx, "Pause Menu", nk_rect(0, 0, 100, 240),
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 

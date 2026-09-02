@@ -37,7 +37,9 @@ public:
     /* Callback Setters */
 
     void setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback);
-    void setMovementCallback(std::function<void(const int& index, vec3 translVec, const float& animFrames)> callback);
+    void setStartMovementCallback(std::function<void(const int& index, vec3 translVec)> callback);
+    void setChangeMovementDirectionCallback(std::function<void(const int& index, vec3 translVec)> callback);
+    void setEndMovementCallback(std::function<void(const int& index)> callback);
 
     /* General Setters */
 
@@ -56,8 +58,13 @@ public:
     int getIndex();
     std::string getCacheKey(); // the key being the filepath to the JSON outlining the spritesheets used by this entity
 
-    // move entity by one square in one direction, with a specified mode of transport (walking/running)
+    // move in a specified direction indefinitely with a specified mode of transport (walking/running)
     void move(const Direction& direction, const AnimEvent& mode);
+    // change direction of already active movement (required to update the translVec to reflect new direction, updating
+    // m_direction directly in this case would keep moving the entity in the previous direction, and only update the spritesheet animation)
+    void changeMovementDirection(const Direction& direction);
+    // end current movement and return to ANIM_EVENT_IDLE
+    void endMovement();
 
     bool isMoving(); // getter, checks movement status of Entity
 
@@ -69,18 +76,17 @@ public:
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
 
-
-
 protected:
 private:
 
     // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
     std::string m_animJsonFilepath;
 
-    /* callback for sprite sheet animation changes */
+    /* Callbacks */
     std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;
-    /* Callback for movement */
-    std::function<void(const int& index, vec3 translVec, const float& animFrames)> m_movementCallback;
+    std::function<void(const int& index, vec3 translVec)> m_startMovementCallback;
+    std::function<void(const int& index, vec3 translVec)> m_changeMovementDirectionCallback;
+    std::function<void(const int& index)> m_endMovementCallback;
 
     /* Every spritesheet is associated with a certain event/action, which will act as the key in the sprite map
      * An example of a key could be 'walk' or 'run', each of which are separate actions with separate spritesheets */
@@ -90,4 +96,10 @@ private:
 
     float m_frameTimer;
     bool m_isMoving; // controls movement, move() can only be called if there is no existing movement
+
+    /* total number of frames the currently active movement sprite sheet animation lasts for, used to re-calculate
+     * translVec if changeMovementDirection() is called, as the translVec calculation requires this value.
+     * This member is not used for any sprite sheet animation that does not correspond to movement
+     */
+    int m_animFrames;
 };

@@ -46,6 +46,9 @@ public:
     void setScene(const std::string& sceneDir);
     std::vector<std::shared_ptr<Entity>>& getEntities();
 
+    //TEMP
+    void testUiSystem();
+
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
@@ -64,12 +67,12 @@ private:
         float maxV;
     };
 
-    struct EntityTransl {
+    /*struct EntityTransl {
        int  index;                   // index in Scene of entity associated with this translation
        vec3 translVec;               // translation matrix for every step
        float animFrames;             // duration in frames of this translation
        float animFramesAcc;          // number of frames this transformation has been running for
-    };
+    };*/
 
     /* Renderer clock */
     std::chrono::steady_clock m_clock;
@@ -165,8 +168,8 @@ private:
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
 
-    /* Contains entity translations that are currently being run */
-    std::vector<EntityTransl> m_entityTransls;
+    /* Maps translation vectors to currently moving entities */
+    std::unordered_map<int, vec3> m_translsMap;
 
     /* Stores all pre-loaded sprite sheets for the current scene's entities */
     std::unordered_map<std::string, Diligent::RefCntAutoPtr<Diligent::ITexture>> m_entitySpriteCache;

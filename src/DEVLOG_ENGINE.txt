@@ -329,9 +329,65 @@ GAME_EVENT_ENTER_SCENE (triggered when approaching an exit in a scene)
 CHECK: https://stackoverflow.com/questions/46631814/handling-multiple-keys-input-at-once-with-glfw
 TODO: Improve style colours for UI
 
+Improving movement
+-=-=-=-=-=-=-=-=-=-=-
 
-Diligent Engine: ERROR in CreateVulkanObject() (LogicalDevice.cpp, 172): Failed to create Vulkan image 'Nuklear font texture'
-VK Error Code: ERROR_OUT_OF_DEVICE_MEMORY
-Diligent Engine: ERROR in CreateDeviceObject() (RenderDeviceBase.hpp, 463): Failed to create Texture 'Nuklear font texture'
-Tex desc: Type: Texture 2D; size: 533866624x697391072; Format: TEX_FORMAT_RGBA8_UNORM; Mip levels: 1; Sample Count: 1; Usage: USAGE_IMMUTABLE; Bind Flags: BIND_SHADER_RESOURCE; CPU access: 0
+Better movement behaviour would ditch the grid and have a single press of movement key signify 'turn to face this direction'
+and a continuous press to signify, keep smoothly moving by the translVec every frame until the key is released
+currently, move() can only move by 1 unit in the coordinate space
+
+To implement this version of movement, the single movement callback, which creates an EntityTransl object
+that allows the renderer to automatically terminate the movement when the entity has moved 1 unit, needs
+to be separated into three callbacks. One for starting movement, one for changing movement direction
+and one for ending movement
+
+EntityTransl is no longer needed, as the only fields that are now useful are the translVec and the index of the entity it is associated
+with, the vector of EntityTransl objects now becomes an unordered map
+
+The input handler for movement also needs to be re-written. Previously whenever GLFW detected a keypress,
+it would be added to a command queue in the engine. The keycode is not sent directly. To allow me to later
+include a setting to re-bind keys I declare an enumerated type 'GameCmd' listing all possible commands the game can handle
+and through a JSON these GameCmds are all assigned a GLFW key. This JSON was loaded when launching the game to populate
+the key map, which allowed the code to match the recieved GLFW enum keycode to the matching GameCmd and add it to the command queue.
+The input handler function then attached itself as a callback for a function that dequeued the next command and performs the appropriate action
+
+(This system being based on one I had developed prior to this project, except in C++ rather than C)
+
+The issue with this system is that it can only handle commands mapped to one key. The planned diagonal movement is activated
+by pressing two movement keys at once. This also doesn't support the new expected behaviour for movement, as when holding
+any movement key, this system will enqueue a very large number of movement commands, meaning that instead of the expected behaviour
+where releasing all movement keys immediately terminates movement, the entity will instead not stop until all of those enqueued movement
+commands have been cleared. Also, the new expectation is that a single keypress of any moveent key merely turns
+an entity to face that direction, which needs to be assigned to a different command to actual movement.
+
+This new system needs to be able to:
+- handle and map game commands requiring multiple simultaneous keypresses
+- handle continuous keypresses and distinguish single keypresses from continuous keypresses
+
+The JSON structure of the key config has also been revised.
+Now every command is its own separate object
+
+
+There are three distinct types of GameCmd enumerators. Those representing single actions, those which begin a continuous action
+and those which terminate a continuous action
+
+single-action game commands are activated by pressing their corresponding key(s) once and immediately releasing
+continuous action game commands are activated by holding their corresponding key(s). In this situation, the engine
+will dispatch the command beginning the continuous action once only. The corresponding GameCmd which ends this action
+will be dispatched when the key(s) corresponding to the continuous action are released.
+
+A GameCmd enumerator (excluding continuous action terminators) can be set to activate on the keypress of one or multiple keys,
+the maximum being two keys for now. The keycodes which correspond to GameCmd enumerators are in different two different maps,
+one for single actions and one for continuous actions
+
+These keycodes are not the GLFW enumerators for keys, they are unsigned 32-bit integers (uint32_t) which are considered as being split
+into two separate unsigned 16-bit integers (uint16_t), where each of these matches the value of the GLFW enumerator. This allows up to two
+keycodes to be stored and mapped to a GameCmd. Using a vector of integer types as the key instead is not practical as the std::unordered_map
+container has no default hash function for vector keys
+
+The GLFW keypress callback function body now looks like this:
+
+if (action != GLFW_RELEASE) g_pEngine->signalKeyPress(key);
+else g_pEngine->signalKeyRelease(key);
+
 

@@ -25,18 +25,20 @@
 // movement system, which syncs with movement animations
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 // Camera linked to player's movement and follows them around the map on all axes at a fixed offset
-// UI system made with Nuklear and accompanying renderer (in testing, needs to be linked to appropriate keypress)
+// UI system made with Nuklear and accompanying renderer (in testing)
 
 // WIP: Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
 
 // FIX (med pri): Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
 // FIX (med pri): movement behaviour doesn't match expected (stop moving when not holding any movement key), maybe cmd queue not best format?
+// FIX (high pri): UI pipeline works and draw commands are dispatched and executed properly, but no UI is visible because view matrix isnt accounted for
 
 // TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 // TODO: Make UI skin (also add missing glyphs to font)
 // TODO: COLLISION DETECTION (HIGH PRI, needed for most mechanics)
 // TODO: Bind all textures for scene renderer (may need tex array) [HIGH PRI]
+// TODO: Need more complex test scene for development of scene JSON spec
 
 /* CURRENT STATUS:
  * Compiles successfully, renderer and pipelines initialise with no issues.
