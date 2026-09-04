@@ -332,8 +332,7 @@ TODO: Improve style colours for UI
 Improving movement
 -=-=-=-=-=-=-=-=-=-=-
 
-Better movement behaviour would ditch the grid and have a single press of movement key signify 'turn to face this direction'
-and a continuous press to signify, keep smoothly moving by the translVec every frame until the key is released
+Better movement behaviour would ditch the grid and have a press of a movement key to signify: keep smoothly moving by the translVec every frame until the key is released
 currently, move() can only move by 1 unit in the coordinate space
 
 To implement this version of movement, the single movement callback, which creates an EntityTransl object
@@ -362,23 +361,23 @@ an entity to face that direction, which needs to be assigned to a different comm
 
 This new system needs to be able to:
 - handle and map game commands requiring multiple simultaneous keypresses
-- handle continuous keypresses and distinguish single keypresses from continuous keypresses
+- handle continuous keypresses and distinguish general game commands from movement commands
 
 The JSON structure of the key config has also been revised.
 Now every command is its own separate object
 
 
-There are three distinct types of GameCmd enumerators. Those representing single actions, those which begin a continuous action
-and those which terminate a continuous action
+There are three distinct types of command enumerators. Those representing single actions (GameCmd), those which begin a continuous action (MovementCmd)
+and those which terminate a continuous action (MovementCmd)
 
 single-action game commands are activated by pressing their corresponding key(s) once and immediately releasing
 continuous action game commands are activated by holding their corresponding key(s). In this situation, the engine
 will dispatch the command beginning the continuous action once only. The corresponding GameCmd which ends this action
 will be dispatched when the key(s) corresponding to the continuous action are released.
 
-A GameCmd enumerator (excluding continuous action terminators) can be set to activate on the keypress of one or multiple keys,
-the maximum being two keys for now. The keycodes which correspond to GameCmd enumerators are in different two different maps,
-one for single actions and one for continuous actions
+A GameCmd or MovmentCmd enumerator (excluding continuous action terminators) can be set to activate on the keypress of one or multiple keys,
+the maximum being two keys for now. The keycodes which correspond to enumerators are in different two different maps,
+one for single actions (GameCmd) and one for continuous actions (MovementCmd)
 
 These keycodes are not the GLFW enumerators for keys, they are unsigned 32-bit integers (uint32_t) which are considered as being split
 into two separate unsigned 16-bit integers (uint16_t), where each of these matches the value of the GLFW enumerator. This allows up to two
@@ -390,4 +389,18 @@ The GLFW keypress callback function body now looks like this:
 if (action != GLFW_RELEASE) g_pEngine->signalKeyPress(key);
 else g_pEngine->signalKeyRelease(key);
 
+issues:
+1. if you dont intend to just change the direction you face, there is a very annoying delay before you
+actually begin movement due to when GLFW decides to start detecting GLFW_REPEAT events
+2. I cannot move north-west, or face that direction
+3. sometimes, due to something which needs to be determined (which may cause 2 as a side-effect), you stop being
+able to move either entirely or just in certain directions, ENTITY_FACE_XXX commands will still work
+4. If in diagonal moveent you let go of one of the keys, your movement direction will update.
+But if you are moving straight in any direction and then hold a key to move diagonally, the new ENTITY_FACE_XXX
+commands registers, but the movement direction never updates
 
+TODO: complete split of movement commands from other commands
+
+movement keys should be restricted to only four keys, ideally all in close proximity.
+The defaults are W/A/S/D. Diagonal movement should always use a combination of two of these keys
+The keys used by movement cannot also be re-used in any other GameCmd

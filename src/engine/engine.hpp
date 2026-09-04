@@ -11,52 +11,25 @@
 
 #include <memory>
 
-/* -- OLD
-enum GameCmd : uint8_t {
-    ENTITY_MOVE_FORWARD,
-    ENTITY_MOVE_LEFT,     // west
-    ENTITY_MOVE_RIGHT,    // east
-    ENTITY_MOVE_BACKWARD,
-    ENTITY_RUN,
-    UI_PROGRESS,
-    UI_ESCAPE,
-    UI_OPEN,
-    SHORTCUT_BAG_OPEN,
-    SHORTCUT_MAP_OPEN,
-    SHORTCUT_PKMN_OPEN,
-    ACTIVATE_DEBUG_OVERLAY,
-    GAME_CAPTURE_SCREEN
-};*/
+
+enum MovementCmd : uint8_t {
+    ENTITY_MOVE_SOUTH       = 0,
+    ENTITY_MOVE_SOUTH_EAST  = 1,
+    ENTITY_MOVE_EAST        = 2,
+    ENTITY_MOVE_NORTH_EAST  = 3,
+    ENTITY_MOVE_NORTH       = 4,
+    ENTITY_MOVE_NORTH_WEST  = 5,
+    ENTITY_MOVE_WEST        = 6,
+    ENTITY_MOVE_SOUTH_WEST  = 7,
+    ENTITY_STOP_MOVEMENT    = 8,
+};
 
 enum GameCmd : uint8_t {
-    // directional commands match order of directions for Entity's enum
-    ENTITY_FACE_SOUTH       = 0,
-    ENTITY_FACE_SOUTH_EAST  = 1,
-    ENTITY_FACE_EAST        = 2,
-    ENTITY_FACE_NORTH_EAST  = 3,
-    ENTITY_FACE_NORTH       = 4,
-    ENTITY_FACE_NORTH_WEST  = 5,
-    ENTITY_FACE_WEST        = 6,
-    ENTITY_FACE_SOUTH_WEST  = 7,
 
-    ENTITY_MOVE_SOUTH      = 8,
-    ENTITY_MOVE_SOUTH_EAST = 9,
-    ENTITY_MOVE_EAST       = 10,
-    ENTITY_MOVE_NORTH_EAST = 11,
-    ENTITY_MOVE_NORTH      = 12,
-    ENTITY_MOVE_NORTH_WEST = 13,
-    ENTITY_MOVE_WEST       = 14,
-    ENTITY_MOVE_SOUTH_WEST = 15,
+    UI_PROGRESS = 0,
+    UI_ESCAPE   = 1,
+    UI_OPEN     = 2,
 
-    // running will be implemented post-release
-
-    UI_PROGRESS = 16,
-    UI_ESCAPE   = 17,
-    UI_OPEN     = 18,
-
-    // termination commands for continuous actions, sent when releasing keys assigned to continuous actions
-
-    ENTITY_STOP_MOVEMENT = 20
 };
 
 struct EngineConfig {
@@ -89,9 +62,12 @@ public:
 
     void signalKeyPress(const int& keycode);
     void signalKeyRelease(const int& keycode);
+    void stopCurrentMovement();
+    void updateMovement();
 
-    // used to get the latest command in the command queue and pass it to the game's command callback
+    // used to get the latest GameCmd in the command queue and pass it to the game's command callback
     void processCmds(std::function<void(GameCmd* cmd)> callback);
+    void handleMovement(std::function<void(MovementCmd* cmd)> callback);
 
     /* --- RENDERING --- */
 

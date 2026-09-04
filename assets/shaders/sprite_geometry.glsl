@@ -6,7 +6,7 @@ layout(binding = 0) uniform Constants {
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-// Inputs from vertex shader – these are arrays of size 1 (since it's a point)
+// NOTE: All inputs to a geometry shader must be arrays, even if they have only one element
 in mat4 modelMatrix[];
 in flat float texArrayIndx[];
 in flat float maxU[];
@@ -25,7 +25,6 @@ void main() {
 
   // World-space position from the model matrix
   vec3 pos = (model * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-  // pos = vec3(float(instID) * 2.0, 0.0, 0.0);
 
   // Camera axes
   vec3 cameraRight = vec3(g_viewMatrix[0][0], g_viewMatrix[1][0], g_viewMatrix[2][0]);
@@ -34,7 +33,6 @@ void main() {
   mat4 viewProjMatrix = g_projMatrix * g_viewMatrix;
   float size = 0.5;
 
-  // Generate billboard quad – use maxUVal and maxVVal, not arrays
   gl_Position = viewProjMatrix * vec4(pos - cameraRight * size - cameraUp * size, 1.0);
   uv = vec2(0.0, maxVVal);
   EmitVertex();
