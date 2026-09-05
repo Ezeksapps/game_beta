@@ -404,3 +404,72 @@ TODO: complete split of movement commands from other commands
 movement keys should be restricted to only four keys, ideally all in close proximity.
 The defaults are W/A/S/D. Diagonal movement should always use a combination of two of these keys
 The keys used by movement cannot also be re-used in any other GameCmd
+
+05/09/2026 better idea:
+
+GLFW will only provide limited information about a key's state. There are three 'events' GLFW_PRESS, GLFW_RELEASE & GLFW_REPEAT
+so the best way to handle which keys are currently pressed will be to insert every recieved key into a set of pressed keys. The key is
+removed from the set if GLFW_RELEASE is recieved. GLFW_REPEAT will not be used directly, but it will re-send a key code if that key is being
+held for longer than the OS's interval that determines when it considers a key to be held. Because all pressed keys are stored in a set, I can
+immediately attempt an insertion of the keycode (a set will not accept duplicate elements)
+
+after adding a recieved key to the set, check which commands need to be issued.
+
+
+void Engine::signalKeyRelease(const int& keycode) {
+
+    activeKeys.erase(keycode);
+
+    if (movementCmds.contains(keycode)) {
+        switch (activeMovement) {
+
+            // if the active movement wasn't diagonal, then just stop movement
+            case ENTITY_MOVE_SOUTH:
+            case ENTITY_MOVE_EAST:
+            case ENTITY_MOVE_NORTH:
+            case ENTITY_MOVE_WEST:
+                activeMovement = ENTITY_STOP_MOVEMENT;
+                break;
+
+            // don't stop movement immediately. If the active movement is diagonal, then the new movement command
+            // needs to be set to whichever one the other active movement key maps to
+            case ENTITY_MOVE_SOUTH_EAST:
+
+                break;
+            case ENTITY_MOVE_NORTH_EAST:
+                activeMovement = ENTITY_MOVE_EAST;
+                break;
+            case ENTITY_MOVE_NORTH_WEST:
+                break;
+            case ENTITY_MOVE_SOUTH_WEST:
+                break;
+        }
+    }
+}
+
+Intended behaviour in the diagonal cases is to check which of the two keys was released and revert to the single-key action
+so for example in case ENTITY_MOVE_SOUTH_EAST, check if the key assigned to moving south or east was the one released. If it's
+the one for moving south, move east. If it's the one for moving east, move south. This is a problem because I can't check which
+commands are assigned to which keycodes. C++ maps map a key to a value. The value isn't hashed to form a proper key, so I can't use
+std::unordered_map<uint32_t, MovementCmd> movementCmds; to get a 32-bit key code from a MovementCmd, because the movement command isn't
+a key
+
+The simplest solution is to make a reverse map which maps MovementCmds to their corresponding key codes, but that is technically duplicate
+data. I want to avoid wasted space and unecessary duplication as much as possible.
+The only data I specifically need to accomplish the desired functionality is the 32-bit keycode representing the key(s) which produced
+the currently active movement command. So, a better solution would be to just store this code only alongside the active movement command
+in a separate variable
+
+Another issue was that the handling of the current movement command was still attached to a callback that ran every time gameUpdate() was called
+This is wrong, move() and endMovement() should only be called once, not repeatedly every frame. This also doesn't properly update the visible movement
+unless ENTITY_STOP_MOVEMENT was issued prior to changing direction, as the previous move() call is still active and was never terminated.
+What should instead happen is that the callback is executed only when the value of activeMovement needs to be changed
+
+pseudocode impl:
+
+if (prevMovementCmd == ENTITY_STOP_MOVEMENT) {
+   if (newMovementCmd == prevMovementCmd) return;
+   else entity->move(movementCmd, ANIM_EVENT_WALK);
+}
+else if (newMovementCmd == ENTITY_STOP_MOVEMENT) entity->endMovement();
+else entity->changeMovementDirection(movementCmd);

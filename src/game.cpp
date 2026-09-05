@@ -20,30 +20,39 @@ void handleInput(GameCmd* input) {
     }
 }
 
+
 void handleMovement(MovementCmd* cmd) {
     switch(*cmd) {
         case ENTITY_MOVE_SOUTH:
+            std::cout << "Moving South\n";
             (*entities)[0]->move(DIRECTION_SOUTH, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_SOUTH_EAST:
+            std::cout << "Moving South East\n";
             (*entities)[0]->move(DIRECTION_SOUTH_EAST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_EAST:
+            std::cout << "Moving East\n";
             (*entities)[0]->move(DIRECTION_EAST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_NORTH_EAST:
+            std::cout << "Moving North East\n";
             (*entities)[0]->move(DIRECTION_NORTH_EAST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_NORTH:
+            std::cout << "Moving North\n";
             (*entities)[0]->move(DIRECTION_NORTH, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_NORTH_WEST:
+            std::cout << "Moving North West\n";
             (*entities)[0]->move(DIRECTION_NORTH_WEST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_WEST:
+            std::cout << "Moving West\n";
             (*entities)[0]->move(DIRECTION_WEST, ANIM_EVENT_WALK);
             break;
         case ENTITY_MOVE_SOUTH_WEST:
+            std::cout << "Moving South West\n";
             (*entities)[0]->move(DIRECTION_SOUTH_WEST, ANIM_EVENT_WALK);
             break;
         case ENTITY_STOP_MOVEMENT:
@@ -51,6 +60,7 @@ void handleMovement(MovementCmd* cmd) {
             break;
     }
 }
+
 
 void gameUpdate(void) {
     g_pEngine->processCmds(handleInput);
