@@ -473,3 +473,4 @@ if (prevMovementCmd == ENTITY_STOP_MOVEMENT) {
 }
 else if (newMovementCmd == ENTITY_STOP_MOVEMENT) entity->endMovement();
 else entity->changeMovementDirection(movementCmd);
+

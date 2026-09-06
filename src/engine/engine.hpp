@@ -11,7 +11,7 @@
 
 #include <memory>
 
-
+/* NOTE: For correct movement behaviour, the enumerators must match the order of Direction's corresponding enumerators */
 enum MovementCmd : uint8_t {
     ENTITY_MOVE_SOUTH       = 0,
     ENTITY_MOVE_SOUTH_EAST  = 1,
@@ -46,10 +46,14 @@ public:
     Engine(const EngineConfig& config);
     ~Engine();
 
+    /* --- SETTERS --- */
+
     // all scenes are in their own directory. setScene should take the name of the directory, so that
     // it can locate the JSON and glTF files corresponding to the scene and create the object
     // acts as a public-access way to call renderer's setScene()
     void setScene(const std::string& sceneDir);
+
+    void setHandleMovementCallback(std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> callback);
 
     /* --- GETTERS --- */
 
@@ -57,17 +61,11 @@ public:
 
     /* --- INPUT HANDLING --- */
 
-    // Send a keycode (GLFW enum key) to the input handler
-    void handleInput(const int& keycode);
-
     void signalKeyPress(const int& keycode);
     void signalKeyRelease(const int& keycode);
-    void stopCurrentMovement();
-    void updateMovement();
 
     // used to get the latest GameCmd in the command queue and pass it to the game's command callback
-    void processCmds(std::function<void(GameCmd* cmd)> callback);
-    void handleMovement(std::function<void(MovementCmd* cmd)> callback);
+    void processCmds(std::function<void(GameCmd& cmd)> callback);
 
     /* --- RENDERING --- */
 
@@ -78,7 +76,6 @@ public:
 
 private:
 
-    //std::unordered_map<GameCmd, KeypressType>
-
+    std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> m_handleMovementCallback;
 
 };

@@ -11,8 +11,6 @@ using json = nlohmann::json;
 
 std::set<int> activeKeys;
 
-// new input system is WIP, now mostly functional, but I sill can't move north-west?
-
 /* Map key(s) to respective game commands */
 std::unordered_map<uint32_t, MovementCmd> movementCmds;
 std::unordered_map<uint32_t, GameCmd> singleCmds;
@@ -36,7 +34,6 @@ uint32_t combineKeys(std::vector<uint16_t> keys) {
     return packed;
 }
 
-
 /* Read keybind config & map all game commands to their respective enumerated GLFW keys or dual-key combinations */
 void initInputHandler() {
     const char* keybindsJson = readJsonAsset("assets/config/input_config.json");
@@ -44,9 +41,9 @@ void initInputHandler() {
     uint8_t currentCommand; // index/number of current command
 
     /*
-     * keycode can either be a single int or an array of ints, depending on if the command is activated by a single
-     * keypress or multiple simultaneous keypresses.
-     * The commands and movement objects in the JSON must be in the same order as the MovementCmd and GameCmd enumerators.
+     * keycode can either be a single int or an array of 2 ints, depending on if the command is activated by a single
+     * keypress or a dual keypress.
+     * The 'commands' and 'movement' objects in the JSON must be in the same order as the MovementCmd and GameCmd enumerators.
      * If they are not, then commands will be assigned to incorrect keybinds.
      */
 
@@ -59,9 +56,7 @@ void initInputHandler() {
         }
         else keys.push_back(command["keycode"]);
 
-        if (keys.size() == 1) { // single-key commands
-            movementCmds.emplace(static_cast<uint32_t>(keys[0]), (MovementCmd)currentCommand);
-        }
+        if (keys.size() == 1) movementCmds.emplace(static_cast<uint32_t>(keys[0]), (MovementCmd)currentCommand);
         else { // multi-key commands
             uint32_t packedKey = combineKeys(keys);
             movementCmds.emplace(packedKey, (MovementCmd)currentCommand);
@@ -78,11 +73,8 @@ void initInputHandler() {
         }
         else keys.push_back(command["keycode"]);
 
-
-        if (keys.size() == 1) { // single-key commands
-            singleCmds.emplace(static_cast<uint32_t>(keys[0]), (GameCmd)currentCommand);
-        }
-        else { // multi-key commands
+        if (keys.size() == 1) singleCmds.emplace(static_cast<uint32_t>(keys[0]), (GameCmd)currentCommand);
+        else { // multi-key commands (currently unused)
             uint32_t packedKey = combineKeys(keys);
             singleCmds.emplace(packedKey, (GameCmd)currentCommand);
         }
@@ -116,6 +108,11 @@ std::vector<std::shared_ptr<Entity>>& Engine::getEntities() {
 
 /* --- INPUT HANDLING --- */
 
+
+void Engine::setHandleMovementCallback(std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> callback) {
+    m_handleMovementCallback = callback;
+}
+
 void Engine::signalKeyPress(const int& keycode) {
 
     // no need to check if this is a duplicate, since activeKeys is a set, it will reject any attempts to insert duplicate elements anyway
@@ -123,6 +120,9 @@ void Engine::signalKeyPress(const int& keycode) {
 
     uint8_t numMovementKeys = 0;
     uint16_t firstMovementKey;
+
+    MovementCmd newMovementCmd = ENTITY_STOP_MOVEMENT;
+    uint32_t newMovementKey = 0;
 
     for (const uint16_t& key : activeKeys) {
         if (movementCmds.contains(key)) {
@@ -138,8 +138,8 @@ void Engine::signalKeyPress(const int& keycode) {
             // second movement key, completing dual-key command
             else if (numMovementKeys == 1) {
                 uint32_t packedKey = combineKeys({firstMovementKey, key});
-                activeMovement = movementCmds[packedKey];
-                activeMovementKey = packedKey;
+                newMovementCmd = movementCmds[packedKey];
+                newMovementKey = packedKey;
                 ++numMovementKeys;
             }
         } // needs to handle dual-key!
@@ -147,8 +147,16 @@ void Engine::signalKeyPress(const int& keycode) {
     }
     // if no more than one movement key is currently active then issue the movement command bound to the key
     if (numMovementKeys == 1) {
-        activeMovement = movementCmds[firstMovementKey];
-        activeMovementKey = firstMovementKey;
+        newMovementCmd = movementCmds[firstMovementKey];
+        newMovementKey = firstMovementKey;
+    }
+
+    // only handle movement when the active command changes
+    // the callback should not be called if the movement command is identical to the previous
+    if (activeMovement != newMovementCmd) {
+        m_handleMovementCallback(activeMovement, newMovementCmd);
+        activeMovement = newMovementCmd;
+        activeMovementKey = newMovementKey;
     }
 }
 
@@ -157,6 +165,10 @@ void Engine::signalKeyRelease(const int& keycode) {
     activeKeys.erase(keycode);
 
     if (movementCmds.contains(keycode)) {
+
+        MovementCmd newMovementCmd = ENTITY_STOP_MOVEMENT;
+        uint32_t newMovementKey = 0;
+
         switch (activeMovement) {
 
             // if the active movement wasn't diagonal, then just stop movement
@@ -164,7 +176,8 @@ void Engine::signalKeyRelease(const int& keycode) {
             case ENTITY_MOVE_EAST:
             case ENTITY_MOVE_NORTH:
             case ENTITY_MOVE_WEST:
-                activeMovement = ENTITY_STOP_MOVEMENT;
+                newMovementCmd = ENTITY_STOP_MOVEMENT;
+                newMovementKey = 0;
                 break;
 
             // don't stop movement immediately. If the active movement is diagonal, then the new movement command
@@ -175,23 +188,29 @@ void Engine::signalKeyRelease(const int& keycode) {
             case ENTITY_MOVE_SOUTH_WEST:
                 uint16_t key1 = activeMovementKey & 0xFFFF;
                 uint16_t key2 = (activeMovementKey >> 16) & 0xFFFF;
-                if (keycode == key1) activeMovement = movementCmds[key2];
-                else activeMovement = movementCmds[key1];
+                if (keycode == key1) {
+                    newMovementCmd = movementCmds[key2];
+                    newMovementKey = key2;
+                }
+                else {
+                    newMovementCmd = movementCmds[key1];
+                    newMovementKey = key1;
+                }
                 break;
         }
+
+        m_handleMovementCallback(activeMovement, newMovementCmd);
+        activeMovement = newMovementCmd;
+        activeMovementKey = newMovementKey;
     }
 }
 
-void Engine::processCmds(std::function<void(GameCmd* cmd)> callback) {
+void Engine::processCmds(std::function<void(GameCmd& cmd)> callback) {
     if (!pendingCmds.empty()) {
-        GameCmd* cmd = &pendingCmds.front();
+        GameCmd cmd = pendingCmds.front();
         pendingCmds.pop();
         callback(cmd);
     }
-}
-
-void Engine::handleMovement(std::function<void(MovementCmd* cmd)> callback) {
-    callback(&activeMovement);
 }
 
 /* --- RENDERING --- */

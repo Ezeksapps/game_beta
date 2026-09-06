@@ -152,6 +152,7 @@ void Entity::move(const Direction& direction, const AnimEvent& mode) {
 // NOTE: Running will eventually add further complication, as Renderer also needs to be signalled of a larger translVec
 // in that situation, possibly requiring another similar callback
 void Entity::changeMovementDirection(const Direction& direction) {
+    m_direction = direction;
     m_changeMovementDirectionCallback(m_index, getTranslVec(direction, m_animFrames));
 }
 
