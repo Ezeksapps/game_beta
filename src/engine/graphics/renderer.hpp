@@ -56,8 +56,8 @@ public:
 private:
 
     struct FrameConstants {
-        mat4 projMatrix;
-        mat4 viewMatrix;
+        mat4 projMatrix; // The 3D world's perspective proj, UI will use its own ortho proj matrix
+        mat4 viewMatrix; // aka. camera matrix
     };
 
     struct InstanceData {
@@ -67,12 +67,18 @@ private:
         float maxV;
     };
 
-    /*struct EntityTransl {
-       int  index;                   // index in Scene of entity associated with this translation
-       vec3 translVec;               // translation matrix for every step
-       float animFrames;             // duration in frames of this translation
-       float animFramesAcc;          // number of frames this transformation has been running for
-    };*/
+    struct PrimitiveData {
+        uint32_t texID;
+        uint32_t indexCount;
+        uint32_t firstIndex;
+    };
+
+    struct MeshData {
+        std::vector<PrimitiveData> primitives;
+        Diligent::BoundBox         boundingBox;
+    };
+
+    std::vector<MeshData> m_sceneMeshes;
 
     /* Renderer clock */
     std::chrono::steady_clock m_clock;
@@ -124,14 +130,13 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSceneVertexBuffer;
     std::vector<Diligent::ITexture*>                  m_pSceneTextures;
     Diligent::IBuffer*                                m_pSceneIndexBuffer;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSceneShaderResourceView;
 
     /* ---- UI pipeline buffers & textures ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiVertexBuffer;
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiIndexBuffer;
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pFontTexture;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pFontTextureView;
-
-    Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pMapShaderResourceView;
 
     /* Pipeline SRBs */
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSceneShaderResourceBinding;

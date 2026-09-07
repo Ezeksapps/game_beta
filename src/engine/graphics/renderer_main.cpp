@@ -327,26 +327,9 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 
 /* --- GAME DATA UPDATE FUNC --- */
 
-void Renderer::update() { // TODO: Make more efficient
+void Renderer::update() {
 
     if (!m_translsMap.empty()) {
-        /*for (int i = 0; i < m_entityTransls.size();) {
-            EntityTransl& transl = m_entityTransls[i];
-            ++transl.animFramesAcc;
-
-            // Apply translation to entity's position
-            m_pScene->m_pEntities[transl.index]->m_pos += transl.translVec;
-            // m_pScene->m_pEntities[transl.index]->m_pos += lerp(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f, 0.0f, 0.0f), 0.5f);
-            vec3 pos =  m_pScene->m_pEntities[transl.index]->m_pos;
-
-            // Check if translation is complete
-            if (transl.animFramesAcc >= transl.animFrames) {
-                m_pScene->m_pEntities[transl.index]->doAnimEvent(ANIM_EVENT_IDLE); // reset to idle animation
-                /* Remove complete translation, done by swapping this and the last EntityTransl so that this now complete translation can be popped */
-                /*if (i < m_entityTransls.size() - 1) std::swap(m_entityTransls[i], m_entityTransls.back());
-                m_entityTransls.pop_back();
-            } else ++i;
-        }*/
         for (const auto& [index, translVec] : m_translsMap) {
              m_pScene->m_pEntities[index]->m_pos += translVec;
         }

@@ -325,8 +325,6 @@ GAME_EVENT_BATTLE_END
 GAME_EVENT_ENTER_SCENE (triggered when approaching an exit in a scene)
 // add more as gameplay becomes clearer
 
-
-CHECK: https://stackoverflow.com/questions/46631814/handling-multiple-keys-input-at-once-with-glfw
 TODO: Improve style colours for UI
 
 Improving movement
@@ -365,7 +363,6 @@ This new system needs to be able to:
 
 The JSON structure of the key config has also been revised.
 Now every command is its own separate object
-
 
 There are three distinct types of command enumerators. Those representing single actions (GameCmd), those which begin a continuous action (MovementCmd)
 and those which terminate a continuous action (MovementCmd)
@@ -465,7 +462,7 @@ This is wrong, move() and endMovement() should only be called once, not repeated
 unless ENTITY_STOP_MOVEMENT was issued prior to changing direction, as the previous move() call is still active and was never terminated.
 What should instead happen is that the callback is executed only when the value of activeMovement needs to be changed
 
-pseudocode impl:
+pseudocode impl of new callback:
 
 if (prevMovementCmd == ENTITY_STOP_MOVEMENT) {
    if (newMovementCmd == prevMovementCmd) return;
@@ -474,3 +471,73 @@ if (prevMovementCmd == ENTITY_STOP_MOVEMENT) {
 else if (newMovementCmd == ENTITY_STOP_MOVEMENT) entity->endMovement();
 else entity->changeMovementDirection(movementCmd);
 
+
+
+Collision Detection
+-=-=-=-=-=-=-=-=-=-=-=-
+
+Sprites themselves are very simple geometry-wise, as they are made up of only a single quad
+The best way to do collision detection for them is therefore with an AABB algorithm (axis-aligned bounding box)
+This is fine for collisions between entities, but I also need to consider collision between an entity an the surrounding 3D scene.
+
+Entities should be able to travel around the scene freely as long as they do not overlap/approach any point where there is
+a wall. Checking for walls like this should be easy, just check if we are approching a place where scene geometry goes up
+in the Z-axis at an angle greater than 45deg. If the angle <= 45deg, then the entity should climb the incline, moving normally,
+but also having its Z-coordinate incremented as it moves up the incline. The camera will follow entites along any axis, so it
+will go up in Z automatically as the player climbs
+
+I can use Diligent::GLTF::Mesh's .BB (bound box) property to get the bounding box of the mesh an entity is approaching
+
+Expanding scene renderer for multiple textures
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+This isn't that difficult, since I am only using base colour. Other material components are unused, as they exist to provide
+realism and visual depth that is not required for the style of this game. g_pSceneTextures need to be made into a proper texture array
+sized according to the number of textures the glTF loader has detected in the scene
+Looking at the back-end implementation of GetTexture() in the glTF asset loader, Diligent is internally loading all textures into a dynamic texture
+atlas. That means most of the complex work is done already
+
+A texture refers to just the raw image data of a loaded PNG (although diligent probably adds some metadata)
+A material can take multiple textures as inputs and dictates the final appearence of the surface it is applied to based on the input textures
+
+In terms of Blender, the materials use a principled BSDF node with only a base colour texture attached, the other parameters such as
+the normal map or the 'metallic' and 'roughness' sliders are unused, everything that is not the base colour is left untouched.
+The material output node has the principled BSDF linked to the surface shading slot. The other three slots are irrelevant and unused
+
+In diligent's API, when accessing an individual primitive, a property of the Diligent::GLTF::Primitive struct is 'MaterialID' (uint32_t)
+When loading any glTF, Diligent will have also auto-created the materials and placed them in the m_pGlbModel->Materials vector
+
+So, to draw I want to assign textures per-primitive as each primitive has its own material. But I can't see how to access the textures
+which a material takes as its inputs?
+
+To investigate, I looked at the GLTFLoader header (DiligentTools/AssetLoader/interface/GLTFLoader.hpp) to see the declaration
+of the Material struct and found these member function that dealt with textures:
+
+Uint32 GetMaxActiveTextureAttribIdx() const
+Uint32 GetNumActiveTextureAttribs() const
+
+bool IsTextureAttribActive(Uint32 Idx) const
+
+int GetTextureId(Uint32 Idx) const
+void SetTextureId(Uint32 Idx, int TextureId)
+
+TextureShaderAttribs& GetTextureAttrib(Uint32 Idx)
+const TextureShaderAttribs& GetTextureAttrib(Uint32 Idx) const
+
+GetTextureId() is the most useful one of these, as it returns the index of the texture you request
+in the model's texture array. materials store texture IDs. A material can have up to 15 textures representing all the different possible input textures.
+These texture attribs are stored in the material with indices 0 - 15. The one I care about is index 0, which
+is 'DefaultBaseColorTextureAttribId', so I can call m_pGlbModel->Materials[primitive.MaterialId].GetTextureId(DefaultBaseColorTextureAttribId);
+to get the texture associated with a single primitive
+
+in renderScene() I already iterate over each mesh and primitive to get the primitive's attributes to issue the draw command.
+Getting the correct texture for a primitive now depends on this iteration, but textures cannot be assigned to the SRV or SRB in an active render
+pass (or at least that wouldn't be the ideal way to do it). I do not want to iterate twice over the same arrays. That is inefficient and lazy.
+Instead, the iteration should be moved outside of the render and I can instead cache all the draw attributes for every primitive as well as the materials
+assigned to them in a structure. This approach will also be helpful for the collision detection, since I'll also need to get the meshes' bounding boxes
+anyway.
+
+
+
+Windows cross-compilation can be done with mingw64-gcc-c++
+This cross compiler also implements ports of the GNU tools

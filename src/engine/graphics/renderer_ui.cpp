@@ -35,8 +35,8 @@ void Renderer::createUiPipelineState() {
     PipelineStateObjCreateInfo.GraphicsPipeline.PrimitiveTopology                       = Diligent::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     /* Face culling mode */
     PipelineStateObjCreateInfo.GraphicsPipeline.RasterizerDesc.CullMode                 = Diligent::CULL_MODE_NONE;
-    /* Enable depth testing */
-    PipelineStateObjCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable            = true;
+    /* Disable depth testing (UI draws over everything, it doesn't care) */
+    PipelineStateObjCreateInfo.GraphicsPipeline.DepthStencilDesc.DepthEnable            = false;
     /* Render pass used by this pipeline */
     PipelineStateObjCreateInfo.GraphicsPipeline.pRenderPass                             = m_pRenderPass;
     /* initial supbpass to start render pass from */

@@ -55,8 +55,12 @@ public:
     // used by renderer, returns a read-only reference to the active sprite
     const std::shared_ptr<Sprite>& getActiveSprite();
 
+    /* Getters */
+
     int getIndex();
     std::string getCacheKey(); // the key being the filepath to the JSON outlining the spritesheets used by this entity
+
+    /* Movement funcs */
 
     // move in a specified direction indefinitely with a specified mode of transport (walking/running)
     void move(const Direction& direction, const AnimEvent& mode);
@@ -65,8 +69,6 @@ public:
     void changeMovementDirection(const Direction& direction);
     // end current movement and return to ANIM_EVENT_IDLE
     void endMovement();
-
-    bool isMoving(); // getter, checks movement status of Entity
 
     // TODO: Move read-only members to private and use getters
     // read-only: index, pos (set initially by Scene, maybe make Entity friend class of Scene?), event (shouldnt be changed without ops performed by doAnimEvent)
@@ -95,7 +97,6 @@ private:
     std::shared_ptr<Sprite> m_pActiveSprite;
 
     float m_frameTimer;
-    bool m_isMoving; // controls movement, move() can only be called if there is no existing movement
 
     /* total number of frames the currently active movement sprite sheet animation lasts for, used to re-calculate
      * translVec if changeMovementDirection() is called, as the translVec calculation requires this value.

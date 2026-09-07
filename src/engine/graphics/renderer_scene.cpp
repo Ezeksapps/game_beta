@@ -39,7 +39,7 @@ void Renderer::createScenePipelineState() {
         shaderCreateInfo.Desc.ShaderType = Diligent::SHADER_TYPE_VERTEX;
         shaderCreateInfo.EntryPoint      = "main";
         shaderCreateInfo.Desc.Name       = "vertex shader desc";
-        shaderCreateInfo.FilePath        = "map_vertex.glsl";
+        shaderCreateInfo.FilePath        = "scene_vertex.glsl";
         m_pDevice->CreateShader(shaderCreateInfo, &pSceneVertexShader);
     }
 
@@ -49,7 +49,7 @@ void Renderer::createScenePipelineState() {
         shaderCreateInfo.Desc.ShaderType = Diligent::SHADER_TYPE_PIXEL;
         shaderCreateInfo.EntryPoint      = "main";
         shaderCreateInfo.Desc.Name       = "fragment shader desc";
-        shaderCreateInfo.FilePath        = "map_fragment.glsl";
+        shaderCreateInfo.FilePath        = "scene_fragment.glsl";
         m_pDevice->CreateShader(shaderCreateInfo, &pSceneFragmentShader);
     }
 
@@ -130,17 +130,25 @@ void Renderer::loadGLB(const std::string& filename) {
 
     for (int i = 0; i < m_pGlbModel->GetTextureCount(); ++i) {
         m_pSceneTextures.push_back(m_pGlbModel->GetTexture(i, m_pDevice, m_pImmediateContext));
-    };
+    }
 
-    /* TODO: Make some mechanism where program gracefully exits on encountering a textureless GLB, rather than crashing from an unset g_texture global in shaders */
-    if (!m_pSceneTextures.empty()) {
-        // TODO: Must bind all textures!
-        // Diligent::ITextureView* texViews;
-        // for (int i = 0; i < m_pMapTextures.size(); ++i) {
-        //     Diligent::ITextureView* pTexView = m_pMapTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-        // }
-        Diligent::ITextureView* pTexView = m_pSceneTextures[0]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE); // USE ALL TEXTURES!
-        m_pSceneShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(pTexView);
+    // now must cache required data from these iterators
+    for (const Diligent::GLTF::Mesh& mesh : m_pGlbModel->Meshes) {
+
+        std::vector<PrimitiveData> primitives;
+
+        for (const Diligent::GLTF::Primitive& primitive : mesh.Primitives) {
+            primitives.push_back(PrimitiveData {
+                .texID      = (uint32_t)m_pGlbModel->Materials[primitive.MaterialId].GetTextureId(Diligent::GLTF::DefaultBaseColorTextureAttribId),
+                .indexCount = primitive.IndexCount,
+                .firstIndex = primitive.FirstIndex
+            });
+        }
+
+        m_sceneMeshes.push_back(MeshData {
+            .primitives  = primitives,
+            .boundingBox = mesh.BB // will be used later for collision detection
+        });
     }
 
     // vertex buffers, index buffer and textures now loaded, proceed to render scene glTF
@@ -152,15 +160,22 @@ void Renderer::renderScene() {
     m_pImmediateContext->SetVertexBuffers(0, 1, &m_pSceneVertexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_pSceneIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pScenePipelineStateObj); // set pipeline to use
-    m_pImmediateContext->CommitShaderResources(m_pSceneShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
 
     /* Draw each primitive individually, or indices and vertices will overlap and draw over each other */
-    for (const Diligent::GLTF::Mesh& mesh : m_pGlbModel->Meshes) {
-        for (const Diligent::GLTF::Primitive& primitive : mesh.Primitives) {
+    for (int i = 0; i < m_sceneMeshes.size(); ++i) {
+        for (const PrimitiveData& primitive : m_sceneMeshes[i].primitives) {
+
+            Diligent::ITextureView* pTexView = m_pSceneTextures[primitive.texID]->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+
+            // update SRV for this primitive's texture
+            m_pSceneShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(pTexView);
+
+            // commit updated SRB
+            m_pImmediateContext->CommitShaderResources(m_pSceneShaderResourceBinding, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
 
             Diligent::DrawIndexedAttribs drawAttribs;
-            drawAttribs.NumIndices = primitive.IndexCount;
-            drawAttribs.FirstIndexLocation = primitive.FirstIndex;
+            drawAttribs.NumIndices = primitive.indexCount;
+            drawAttribs.FirstIndexLocation = primitive.firstIndex;
             drawAttribs.BaseVertex = 0;
             drawAttribs.IndexType = Diligent::VT_UINT32;
             drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;

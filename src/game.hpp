@@ -26,11 +26,11 @@
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 // Camera linked to player's movement and follows them around the map on all axes at a fixed offset
 // UI system made with Nuklear and accompanying renderer (in testing)
+// input system that properly controls movement with expected behaviour (entity moves so long as movement key(s) are held)
 
 // WIP: Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
 
 // FIX (med pri): Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
-// FIX (med pri): movement behaviour doesn't match expected (stop moving when not holding any movement key), maybe cmd queue not best format?
 // FIX (high pri): UI pipeline works and draw commands are dispatched and executed properly, but no UI is visible because view matrix isnt accounted for
 
 // TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
@@ -39,18 +39,6 @@
 // TODO: COLLISION DETECTION (HIGH PRI, needed for most mechanics)
 // TODO: Bind all textures for scene renderer (may need tex array) [HIGH PRI]
 // TODO: Need more complex test scene for development of scene JSON spec
-
-/* CURRENT STATUS:
- * Compiles successfully, renderer and pipelines initialise with no issues.
- * Map pipeline renders 3D environment. Camera system is properly set up and can rotate with yaw, pitch and roll
- * Sprite pipeline renders sprite with proper UVs and alpha channels and properly matches the camera's rotation to appear flat.
- * UI pipeline correctly recieves vertices from Nuklear backend and draws UI with expected behaviour.
- * Sprite sheet system fully implemented, but needs to accomodate directionless sprite sheets as well.
- * All sprite sheets for an entity are cached on load, so the texture data can be switched as needed, meaning no visual lag is seen when switching
- * between sprite sheets. Frame sizes in sprite sheets may be of any size below the maximum dimensions defined in Renderer.
- * Entitiy movement operational, corresponding movement animation plays with it and is synced so that moving one tile will run one exactly cycle
- * of that animation
- */
 
 #include "engine/engine.hpp"
 

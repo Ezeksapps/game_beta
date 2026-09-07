@@ -21,10 +21,10 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
         int typeValue = anim["type"];
 
         Sprite sprite {
-            .filepath = anim["filepath"],
+            .filepath       = anim["filepath"],
             .frameDurations = anim["durations"],
-            .frameWidth = anim["frameWidth"],
-            .frameHeight = anim["frameHeight"]
+            .frameWidth     = anim["frameWidth"],
+            .frameHeight    = anim["frameHeight"]
         };
 
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
@@ -84,8 +84,6 @@ std::string Entity::getCacheKey() {
     return m_animJsonFilepath;
 }
 
-bool Entity::isMoving() { return m_isMoving; }
-
 const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteMap() {
     return m_spriteMap;
 }
@@ -127,17 +125,12 @@ vec3 getTranslVec(const Direction& direction, const int& animFrames) { // TODO: 
             //m_pos += vec3(-1.0f, -1.0f, 0.0f);
             translVec = vec3(-1.0f / animFrames, -1.0f / animFrames, 0.0f /* Z-axis ignored */);
             break;
-        default:
-            break;
     }
     return translVec;
 }
 
 void Entity::move(const Direction& direction, const AnimEvent& mode) {
 
-    if (m_isMoving) return;
-
-    m_isMoving = true;
     m_direction = direction;
 
     doAnimEvent(mode);
@@ -159,5 +152,4 @@ void Entity::changeMovementDirection(const Direction& direction) {
 void Entity::endMovement() {
     m_endMovementCallback(m_index);
     doAnimEvent(ANIM_EVENT_IDLE);
-    m_isMoving = false;
 }

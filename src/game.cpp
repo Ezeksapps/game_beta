@@ -34,7 +34,6 @@ void handleMovement(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd) {
 
 void gameUpdate(void) {
     g_pEngine->processCmds(handleInput);
-
 }
 
 void gameInit() {
