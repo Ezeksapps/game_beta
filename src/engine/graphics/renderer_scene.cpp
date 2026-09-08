@@ -84,7 +84,7 @@ void Renderer::createScenePipelineState() {
      * Set shader variables that can be set in this code
      */
     Diligent::ShaderResourceVariableDesc shaderVars[] = {
-        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
     };
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.Variables    = shaderVars;
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(shaderVars);
@@ -111,6 +111,7 @@ void Renderer::createScenePipelineState() {
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pScenePipelineStateObj->CreateShaderResourceBinding(&m_pSceneShaderResourceBinding, true);
+
 }
 
 /* --- LOADER FUNCS --- */

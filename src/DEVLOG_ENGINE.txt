@@ -1,10 +1,3 @@
-Pitch = up/down (world z), Yaw = left/right (world x)
-
-NOTE: UI library may be ImGui, but figure out how to control the styling so everything looks pixelated
-(though it should automatically do this based on the specified width/height in renderer, font can be pixelated as well)
-
-TODO: Switch to anisotropic filter for better-looking textures
-
 PLAN FOR MOVEMENT IMPLEMENTATION
 --------
 
@@ -537,7 +530,60 @@ Instead, the iteration should be moved outside of the render and I can instead c
 assigned to them in a structure. This approach will also be helpful for the collision detection, since I'll also need to get the meshes' bounding boxes
 anyway.
 
+From Diligent Samples, tutorial 3:
+-----------------------------------
 
+Mutable resources are set through the object called shader resource binding, or SRB. SRB encompasses all resources specific to an object instance.
+As an example, if your character shader uses a shadow map, diffuse and normal maps,
+then shadow map should typically be static resource as it is the same for all object instances,
+while normal and diffuse maps should be mutable as they are character-specific.
+Shader variable type is defined by ShaderResourceVariableDesc structure. Recall that if shader variable type is not specified,
+default type defined by DefaultVariableType is used.
+
+A mutable resource can only be bound once to an SRB object. If multiple variations are required, a number of SRB objects should be created.
+For a very frequently changning resources, dynamic variables can be used. Dynamic resources can be bound multiple times to the same SRB object,
+but are less efficient from performance point of view. Refer to [this post] for more details.
+Do not confuse shader variable type with resource usage. Shader variable type is all about binding resources to shader variables.
+It has nothing to do with the ability to change the resource contents which is controlled by the resource usage.
+
+https://diligentgraphics.com/2016/03/23/resource-binding-model-in-diligent-engine-2-0/
+
+The referenced post from 2016 also states:
+
+Mutable variables define resources that are expected to change on a per-material frequency. Examples may include diffuse textures, normal maps etc.
+Dynamic variables are expected to change frequently and randomly.
+-----------------------------------
+
+Diligent::ShaderResourceVariableDesc shaderVars[] = {
+    {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+};
+
+the texture is currently declared as a mutable resource and it can therefore only be bound once to an SRB, this is not a problem, the SRB
+should be different for every object (therefore every primitive), and supposedly the pattern with which I alter the mutable value of the g_texture
+variable is correct (obtaining the variable through the SRB then calling Set())
+
+The SRVs created for each texture have been verififed to be correct. The texture in the fragment shader which corresponds to g_texture is typed
+as 2DSampler, which is correct. There is no clear reason why everything is using the same texture, despite the expected behaviour of an SRB
+being used in the code, unless I am incorrectly interpreting what these docs are trying to communicate
+
+Am I misinterpreting the wording, I believe it says a mutable resource can have the attached resource, which is an SRB (it binds all resourced for this object)
+set only once. If I change the resource that the SRB is bound to then surely it would work properly?
+Additional confusion comes from the wording in the 2016 post claiming mutable resources are best for where the material changes per object (exactly what this is)
+
+Changing the texture sampler to a dynamic variable does fix this, and the pipeline now works perfectly, but I am still concerned about the confusing
+wording these docs have sometimes.
+
+
+Mutable variables define resources that are expected to change on a per-material frequency. Examples may include diffuse textures, normal maps etc.
+Dynamic variables are expected to change frequently and randomly.
+
+Well the whole point is that each primitive has a different material
+Switching to dynamic does fix this perfectly, I am just concerned with efficiency trade offs (I only use OpenGL and Vulkan so take this into account)
+is this fine for my use-case?
+
+FURTHER NOTES:
 
 Windows cross-compilation can be done with mingw64-gcc-c++
 This cross compiler also implements ports of the GNU tools
+
+Pitch = up/down (world z), Yaw = left/right (world x)

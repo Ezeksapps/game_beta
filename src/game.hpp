@@ -9,7 +9,7 @@
 
 // CURRENTLY COMPLETE:
 // Renderer init
-// glTF loader
+// glTF loader (Now complete with ability to handle more than one material)
 // Sprite loader and renderer
 // Graphics pipelines, render pass and frame buffer
 // Sprite billboards' instance data
