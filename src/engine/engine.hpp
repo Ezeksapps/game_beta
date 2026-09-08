@@ -65,7 +65,7 @@ public:
     void signalKeyRelease(const int& keycode);
 
     // used to get the latest GameCmd in the command queue and pass it to the game's command callback
-    void processCmds(std::function<void(GameCmd& cmd)> callback);
+    void processCmds(std::function<void(GameCmd cmd)> callback);
 
     /* --- RENDERING --- */
 

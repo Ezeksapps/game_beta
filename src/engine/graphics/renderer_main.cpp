@@ -100,7 +100,7 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
 }
 
 void Renderer::testUiSystem() {
-    pauseMenu();
+    m_pCurrentUiElemFunc = pauseMenu;
 }
 
 // CHECK: Maybe rename index to event?

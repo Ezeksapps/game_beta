@@ -46,26 +46,16 @@ const uint8_t* loadStylesheet() {
 
     for (const json& obj : root) { // for every object in JSON (holding styles for a specific UI elem)
 
-        /* NOTE: Order must be consistent, you cannot change the order of the keys in an object without affecting the values RGBA/XY
+        /* NOTE: Order must be consistent, you cannot change the order of the keys in an object without affecting the RGBA values
          * that get assigned to the different UI components/actions, as the array order expected C-side is hard-coded!
          */
 
         if (obj.empty()) continue;
 
-        for (const json& vec : obj) { // for every key whose value is either a colour (vec4) or padding data (vec2)
+        for (const json& vec : obj) { // for every key
             // each vec is a fixed-size array
-            int vecSize = vec.size();
-            if (vecSize == 2) { // vec2
-                for (int i = 0; i < vecSize; ++i) {
-                    stylesheetData[index] = vec[i];
-                    ++index;
-                }
-            }
-            else if (vecSize == 4) { // vec4
-                for (int i = 0; i < vecSize; ++i) {
-                    stylesheetData[index] = vec[i];
-                    ++index;
-                }
+            if (vec.size() == 4) { // vec4
+                for (int i = 0; i < vec.size(); ++i) stylesheetData[++index] = vec[i];
             }
             else throw std::runtime_error("Cannot parse stylesheet, an key is assigned to an array of incorrect size (must be either vec2 or vec4)");
         }

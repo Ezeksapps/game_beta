@@ -287,8 +287,7 @@ void pauseMenu() {
         nk_layout_row_static(&ctx, 20, 100, 1);
         if (nk_button_label(&ctx, "Map")) {/*handle event*/}
 
-        // Press ESC to exit
-
     }
+    nk_end(&ctx);
 }
 

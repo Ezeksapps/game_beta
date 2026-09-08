@@ -8,20 +8,8 @@ uint32_t g_offset = 0;
 
 struct nk_rect {float x,y,w,h;}; // matches Nuklear's version
 
-mat4 getUiProjMatrix(const float& width, const float& height) { // CHECK: use glm::ortho instead?
-
-    const float L = 0.0f;
-    const float R = static_cast<float>(width);
-    const float T = 0.0f;
-    const float B = static_cast<float>(height);
-
-    return mat4 {
-        // COL 0          | COL 1             | COL 2 | COL 3
-        2.0f / (R - L),     0.0f,               0.0f,   0.0f,
-        0.0f,               2.0f / (T - B),     0.0f,   0.0f,
-        0.0f,               0.0f,               0.5f,   0.0f,
-        (R + L) / (L - R),  (T + B) / (B - T),  0.5f,   1.0f
-    };
+mat4 getUiProjMatrix(const float& width, const float& height) {
+    return glm::ortho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
 }
 
 void Renderer::createUiPipelineState() {
@@ -123,12 +111,24 @@ void Renderer::createUiPipelineState() {
     Diligent::RefCntAutoPtr<Diligent::IBuffer> constantsBuffer;
     {
         mat4 proj = getUiProjMatrix(static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
+        mat4 view = m_viewMatrix;
+
+        struct Constants {
+            mat4 projMatrix;
+            mat4 viewMatrix;
+        };
+
+        Constants constants;
+        constants.projMatrix = proj;
+        constants.viewMatrix = view;
 
         Diligent::BufferDesc constantsBufferDesc;
         constantsBufferDesc.BindFlags = Diligent::BIND_UNIFORM_BUFFER;
-        constantsBufferDesc.Size      = sizeof(proj);
+        constantsBufferDesc.Size      = sizeof(Constants);
         constantsBufferDesc.Usage     = Diligent::USAGE_DEFAULT;
-        Diligent::BufferData initData(&proj, sizeof(proj));
+        constantsBufferDesc.Name      = "Constants Buffer";
+
+        Diligent::BufferData initData(&constants, sizeof(Constants));
 
         m_pDevice->CreateBuffer(constantsBufferDesc, &initData, &constantsBuffer);
     }
@@ -253,6 +253,8 @@ void Renderer::renderUi() {
     m_pImmediateContext->SetBlendFactors(blendFactors);
 
     m_pImmediateContext->SetViewports(1, &g_viewport, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
+
+    if (m_pCurrentUiElemFunc != nullptr) m_pCurrentUiElemFunc(); // execute creator func for currently active UI elem
 
     // Convert from command queue into draw list and draw to screen
     // Load draw vertices & elements directly into vertex + element buffer

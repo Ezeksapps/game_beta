@@ -5,7 +5,7 @@
 
 std::vector<std::shared_ptr<Entity>>* entities = nullptr;
 
-void handleInput(GameCmd& input) {
+void handleInput(GameCmd input) {
     switch(input) {
         case UI_PROGRESS:
             break;

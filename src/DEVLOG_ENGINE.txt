@@ -573,17 +573,30 @@ Additional confusion comes from the wording in the 2016 post claiming mutable re
 Changing the texture sampler to a dynamic variable does fix this, and the pipeline now works perfectly, but I am still concerned about the confusing
 wording these docs have sometimes.
 
-
-Mutable variables define resources that are expected to change on a per-material frequency. Examples may include diffuse textures, normal maps etc.
-Dynamic variables are expected to change frequently and randomly.
-
-Well the whole point is that each primitive has a different material
-Switching to dynamic does fix this perfectly, I am just concerned with efficiency trade offs (I only use OpenGL and Vulkan so take this into account)
-is this fine for my use-case?
-
 FURTHER NOTES:
 
 Windows cross-compilation can be done with mingw64-gcc-c++
 This cross compiler also implements ports of the GNU tools
 
 Pitch = up/down (world z), Yaw = left/right (world x)
+
+UI DEBUG:
+
+Non-movement key found in set of active keys, adding GameCmd 2 to command queue
+Creator function for pause menu called
+nk_begin returned true, beginning construction of UI element
+Number of commands in buffer: 0
+After nk_end, commands in buffer: 0
+
+commands in buffer following nk_end shouldn't be zero. Though I can confirm draw commands do end up being processed when calling pauseMenu(),
+as 16 draw command are executed when it is called. The most likely reason why I don't see any UI on screen is due to the fact that Nuklear
+expects the UI creator func to be re-executed for every frame, this is explicitly stated in the code comment for nk_begin():
+
+"Starts a new window; needs to be called every frame for every window (unless hidden) or otherwise the window gets removed"
+
+The best solution to this would be to have a function pointer stored globally within renderer_ui.cpp pointing to the creator function
+for the currently active UI element, this way that function can be called before draw commands are issued every frame
+
+UPDATE: That didn't display anything either, although at least now I've avoided future bugs from not doing the func pointer thing
+
+Surely the issue must be one of the matrices or the shaders, but I don't see how they could be wrong

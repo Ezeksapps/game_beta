@@ -179,6 +179,8 @@ private:
     /* Stores all pre-loaded sprite sheets for the current scene's entities */
     std::unordered_map<std::string, Diligent::RefCntAutoPtr<Diligent::ITexture>> m_entitySpriteCache;
 
+    void (*m_pCurrentUiElemFunc)();
+
     void createSharedUniformBuffer();
 
     void createScenePipelineState();

@@ -143,7 +143,10 @@ void Engine::signalKeyPress(const int& keycode) {
                 ++numMovementKeys;
             }
         } // needs to handle dual-key!
-        else pendingCmds.push(singleCmds[key]);
+        else {
+            std::cout << "Non-movement key found in set of active keys, adding GameCmd " << (int)singleCmds[key] << " to command queue\n";
+            pendingCmds.push(singleCmds[key]);
+        }
     }
     // if no more than one movement key is currently active then issue the movement command bound to the key
     if (numMovementKeys == 1) {
@@ -205,7 +208,7 @@ void Engine::signalKeyRelease(const int& keycode) {
     }
 }
 
-void Engine::processCmds(std::function<void(GameCmd& cmd)> callback) {
+void Engine::processCmds(std::function<void(GameCmd cmd)> callback) {
     if (!pendingCmds.empty()) {
         GameCmd cmd = pendingCmds.front();
         pendingCmds.pop();
