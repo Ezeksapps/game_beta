@@ -46,9 +46,8 @@ public:
     void setScene(const std::string& sceneDir);
     std::vector<std::shared_ptr<Entity>>& getEntities();
 
-    //TEMP
+    //TEMP, calls pauseMenu()
     void testUiSystem();
-
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;

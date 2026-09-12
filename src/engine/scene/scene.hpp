@@ -6,6 +6,11 @@
 
 #include "../entity/entity.hpp"
 
+struct AABB {
+    vec3 min;
+    vec3 max;
+};
+
 class Scene {
 
 friend class Renderer; // TODO remove
@@ -16,8 +21,14 @@ public:
     Scene(const std::string& sceneDir);
     ~Scene();
 
+    // checks collisions between scene entities & 3D scene meshes
+    void resolveCollisions();
+
     std::vector<std::shared_ptr<Entity>>& getEntities();
-        std::vector<std::shared_ptr<Entity>> m_pEntities; // TEMP
+
+    std::vector<std::shared_ptr<Entity>> m_pEntities; // TEMP
+
+    std::vector<AABB>                m_bboxes;
 
 private:
 

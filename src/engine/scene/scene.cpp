@@ -73,3 +73,25 @@ void Scene::loadSceneJson(const std::string& sceneFilepath) {
     // TODO: Define scene JSON format
 }
 
+// check if two AABBs intersect
+// source: https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+bool intersect(const AABB& a, const AABB& b) {
+    return (
+        a.min.x <= b.max.x &&
+        a.max.x >= b.min.x &&
+        a.min.y <= b.max.y &&
+        a.max.y >= b.min.y &&
+        a.min.z <= b.max.z &&
+        a.max.z >= b.min.z
+    );
+}
+
+void Scene::resolveCollisions() {
+    /* Checking every entity for collisions on every invokation of this function is ridiculously inefficient
+     * First, check which entities are actually close to each other (within a particular range)
+     * Only do an AABB instersection test if they are within that range
+     * For collisions with the 3D scene, look through the BBoxes to see which is closest and check for collision
+     */
+
+
+}

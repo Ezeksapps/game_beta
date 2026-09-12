@@ -157,7 +157,7 @@ void Renderer::populateInstanceBuffer() {
     int i = 0;
     for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
 
-        entity->update(1.0f);
+        entity->update(0.5f); // TODO: entity should percieve an update of 1 frame, but this sets correct anim speed for now, check why setting m_fps doesnt work
         const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();
 
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;

@@ -479,7 +479,45 @@ in the Z-axis at an angle greater than 45deg. If the angle <= 45deg, then the en
 but also having its Z-coordinate incremented as it moves up the incline. The camera will follow entites along any axis, so it
 will go up in Z automatically as the player climbs
 
-I can use Diligent::GLTF::Mesh's .BB (bound box) property to get the bounding box of the mesh an entity is approaching
+I can use Diligent::GLTF::Mesh's .BB (bound box) property to get the bounding box of the mesh an entity is approaching,
+this box is already in the standard format for AABB collision detection, only with 3D vec3 coordinates instead of 2D vec2
+
+Now I need to determine where I am going to add the implementation for the collision detection.
+This algorithm deals with collisions between entities as well as collisions betweens entities and 3D elements of the scene.
+Because this mostly deals with the Entity, I want to put this handling as part of the Entity::update() function. The only
+complication is the need to handle the 3D meshes' bounding boxes, which need to be obtained off the renderer via m_sceneMeshes,
+A getter func cannot be used, Entity does not know about the renderer's existance. Possibly another callback can be used, but if I do that
+I need to figure out what data I send, I don't want to make unecessary copies. I could pass a shared pointer to scene meshes, but that contains
+other data like primitive data containing index counts and texture IDs which entity should have no access to. Again, entity should have no access
+to any internal component of renderer.
+
+I will solve this issue later. First I just want to get collision detection between entities done, that is the most important part after all,
+since this will be what determines if you're facing an entity to talk to/interact with them
+
+Another issue comes with this though, Scene holds all the entities, and only renderer can access scene directly, because the renderer own the
+unique pointer to scene. I can't determine which entities are colliding within the Entity class, because each class instance only holds data about itself
+I also won't solve this by having each instance hold vectors of the positions odf every other entity. That is inefficient, a waste of memory, and will be hard to manage properly.
+Code should always follow a 'single source of truth' paradigm. I will not keep data duplicates
+
+My solution was to place this logic in the Scene class, this way Renderer can still call the collision tests every frame and
+the implementation is housed in a logical location (scene holds the vector of entities, solving the issue with having the logic in the Entity class)
+Whenever two entities are found to collide, I can just call m_pEntities[index]->stopMovement();
+
+Now I have another thing to figure out. Checking AABB collisions between every last entity is ridiculously inefficient.
+I want to instead only test collisions between entity pairs that are actually close enough to each other where it might be a possibility that they collide
+
+Testing the proximity of every entity every time the function is run is also inefficient, I thought that I might be able
+to switch the data structure holding the entities to an ordered one, but that won't work as the order of entities in the vector
+is important to the sprite sheet and movement systems working properly, also I need the entity positions ordered, not the actual entities.
+I still don't want unecessary data copying, so maybe I can sort references to the m_pos members of entities in the vector?
+That would still require updating and re-sorting every frame (as positions can update every frame) and doesn't solve the problem
+
+To see what other options I had, I searched for ways to make collision detection more efficient and found the following answer:
+https://gamedev.stackexchange.com/a/74909
+
+Spatial hashing was exactly what I needed and matched the idea I already had quite closely
+I am basing the version I'm making on this implementation I found:
+https://conkerjo.wordpress.com/2009/06/13/spatial-hashing-implementation-for-fast-2d-collisions/
 
 Expanding scene renderer for multiple textures
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

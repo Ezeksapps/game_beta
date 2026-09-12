@@ -1,0 +1,117 @@
+Shinx/Luxio/Luxray
+-----
+
+Charmander/Charmeleon/Charizard
+Bulbasaur/Ivysaur/Venusaur
+Pidgey/Pidgeotto/Pidgeot
+Rattata/Raticate (both forms)
+Ekans/Arbok
+Sandshrew/Sandslash (both forms)
+Vulpix/Ninetales (both forms)
+Venonat/Venomoth
+Diglett/Dugtrio (both forms)
+Meowth/Persian (all forms, excl. glr)
+Mankey/Primeape
+Growlithe/Arcanine
+Tentacool/Tentacruel
+Geodude/Graveller/Golem (both forms)
+Slowpoke/Slowbro/Slowking
+Magnemite/Magneton
+Doduo/Dodrio
+Seel/Dewgong
+Haunter/Gengar
+Drowzee
+Snorlax
+Krabby/Kingler
+Exeggcute, Exeggcutor (both forms)
+Cubone, Marowak (both forms)
+Rhyhorn/Rhydon
+Kangaskhan
+Goldeen/Seaking
+Scyther
+Magikarp/Gyarados
+Lapras
+Psyduck/Golduck
+Ditto
+Eevee, Flareon, Vaporeon, Jolteon, Espeon, Umbreon, Leafeon, Glaceon and Sylveon
+Omanyte/Omastar
+Kabuto/Kabutops
+Aerodactyl
+Articuno, Zapdos, Moltres
+Dratini/Dragonite/Dragonair
+Mew, Mewtwo
+Chikorita/Bayleef/Maganium
+Cyndaquil/Quilava/Typhlosion
+Hoothoot/Noctowl
+Spinarak/Ariados
+Igglybuff/Jigglypuff/Wigglytuff
+Togepi/Togetic/Togekiss
+Natu/Xatu
+Mareep/Flaafy/Ampharos
+Azurill/Marill/Azumarill
+Sunkern/Sunflora
+Wooper/Quagsire
+Murkrow/Honchkrow
+Ho-oh, Lugia
+Raikou, Entei, Suicune
+
+Torchic/Combusken/Blaziken
+Mudkip/Marshtomp/Swampert
+Treeko/Grovyle/Sceptile
+Zigzagoon/Linoone
+Shroomish/Breloom
+Feebas/Milotic
+Aron/Aggron
+Loudred/Exploud
+Skitty/Delcatty
+Poochyena/Mightyena
+Slaking/Slakoth
+Wynaut/Wobuffet
+Kyogre, Groudon, Rayquaza
+Latios, Latias
+
+Chimchar//Infernape
+Bidoof/Bibarel
+Duskull/Dusklops/Dusknoir
+Gabite/Garchomp
+Buizel/Floatzel
+Anorith/Armaldo
+Teddiursa/Ursaring
+Riolu/Lucario
+Shaymin (Land & Sky formes)
+Dialga, Palkia, Giratina
+
+Snivy/Servine/Serperior
+Oshawott/Dewott/Samurott
+Lillipup/Herdier/Stoutland
+Sandile/Krokorok/Krookodile
+Emolga
+Axew/Fraxure/Haxorus
+Archen/Archeops
+Deino/Zweilous/Hydreigon
+Zorua/Zoroark
+Joltik/Galvantula
+Minccino/Cinccino
+Victini
+Zekrom, Reshiram
+
+Fennekin/Braixen/Delphox
+Fletchling/Fletchinder/Talonflame
+Deddene
+Helioptile/Heliolisk
+Meowstic
+Amaura/Auroris
+Xerneas, Yveltal, Zygarde
+
+Rockruff, Lycanroc (all forms)
+Silvally
+Lunala, Solgaleo, Necrozma
+
+Zearora
+Nickit/Thievul
+
+Sprigatito/Floragato/Meowscarada
+
+Espurr
+
+Pichu, Pikachu and Raichu (both forms) will not be included until after initial release because I am tired of seeing their faces
