@@ -540,6 +540,43 @@ The blog post overrides the |= operator to execute a function that does this, wh
 I will not do that, |= already means something, what it was changed to do in the blog post is not an overwriting bitwise OR. I will implement this as a
 member function of AABB called includeVertex(), which is much more intuitive.
 
+
+
+QUADTREE IMPL PLAN:
+
+The quadtree starts as one single AABB, which is then split into quadrants as needed
+The AABB struct stores only two coordinates: vec2 min and vec2 max
+This is the standard representatin for AABBs. To obtain the centre vertex of any object enclosed by an AABB,
+you can just take the midpoint of the line segement between the min and max vertices.
+(This system actually matches the way Minecraft's /fill command determines the bounding box of the area you want the command to operate on)
+
+AABBs cannot be any shape other than quadrilateral in 2D or cuboidal in 3D, so the area enclosed by the root AABB of the quadtree
+must be quadrilateral. The enclosed region can therefore be stored in the Scene JSON as an array of four vec2 coordinates.
+The root AABB's min and max coordinates can then be obtained from these coordinates
+
+The Quadtree struct contains a vector of nodes. The nodes do not directly hold the other node instances, they only contain
+the 16-bit indices of their child nodes. All node instances are stored continuously in memory in a single vector, 'nodes', which is a property of Quadtree
+The data which corresponds to each node, which are the AABBs of all the meshes in the scene's 3D environment, can be stored in an accompanying vector,
+either within the Quadtree struct or, since there is only ever going to be one quadtree, externally as a private member of Scene.
+The indices of that vector will be filled in by the quadtree's generator so that the elements match the order of they nodes they belong to
+...but can I not technically have more than one object (thus > 1 AABB) per node? Then how would that work, more than one AABB would be assigned to
+more than one index of the vector, effectively breaking the system
+Also what of AABBs in two regions? duplicate the bbox as you would in a spatial hash system?
+
+struct Node {
+    uint16_t children[2][2]{
+        {nullNode, nullNode},
+        {nullNode, nullNode}
+    };
+};
+
+struct Quadtree {
+    AABB     bbox;            // region enclosed by this quadtree (should be dimensions of whole scene)
+    uint16_t root;            // root node index
+    std::vector<Node> nodes;  // all nodes
+};
+
+
 Expanding scene renderer for multiple textures
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

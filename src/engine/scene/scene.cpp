@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
-#include <iostream>
 
 #include "json.hpp"
 #include "../fileio.hpp"
@@ -74,56 +73,9 @@ void Scene::loadSceneJson(const std::string& sceneFilepath) {
     // TODO: Define scene JSON format
 }
 
-/* -- INDEV -- //
-
-Box2D genBounds(std::array<vec2, 4>::iterator begin, std::array<vec2, 4>::iterator end) {
-    Box2D result;
-    for (auto it = begin; it != end; ++it)
-        result.includeVertex(*it);
-    return result;
-}
-
-vec2 getMidpoint(const vec2& vertex1, const vec2& vertex2) {
-    return { (vertex1.x + vertex2.x) / 2.f, (vertex1.y + vertex2.y) / 2.f };
-}
-
-uint32_t build_impl(Quadtree& tree, const Box2D& bounds, std::vector<AABB>::iterator begin, std::vector<AABB>::iterator end) {
-    if (begin == end) return nullNode;
-
-    uint16_t result = tree.nodes.size();
-    tree.nodes.emplace_back();
-
-    //if (std::equal(begin + 1, end, begin)) return result;
-
-    vec2 center = getMidpoint(bounds.min, bounds.max);
-
-    auto bottom = [center](const vec2& vertex){ return vertex.y < center.y; };
-    auto left   = [center](const vec2& vertex){ return vertex.x < center.x; };
-
-    std::vector<AABB>::iterator split_y = std::partition(begin, end, bottom);
-    std::vector<AABB>::iterator split_x_lower = std::partition(begin, split_y, left);
-    std::vector<AABB>::iterator split_x_upper = std::partition(split_y, end, left);
-
-    tree.nodes[result].children[0][0] = build_impl(tree, { bounds.min, center }, begin, split_x_lower);
-    tree.nodes[result].children[0][1] = build_impl(tree, { { center.x, bounds.min.y }, { bounds.max.x, center.y } }, split_x_lower, split_y);
-    tree.nodes[result].children[1][0] = build_impl(tree, { { bounds.min.x, center.y }, { center.x, bounds.max.y } }, split_y, split_x_upper);
-    tree.nodes[result].children[1][1] = build_impl(tree, { center, bounds.max }, split_x_upper, end);
-
-    return result;
-}
-
-Quadtree build(std::array<vec2, 4>& sceneBounds, std::vector<AABB>& sceneBboxes)
-{
-    Quadtree result;
-    result.root = build_impl(result, genBounds(sceneBounds.begin(), sceneBounds.end()), sceneBBoxes.begin, sceneBboxes.end);
-    return result;
-}*/
-
-
 void Scene::genSceneQuadtree() {
-    //m_sceneQuadtree = build(m_sceneBounds, m_sceneBboxes);
+    // TODO
 }
-
 
 // check if two AABBs intersect
 // source: https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
@@ -132,9 +84,7 @@ bool intersect(const AABB& a, const AABB& b) {
         a.min.x <= b.max.x &&
         a.max.x >= b.min.x &&
         a.min.y <= b.max.y &&
-        a.max.y >= b.min.y &&
-        a.min.z <= b.max.z &&
-        a.max.z >= b.min.z
+        a.max.y >= b.min.y
     );
 }
 
