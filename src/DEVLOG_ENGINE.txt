@@ -496,7 +496,7 @@ since this will be what determines if you're facing an entity to talk to/interac
 
 Another issue comes with this though, Scene holds all the entities, and only renderer can access scene directly, because the renderer own the
 unique pointer to scene. I can't determine which entities are colliding within the Entity class, because each class instance only holds data about itself
-I also won't solve this by having each instance hold vectors of the positions odf every other entity. That is inefficient, a waste of memory, and will be hard to manage properly.
+I also won't solve this by having each instance hold vectors of the positions of every other entity. That is inefficient, a waste of memory, and will be hard to manage properly.
 Code should always follow a 'single source of truth' paradigm. I will not keep data duplicates
 
 My solution was to place this logic in the Scene class, this way Renderer can still call the collision tests every frame and
@@ -518,6 +518,27 @@ https://gamedev.stackexchange.com/a/74909
 Spatial hashing was exactly what I needed and matched the idea I already had quite closely
 I am basing the version I'm making on this implementation I found:
 https://conkerjo.wordpress.com/2009/06/13/spatial-hashing-implementation-for-fast-2d-collisions/
+
+The post also mentioned quadtrees, the adavantages given by this approach aren't that useful for entity collisions,
+especially considering that the initial build of a quadtree is expensive, so they will stay with spatial hashes.
+However, the quadtree does look like a good way to implement collision detection with the 3D scene, as
+that is static, meshes in the scene don't move, so I build the quadtree once. The distribution of buildings and flat environments
+is also not equal, large stretches of the scene could be flat with no possible collision, so again, quadtree works
+
+My quadtree implementation is based on:
+https://lisyarus.github.io/blog/posts/building-a-quadtree.html
+
+However, I am deviating quite a bit from the implementation there.
+First of all, I am not keeping the builder functions as template functions. Templates work for generic header implementations
+designed for general purpose use, but in my version I'm only ever iterating over vectors of vertices (std::vector<vec2>). Thus, the templates
+are redundant and introduce unecessary overhead.
+
+Secondly, That implementation seems to build the AABB of the quadtree as a whole based on a list of vec2 vertices (the blog refers to vertices as points)
+This is reasonable, I will do it by using 4 vec2 vertices extracted from the scene JSON defining walkable bounds of a scene (should be a square or rectangle ideally,
+though you could really make it any shape that can be split up into squares). I am deviating in how I extend the quadtree AABB to include these vertices though.
+The blog post overrides the |= operator to execute a function that does this, where the left operand is the AABB and the right operand is the vec2 vertex
+I will not do that, |= already means something, what it was changed to do in the blog post is not an overwriting bitwise OR. I will implement this as a
+member function of AABB called includeVertex(), which is much more intuitive.
 
 Expanding scene renderer for multiple textures
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
