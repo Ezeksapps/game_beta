@@ -696,3 +696,10 @@ for the currently active UI element, this way that function can be called before
 UPDATE: That didn't display anything either, although at least now I've avoided future bugs from not doing the func pointer thing
 
 Surely the issue must be one of the matrices or the shaders, but I don't see how they could be wrong
+
+TODO: determine how much the 'skin' influences the UI over the style sheet colours, some things seem to be getting overriden
+also design own skin. Also, looks like 'gwen' is the default styling anyway
+
+UPDATE: forgot to reset g_offset
+
+https://gamedev.stackexchange.com/a/151146

@@ -1,3 +1,4 @@
+#include "glm/ext/matrix_transform.hpp"
 #include "renderer.hpp"
 #include "../ui/ui.h"
 
@@ -111,7 +112,7 @@ void Renderer::createUiPipelineState() {
     Diligent::RefCntAutoPtr<Diligent::IBuffer> constantsBuffer;
     {
         mat4 proj = getUiProjMatrix(static_cast<float>(m_windowWidth), static_cast<float>(m_windowHeight));
-        mat4 view = m_viewMatrix;
+        mat4 view = identity<mat4>();
 
         struct Constants {
             mat4 projMatrix;
@@ -255,6 +256,7 @@ void Renderer::renderUi() {
     m_pImmediateContext->SetViewports(1, &g_viewport, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
 
     if (m_pCurrentUiElemFunc != nullptr) m_pCurrentUiElemFunc(); // execute creator func for currently active UI elem
+    else return; // UI draw cannot continue if the active UI constructor command is null
 
     // Convert from command queue into draw list and draw to screen
     // Load draw vertices & elements directly into vertex + element buffer
@@ -270,4 +272,6 @@ void Renderer::renderUi() {
     drawCmdsForEach(this, [](void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount) {
         static_cast<Renderer*>(_this)->execDrawCmd(clipRect, texPtr, elemCount);
     });
+
+    g_offset = 0; // reset offset
 }

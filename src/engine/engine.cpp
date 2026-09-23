@@ -144,7 +144,6 @@ void Engine::signalKeyPress(const int& keycode) {
             }
         } // needs to handle dual-key!
         else {
-            std::cout << "Non-movement key found in set of active keys, adding GameCmd " << (int)singleCmds[key] << " to command queue\n";
             pendingCmds.push(singleCmds[key]);
         }
     }
