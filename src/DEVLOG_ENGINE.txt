@@ -576,6 +576,71 @@ struct Quadtree {
     std::vector<Node> nodes;  // all nodes
 };
 
+PLAN 2:
+
+Spatial hash + quadtree checked first
+Primtive-level tests done second if required
+Surface classification, followed by response comes last
+
+additionaly, reject any movement that attempts to go out of bounds
+
+If any object is in two regions of the spatial hash or quadtree at once, they it gets inserted into both.
+For sptl hash, place in both buckets, for quadtree, place in parent node
+
+Basing which buckets an entity should be inserted into on the m_pos member (centre pos) is not the best method
+instead, use the AABB directly, but ignore the z-axis. If the min and max are in two different buckets, then
+insert into both buckets. If AABB is only enclosed by one bucket, place the entity in only one bucket
+(still though, what if the entity intersects four fields, which is the maximum possible number of fields it could be in
+maybe first check if min and max are in different buckets, then find the other two corners and test which buckets they are in)
+
+Develop the quadtree following the sptl hash
+
+first step is to determine what data type the spatial hash should be.
+Conceptually, a sptl hash is a grid. Each cell can have mutliple entities within it.
+A standard grid is represented as a 2D array, but the ability for multiple entities to be present in a cell causes this to become a 3D array
+This is technically fine, but there must be a better-looking method than this abomination:
+
+std::vector<std::vector<std:vector<std::shared_ptr<Entity>>>> m_sptlHash
+
+Another possible data type is:
+
+std::unordered_map<std::pair<uint16_t, uint16_t>, std::vector<std::shared_ptr<Entity>>> m_sptlHash
+
+This is probably more efficient... actually no, m_sptlHash[row][col][entity num] is quick, it just looks horrible
+Only one issue, std::pair doesn't have a default hash func (how many times is this going to happen to me?)
+
+Writing a hash func is not technically that complicated, the only real requirement is that it must always produce the same output from an input
+also multiple inputs can't give the same outputs. In other words, it must do some kind of calculation on the input data to give a 1-1 mapping
+
+But that takes time, too much of it. Again, I can just re-do what I did w/ the input system (pack 2 16-bit uints together and use a 32-bit uint as the key)
+Obtaining the combined key most likely takes the same amount of processing power as would calculating the hash value from the raw pair anyway
+
+so, the final data type is: std::unordered_map<uint32_t, std::vector<std::shared_ptr<Entity>>> m_sptlHash
+
+In Renderer::update(), when the position of a given entity is updated, re-calculate the min and max points for the AABB.
+run the converter func to get the two 32-bits uints those coords correspond to, if they differ, then the entity occupies multiple buckets,
+insert into both (and possibly implement the check for a four-bucket intersection)
+
+On initial generation of the sptl hash, loop through all entities and generate a bbox for them, perform the same ops as in
+Renderer::update(), only in this case, the map hasn't yet been filled in, use operator [] for this, since that'll auto-create the pair
+
+Because the generation of an AABB for an entity depends on its geometry, and entities will eventually have different geometry sizes based
+on the resolution of their sprites,
+
+UPDATE: packing of keys and intial generator are done, now I need to figure out Renderer::update()
+
+        for (const auto& [index, translVec] : m_translsMap) {
+            const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
+
+            entity->m_pos += translVec;
+        }
+
+One problem here, I need to check which cells the entity is currently in and change them if needed to match the new position
+only, I can't do that, because the keys in the map are the cell numbers. I can't access entities in the map without knowing which
+cell to look in.
+
+I need a way to get around this, a reverse map isn't an option, that's essentially a duplicate, which violates SSoT
+
 
 Expanding scene renderer for multiple textures
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

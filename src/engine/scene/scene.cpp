@@ -42,6 +42,8 @@ Scene::Scene(const std::string& sceneDir) {
 
     m_glbFilepath = gltfFilepath;
     loadSceneJson(jsonFilepath);
+
+    genSceneSptlHash();
 }
 
 Scene::~Scene() {}
@@ -94,6 +96,46 @@ void Scene::resolveCollisions() {
      * that are close enough to each other that a collision might be possible. For collisions between entities and
      * the 3D scene, a quadtree is used for this same purpose
      */
+}
+
+// CHANGE: AABBs now 3D again
 
 
+uint32_t getPackedCoord(float x, float y) {
+    // find the grid coordinates the input x and y coords correspond to, grids are 4x4
+    uint16_t row = std::floor(y / 4);
+    uint16_t col = std::floor(x / 4);
+
+    uint32_t packed = 0;
+    // order will be column, then row, so that we have xy instead of yx
+
+    // set first 16 bits to val of col
+    packed = col;
+    // set upper 16 bits to val of row
+    packed |= static_cast<uint32_t>(row << 16);
+
+    return packed;
+}
+
+void Scene::genSceneSptlHash() {
+    for (const std::shared_ptr<Entity>& entity : m_pEntities) {
+        vec3 pos = entity->m_pos; // entity centre pos
+        // TODO: The size of geometry might eventually differ between entities, this must be handled! current size is const 1x1
+        AABB bbox {
+            .min = vec3(pos.x - 0.5, pos.y - 0.5, 0.0f),
+            .max = vec3(pos.x + 0.5, pos.y + 0.5, 0.0f /* HANDLE Z */) // entity should be snapped to floor below them in z
+        };
+
+        uint32_t minCoords = getPackedCoord(bbox.min.x, bbox.min.y);
+        uint32_t maxCoords = getPackedCoord(bbox.max.x, bbox.max.y);
+
+        // if the min and max points of the entity are not in the same cell, then this entity's geometry spans multiple cells
+        if (minCoords != maxCoords) {
+            // TODO: check other two corners, entity might be occupying up to 4 cells simulatenously, not just 2
+            m_sptlHash[minCoords].push_back(entity);
+            m_sptlHash[maxCoords].push_back(entity);
+        }
+        // else entity is only in one cell
+        else m_sptlHash[getPackedCoord(pos.x, pos.y)].push_back(entity);
+    }
 }

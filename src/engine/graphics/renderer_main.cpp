@@ -331,7 +331,9 @@ void Renderer::update() {
 
     if (!m_translsMap.empty()) {
         for (const auto& [index, translVec] : m_translsMap) {
-             m_pScene->m_pEntities[index]->m_pos += translVec;
+            const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
+
+            entity->m_pos += translVec;
         }
     }
 

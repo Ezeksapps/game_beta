@@ -4,7 +4,6 @@
 
 // [Engine code]
 // set one entity as the player, others as their corresponding subclass of entity
-// Collision logic for 3D space (stairs will always be at a fixed angle, so any angle > stair angle = impassable)
 // Create dialogue system
 
 // CURRENTLY COMPLETE:
@@ -25,19 +24,16 @@
 // movement system, which syncs with movement animations
 // Scene class, which loads the current scene and associated entities from a directory containing the scene's glTF and JSON
 // Camera linked to player's movement and follows them around the map on all axes at a fixed offset
-// UI system made with Nuklear and accompanying renderer (in testing)
+// UI system made with Nuklear and accompanying renderer
 // input system that properly controls movement with expected behaviour (entity moves so long as movement key(s) are held)
 
-// WIP: Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
+// WIP: Collision detection (sptl hash WIP, 50% done), Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
 
-// FIX (med pri): Entity positions are treated by the geometry shader as the centre position, which means only half the sprite billboard is above the floor (Z-axis)
-// FIX (high pri): UI pipeline works and draw commands are dispatched and executed properly, but no UI is visible
-
-// TODO: Revise which function belong in the engine as opposed to game code (most things currently being shoved in Engine)
+// TODO: Remove Engine class, it isn't needed
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 // TODO: Make UI skin (also add missing glyphs to font)
 // TODO: COLLISION DETECTION (HIGH PRI, needed for most mechanics)
-// TODO: Need more complex test scene for development of scene JSON spec
+// TODO: Need to develop exit handling for Scenes
 
 #include "engine/engine.hpp"
 

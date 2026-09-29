@@ -5,27 +5,20 @@
  */
 
 #include "../entity/entity.hpp"
+#include "glm/fwd.hpp"
 #include <cstdint>
 
-/*
-    AABB includeVertex(const vec2& vertex) {
-        min.x = std::min(min.x, vertex.x);
-        min.y = std::min(min.y, vertex.y);
-        max.x = std::max(max.x, vertex.x);
-        max.y = std::max(max.y, vertex.y);
-        return *this;
-    }
-*/
+
+// quadtrees not being worked on currently, sptl hash WIP
 
 // use the highest possible value of a uint16_t to represent null values
 constexpr uint16_t nullNode = uint16_t(-1);
 
 
 struct AABB { // ignore z-coordinate, collision in Z handled separately
-    vec2 min;
-    vec2 max;
+    vec3 min;
+    vec3 max;
 };
-
 
 // each node of a quadtree may be split into four more nodes, default to having no child nodes
 struct Node {
@@ -48,7 +41,6 @@ struct Quadtree {
 class Scene {
 
 friend class Renderer; // TODO remove
-//friend class Engine; // TODO remove
 
 public:
 
@@ -68,6 +60,9 @@ private:
 
     void loadSceneJson(const std::string& sceneFilepath);
     void genSceneQuadtree();
+    void genSceneSptlHash();
+
+    std::unordered_map<uint32_t, std::vector<std::shared_ptr<Entity>>> m_sptlHash;
 
     std::string m_glbFilepath;
 
