@@ -88,6 +88,14 @@ const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteM
     return m_spriteMap;
 }
 
+AABB Entity::getAABB() {
+    // m_pos is centre pos
+    return AABB {
+        .min = vec3(m_pos.x - 0.5, m_pos.y - 0.5, m_pos.z),
+        .max = vec3(m_pos.x + 0.5, m_pos.y + 0.5, m_pos.z)
+    };
+}
+
 // helper function, calculates per-frame translation vector for a movement in a particular direction
 vec3 getTranslVec(const Direction& direction, const int& animFrames) { // TODO: Should eventually consider mode, so that running increases the translVec
     vec3 translVec;

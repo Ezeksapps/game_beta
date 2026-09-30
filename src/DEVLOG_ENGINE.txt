@@ -768,3 +768,15 @@ also design own skin. Also, looks like 'gwen' is the default styling anyway
 UPDATE: forgot to reset g_offset
 
 https://gamedev.stackexchange.com/a/151146
+
+TODO, optimise these:
+
+loops over same pair (but diff order) twice, will test A + B and B + a
+
+for (const auto& [cell, entities] : m_sptlHash) {
+    for (const auto& entity : entities) { ... }
+}
+
+
+cache `getOccupiedCells` result instead of recomputing twice, store it in Entity
+

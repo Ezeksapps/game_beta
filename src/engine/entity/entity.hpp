@@ -6,6 +6,7 @@
 
 #include "sprite.hpp"
 #include "../common.hpp"
+#include "../collison_common.hpp"
 
 using namespace glm;
 
@@ -77,6 +78,8 @@ public:
     AnimEvent m_event;        // current event
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
+
+    AABB getAABB();
 
 protected:
 private:

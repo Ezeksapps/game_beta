@@ -328,16 +328,28 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 /* --- GAME DATA UPDATE FUNC --- */
 
 void Renderer::update() {
-
+    // update entity positions, including sptl hash positions
     if (!m_translsMap.empty()) {
         for (const auto& [index, translVec] : m_translsMap) {
             const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
+            std::vector<uint32_t> prevOccupiedCells = getOccupiedCells(entity->getAABB());
 
             entity->m_pos += translVec;
+
+            std::vector<uint32_t> newOccupiedCells = getOccupiedCells(entity->getAABB());
+
+            if (prevOccupiedCells == newOccupiedCells) continue; // nothing to do
+            else { // TODO: optimise this
+                for (const uint32_t& cell : prevOccupiedCells) std::erase(m_pScene->m_sptlHash[cell], entity);
+                for (const uint32_t& cell : newOccupiedCells) m_pScene->m_sptlHash[cell].push_back(entity);
+            }
         }
     }
 
     populateInstanceBuffer();
+
+    // check for collisions
+    m_pScene->resolveCollisions();
 }
 
 /* --- DRAW CALLS --- */

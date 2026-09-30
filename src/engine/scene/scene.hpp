@@ -14,12 +14,6 @@
 // use the highest possible value of a uint16_t to represent null values
 constexpr uint16_t nullNode = uint16_t(-1);
 
-
-struct AABB { // ignore z-coordinate, collision in Z handled separately
-    vec3 min;
-    vec3 max;
-};
-
 // each node of a quadtree may be split into four more nodes, default to having no child nodes
 struct Node {
     uint16_t children[2][2]{
