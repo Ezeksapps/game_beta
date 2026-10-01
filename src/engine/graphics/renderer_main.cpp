@@ -331,18 +331,28 @@ void Renderer::update() {
     // update entity positions, including sptl hash positions
     if (!m_translsMap.empty()) {
         for (const auto& [index, translVec] : m_translsMap) {
+
             const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
-            std::vector<uint32_t> prevOccupiedCells = getOccupiedCells(entity->getAABB());
+            OccupiedCells prevOccupiedCells = getOccupiedCells(entity->getAABB());
 
             entity->m_pos += translVec;
 
-            std::vector<uint32_t> newOccupiedCells = getOccupiedCells(entity->getAABB());
+            OccupiedCells newOccupiedCells = getOccupiedCells(entity->getAABB());
 
-            if (prevOccupiedCells == newOccupiedCells) continue; // nothing to do
-            else { // TODO: optimise this
-                for (const uint32_t& cell : prevOccupiedCells) std::erase(m_pScene->m_sptlHash[cell], entity);
-                for (const uint32_t& cell : newOccupiedCells) m_pScene->m_sptlHash[cell].push_back(entity);
+            // should remove entity index from any cells which it is no longer in and insert it into any newly occupied cells
+            // TODO: this can definitely be optimised somehow...
+            for (uint8_t i = 0; i < prevOccupiedCells.count; ++i) {
+                auto& cell = m_pScene->m_sptlHash[prevOccupiedCells.cells[i]];
+
+                auto it = std::find(cell.begin(), cell.end(), index);
+                if (it != cell.end()) cell.erase(it);
             }
+
+            for (uint8_t i = 0; i < newOccupiedCells.count; ++i) {
+                m_pScene->m_sptlHash[newOccupiedCells.cells[i]].push_back(index);
+            }
+
+
         }
     }
 

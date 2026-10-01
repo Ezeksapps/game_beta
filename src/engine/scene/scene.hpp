@@ -56,7 +56,8 @@ private:
     void genSceneQuadtree();
     void genSceneSptlHash();
 
-    std::unordered_map<uint32_t, std::vector<std::shared_ptr<Entity>>> m_sptlHash;
+    // entity ID 8-bit, as 32 < 255
+    std::unordered_map<uint32_t, std::vector<uint8_t>> m_sptlHash;
 
     std::string m_glbFilepath;
 

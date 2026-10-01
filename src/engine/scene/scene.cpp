@@ -93,11 +93,22 @@ bool intersect(const AABB& a, const AABB& b) {
 void Scene::resolveCollisions() {
     // check collisions between entities
 
-    for (const auto& [cell, entities] : m_sptlHash) {
-        if (entities.empty()) continue; // empty cell, ignore
-        // within this cell, now test all contained entities for collisions with each other
-        for (const std::shared_ptr<Entity>& entity : entities) {
+    for (const auto& [key, entities] : m_sptlHash) {
+        // https://stackoverflow.com/questions/26474995
+        for (uint8_t i = 0; i < entities.size(); ++i) {
+            for (uint8_t j = i + 1; j < entities.size(); ++j) {
+                const uint8_t& a = entities[i];
+                const uint8_t& b = entities[j];
 
+                // collision test, just stop movement for now
+                if (intersect(m_pEntities[a]->getAABB(), m_pEntities[b]->getAABB())) {
+                    // needs to have slightly better handling, the way this ends movement looks a bit awkward visually
+                    m_pEntities[a]->endMovement();
+                    m_pEntities[b]->endMovement();
+                }
+                // TODO: also check if one of the entities intersecting is the player, because if so, then an
+                // NPC interaction is possible
+            }
         }
     }
 
@@ -105,10 +116,10 @@ void Scene::resolveCollisions() {
 }
 
 void Scene::genSceneSptlHash() {
-    for (const std::shared_ptr<Entity>& entity : m_pEntities) {
+    for (uint8_t entityIndex = 0; entityIndex < m_pEntities.size(); ++entityIndex) {
         // TODO: The size of geometry might eventually differ between entities, this must be handled! current size is const 1x1
-        // insert entity into all cells that it occupies
-        std::vector<uint32_t> occupiedCells = getOccupiedCells(entity->getAABB());
-        for (const uint32_t& cell : occupiedCells) m_sptlHash[cell].push_back(entity);
+        // insert entity index into all cells that it occupies
+        OccupiedCells occupiedCells = getOccupiedCells(m_pEntities[entityIndex]->getAABB());
+        for (uint8_t i = 0; i < occupiedCells.count; ++i) m_sptlHash[occupiedCells.cells[i]].push_back(entityIndex);
     }
 }

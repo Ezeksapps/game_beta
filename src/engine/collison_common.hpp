@@ -9,4 +9,9 @@ struct AABB {
     vec3 max;
 };
 
-std::vector<uint32_t> getOccupiedCells(const AABB& bbox);
+struct OccupiedCells {
+    std::array<uint32_t, 4> cells;
+    uint8_t count;
+};
+
+OccupiedCells getOccupiedCells(const AABB& bbox);
