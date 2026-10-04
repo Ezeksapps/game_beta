@@ -327,16 +327,68 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 
 /* --- GAME DATA UPDATE FUNC --- */
 
+float getIntersectArea(const AABB& a, const AABB& b) {
+    // Find the overlapping rectangle on the X axis
+    float overlapMinX = std::max(a.min.x, b.min.x);
+    float overlapMaxX = std::min(a.max.x, b.max.x);
+
+    // Find the overlapping rectangle on the Y axis
+    float overlapMinY = std::max(a.min.y, b.min.y);
+    float overlapMaxY = std::min(a.max.y, b.max.y);
+
+    // do not test for no overlap, if this func has been executed, then there must be overlap
+
+    // The area of the intersection rectangle
+    return (overlapMaxX - overlapMinX) * (overlapMaxY - overlapMinY);
+}
+
+// a translation should be rejected if it would cause bbox A to further overlap with bbox B, assuming they are already overlapping
+// of course, the entity should still be able to move in the other directions which would not cause this
+// for diagonals, you can check either x or y, because both direction's translVecs are applied simultaneously
+bool rejectTransl(const AABB& a, const AABB& b, const vec3& translVec, const Direction& direction) {
+
+    // the AABB that a would become if the translation were not rejected
+    AABB translBbox = a;
+    translBbox.min += translVec;
+    translBbox.max += translVec;
+
+    const float allowance = 0.01f;
+    return getIntersectArea(translBbox, b) > (getIntersectArea(a, b) + allowance);
+}
+
 void Renderer::update() {
+
+    std::vector<uint8_t> translsToTerminate = {};
+
     // update entity positions, including sptl hash positions
     if (!m_translsMap.empty()) {
         for (const auto& [index, translVec] : m_translsMap) {
 
             const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
+
+            std::vector<uint8_t>& knownCollisions = entity->m_knownCollisions;
+
+            /* Do not perform the translation yet, first test if the translation should be allowed.
+             * For example, the translation should be rejected if it would lead to further overlapping
+             * an entity that this entity is already colliding with
+             */
+            bool reject = false;
+            if (!entity->m_knownCollisions.empty()) {
+                for (uint8_t i = 0; i < entity->m_knownCollisions.size(); ++i) {
+                    AABB b = m_pScene->m_pEntities[entity->m_knownCollisions[i]]->getAABB();
+                    AABB a = entity->getAABB();
+                    reject = rejectTransl(a, b, translVec, entity->m_direction);
+                }
+            }
+            if (reject == true) {
+                // NOTE: don't run endMovement in this loop, because then that changes the indices in the transl map
+                // and since the program is actively iterating that map, a segfault will occur
+                translsToTerminate.push_back(index);
+                continue;
+            }
+            else entity->m_pos += translVec;
+
             OccupiedCells prevOccupiedCells = getOccupiedCells(entity->getAABB());
-
-            entity->m_pos += translVec;
-
             OccupiedCells newOccupiedCells = getOccupiedCells(entity->getAABB());
 
             // should remove entity index from any cells which it is no longer in and insert it into any newly occupied cells
@@ -355,6 +407,8 @@ void Renderer::update() {
 
         }
     }
+
+    for (const uint8_t& entityIndex : translsToTerminate) m_pScene->m_pEntities[entityIndex]->endMovement();
 
     populateInstanceBuffer();
 

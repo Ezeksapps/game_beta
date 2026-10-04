@@ -769,4 +769,34 @@ UPDATE: forgot to reset g_offset
 
 https://gamedev.stackexchange.com/a/151146
 
+TODO:
+
+response to collision must be more sophistsicated than just ending movement.
+With the current system, you can still perform a single micro-translation further into the entity you intersect by pressing
+a movement button in that direction, as the translation will be performed prior to the collision test
+maybe to collision test w/ new coordinates first to see if the proposed translation should be executed, or ignored?
+(maybe use the strategy employed by 2D games, where constantly trying to move into an impassable entity makes you glide to the side?)
+
+Also, movement shouldn't stop unconditionally, if the pending translation is in a direction where the entity A's AABB would go further into
+entity B's AABB, then reject it. However, if moving in a different direction, where the AABB will not end up intersecting further, then allow the movement
+with no restriction
+
+(this now done)
+
+Pending translation: [0.0384615, 0, 0]
+Known collisions is of size: 1
+Iterated over 1 entities
+obtained both AABBs, attempting rejection test
+reject == true
+movement terminated
+Segmentation fault         (core dumped) ./build/game
+
+For the overlap allowance, the condition is that an overlap of up to 0.08 (might be scaled later) is allowed in
+either x or y at any given time.
+The check for if the transl rejection test should be applied
+
+The rejection test only really tries to answer one question, which is if the overlap between bbox A and bbox B would have a greater
+area than it did previously, and if so, it should reject the pending translation
+The current system is overcomplicated and can most likely be optimised signficantly by just performing an overlap area calculation
+before and after and checking if they are different (floating point arithmetic may cause slight differences, so have a small allowance)
 

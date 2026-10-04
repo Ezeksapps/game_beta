@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <stdexcept>
+#include <iostream>
 
 #include "json.hpp"
 #include "../fileio.hpp"
@@ -91,20 +92,22 @@ bool intersect(const AABB& a, const AABB& b) {
 }
 
 void Scene::resolveCollisions() {
-    // check collisions between entities
+
+    // Clear last frame's collision data exactly once per entity
+    for (auto& e : m_pEntities) e->m_knownCollisions.clear();
 
     for (const auto& [key, entities] : m_sptlHash) {
         // https://stackoverflow.com/questions/26474995
         for (uint8_t i = 0; i < entities.size(); ++i) {
+
             for (uint8_t j = i + 1; j < entities.size(); ++j) {
                 const uint8_t& a = entities[i];
                 const uint8_t& b = entities[j];
 
-                // collision test, just stop movement for now
+                // collision test
                 if (intersect(m_pEntities[a]->getAABB(), m_pEntities[b]->getAABB())) {
-                    // needs to have slightly better handling, the way this ends movement looks a bit awkward visually
-                    m_pEntities[a]->endMovement();
-                    m_pEntities[b]->endMovement();
+                    m_pEntities[a]->m_knownCollisions.push_back(b);
+                    m_pEntities[b]->m_knownCollisions.push_back(a);
                 }
                 // TODO: also check if one of the entities intersecting is the player, because if so, then an
                 // NPC interaction is possible
@@ -114,6 +117,8 @@ void Scene::resolveCollisions() {
 
     // TODO: quadtree
 }
+
+
 
 void Scene::genSceneSptlHash() {
     for (uint8_t entityIndex = 0; entityIndex < m_pEntities.size(); ++entityIndex) {

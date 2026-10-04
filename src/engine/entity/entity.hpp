@@ -79,6 +79,10 @@ public:
     vec3 m_pos;               // Position (before accounting for world-view-model matrix)
     int m_index;              // index/number of entity in Scene
 
+    // the entity IDs of the entities this entity was last known to be colliding with, updated
+    // every time a translation is accepted and performed
+    std::vector<uint8_t> m_knownCollisions = {};
+
     AABB getAABB();
 
 protected:

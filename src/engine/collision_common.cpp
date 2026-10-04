@@ -1,5 +1,6 @@
 #include "collison_common.hpp"
 
+
 uint32_t packCell(int16_t gridX, int16_t gridY) { // input coords must already be in grid space
     return (static_cast<uint16_t>(gridX) << 16 | static_cast<uint16_t>(gridY));
 }
@@ -30,3 +31,5 @@ OccupiedCells getOccupiedCells(const AABB& bbox) {
         maxCell
     }, 4};
 }
+
+
