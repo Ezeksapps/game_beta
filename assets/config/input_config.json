@@ -30,6 +30,9 @@
     ],
     "commands": [
         {
+            "keycode": 257
+        },
+        {
             "keycode": 256
         },
         {

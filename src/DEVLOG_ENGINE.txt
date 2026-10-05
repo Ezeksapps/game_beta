@@ -791,12 +791,22 @@ reject == true
 movement terminated
 Segmentation fault         (core dumped) ./build/game
 
-For the overlap allowance, the condition is that an overlap of up to 0.08 (might be scaled later) is allowed in
-either x or y at any given time.
-The check for if the transl rejection test should be applied
 
 The rejection test only really tries to answer one question, which is if the overlap between bbox A and bbox B would have a greater
 area than it did previously, and if so, it should reject the pending translation
 The current system is overcomplicated and can most likely be optimised signficantly by just performing an overlap area calculation
 before and after and checking if they are different (floating point arithmetic may cause slight differences, so have a small allowance)
+
+Eevee:
+dx = 21 - 3 = 18 + 2 px allowance either side
+dy = 21 - 4 = 17 + 2 px allowance either side
+
+Shinx:
+dx = 29 - 9 = 20 + 2 px
+dy = 30 - 5 = 25 + 2 px
+
+Vulpix:
+dx = 23 - 7 = 16 + 2 px
+dy = 22 - 3 = 19 + 2 px
+
 

@@ -62,8 +62,8 @@ private:
     struct InstanceData {
         mat4 modelMatrix;
         float texArrayIndex;
-        float maxU;
-        float maxV;
+        float width;
+        float height;
     };
 
     struct PrimitiveData {

@@ -53,6 +53,9 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
         .a = data[*currentIndex + 3]
     };
     *currentIndex += 4;
+
+    printf("Colour to be set: R = %d G = %d B = %d A = %d\n", color.r, color.g, color.b, color.a);
+
     return color;
 }
 
@@ -83,9 +86,9 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
     {
 
         /* --- Skin --- */
-        media.skinId = loadSkinTex(_this, "assets/ui/skin.png"); // TODO: Edit skin to only include required objects and update rect sections
+        //media.skinId = loadSkinTex(_this, "assets/ui/skin.png"); // TODO: Edit skin to only include required objects and update rect sections
 
-        media.check = nk_subimage_id(media.skinId, 512,512, nk_rect(464,32,15,15));
+        /*media.check = nk_subimage_id(media.skinId, 512,512, nk_rect(464,32,15,15));
         media.check_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(450,34,11,11));
         media.option = nk_subimage_id(media.skinId, 512,512, nk_rect(464,64,15,15));
         media.option_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(451,67,9,9));
@@ -93,7 +96,7 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         media.window = nk_subimage_id(media.skinId, 512,512, nk_rect(128,23,127,104));
         media.button = nk_subimage_id(media.skinId, 512,512, nk_rect(384,336,127,31));
         media.button_hover = nk_subimage_id(media.skinId, 512,512, nk_rect(384,368,127,31));
-        media.button_active = nk_subimage_id(media.skinId, 512,512, nk_rect(384,400,127,31));
+        media.button_active = nk_subimage_id(media.skinId, 512,512, nk_rect(384,400,127,31));*/
 
         /* --- colour styles and padding --- */
 
@@ -111,8 +114,10 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         /* window */
         ctx.style.window.background = setColor(stylesheetData, &currentIndex);
         ctx.style.window.border_color = setColor(stylesheetData, &currentIndex);
+        //ctx.style.window.background = nk_rgba(0, 0, 0, 128);
+        //ctx.style.window.border_color = nk_rgba(43, 74, 140, 255);
 
-        ctx.style.window.padding = nk_vec2(8,4); // px
+        ctx.style.window.padding = nk_vec2(4,4); // px
         ctx.style.window.border = 3; // px
 
         /* window header omitted */

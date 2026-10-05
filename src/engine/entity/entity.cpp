@@ -30,6 +30,11 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
         m_spriteMap.insert({(AnimEvent)anim["type"], std::make_shared<Sprite>(sprite)});
     }
 
+    // bboxes will eventually move to separate JSON
+    json bbox = json::parse(spriteJson)["bbox"];
+    m_dxHalf = (bbox[0].get<int>() / 2) * 0.04;
+    m_dyHalf = (bbox[1].get<int>() / 2) * 0.04;
+
     doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
     m_direction = DIRECTION_WEST; // default direction
 }
@@ -89,10 +94,10 @@ const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteM
 }
 
 AABB Entity::getAABB() {
-    // m_pos is centre pos
+
     return AABB {
-        .min = vec3(m_pos.x - 0.5, m_pos.y - 0.5, m_pos.z),
-        .max = vec3(m_pos.x + 0.5, m_pos.y + 0.5, m_pos.z)
+        .min = vec3(m_pos.x - m_dxHalf, m_pos.y - m_dyHalf, 0.0f),
+        .max = vec3(m_pos.x + m_dxHalf, m_pos.y + m_dyHalf, 0.0f)
     };
 }
 

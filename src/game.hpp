@@ -26,12 +26,13 @@
 // Camera linked to player's movement and follows them around the map on all axes at a fixed offset
 // UI system made with Nuklear and accompanying renderer
 // input system that properly controls movement with expected behaviour (entity moves so long as movement key(s) are held)
+// Collision detection between entities through a spatial hash system
 
 // WIP: Collision detection (sptl hash done, quadtree + slope handling todo),
 // Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
 
 // TODO: Remove Engine class, it isn't needed
-// TODO: Entity geometry scaling (hitbox always has const size due to const geometry size, which is too big for most sprites)
+// TODO: Alpha transparency for entities doesn't consider other entities (low pri)
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 // TODO: Make UI skin (also add missing glyphs to font)
 // TODO: NPC interactions (now possible w/ sptl hash)

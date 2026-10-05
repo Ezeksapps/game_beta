@@ -105,6 +105,9 @@ private:
 
     float m_frameTimer;
 
+    float m_dyHalf;
+    float m_dxHalf;
+
     /* total number of frames the currently active movement sprite sheet animation lasts for, used to re-calculate
      * translVec if changeMovementDirection() is called, as the translVec calculation requires this value.
      * This member is not used for any sprite sheet animation that does not correspond to movement

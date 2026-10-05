@@ -127,8 +127,37 @@ void Renderer::createSpritePipelineState() {
     /* Create pipeline with obj create info */
     m_pDevice->CreateGraphicsPipelineState(PipelineStateObjCreateInfo, &m_pSpritePipelineStateObj);
 
-    /* Set Constants variable (holds matrices for current frame) for all shaders that use it */
+    /* Set UBOs */
     m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "Constants")->Set(m_pFrameConstants);
+
+
+
+    Diligent::RefCntAutoPtr<Diligent::IBuffer> constantsBuffer;
+    {
+        struct SpriteConstants {
+            float maxWidth;
+            float maxHeight;
+            float pxToCoordRatio;
+        };
+
+        SpriteConstants constants = {
+            .maxWidth = m_maxSpriteFrameWidth,
+            .maxHeight = m_maxSpriteFrameHeight,
+            .pxToCoordRatio = 0.04
+        };
+
+        Diligent::BufferDesc constantsBufferDesc;
+        constantsBufferDesc.BindFlags = Diligent::BIND_UNIFORM_BUFFER;
+        constantsBufferDesc.Size      = sizeof(SpriteConstants);
+        constantsBufferDesc.Usage     = Diligent::USAGE_DEFAULT;
+        constantsBufferDesc.Name      = "Sprite Constants Buffer";
+
+        Diligent::BufferData initData(&constants, sizeof(SpriteConstants));
+
+        m_pDevice->CreateBuffer(constantsBufferDesc, &initData, &constantsBuffer);
+    }
+
+    m_pSpritePipelineStateObj->GetStaticVariableByName(Diligent::SHADER_TYPE_GEOMETRY, "SpriteConstants")->Set(constantsBuffer);
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pSpritePipelineStateObj->CreateShaderResourceBinding(&m_pSpriteShaderResourceBinding, true);
@@ -163,11 +192,7 @@ void Renderer::populateInstanceBuffer() {
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
         mat4 transform = translate(mat4(1.0f), entity->m_pos);
 
-        // cast to float is necessary here, otherwise maxU and maxV = 0 from precision loss
-        float maxU = activeSprite->frameWidth / static_cast<float>(m_maxSpriteFrameWidth);
-        float maxV = activeSprite->frameHeight / static_cast<float>(m_maxSpriteFrameHeight);
-
-        m_instanceData.push_back(InstanceData(transform, texArrayIndex, maxU, maxV));
+        m_instanceData.push_back(InstanceData(transform, texArrayIndex, activeSprite->frameWidth, activeSprite->frameHeight));
         ++i;
     }
 
