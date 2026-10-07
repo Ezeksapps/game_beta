@@ -25,7 +25,12 @@ typedef struct FontAtlasData {
     int w, h;
 } FontAtlasData;
 
+typedef void (*UICreatorFunc)(/* May add struct for extra data at some point, not currently needed */);
+
 const uint8_t* loadStylesheet();
+
+UICreatorFunc getCurrentUICreatorFunc();
+void popFromStack();
 
 /* This C interface cannot use or include Diligent directly, but texture data is still required to be loaded for skinning purposes
  * initUi() takes a callback which should be a function C++-side that can generate and return the texture data as int

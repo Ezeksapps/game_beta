@@ -10,18 +10,32 @@
 #define NK_IMPLEMENTATION
 #include "nuklear.h"
 
-struct media { // UI Skin
-    int skinId;
-    struct nk_image check;
-    struct nk_image check_cursor;
-    struct nk_image option;
-    struct nk_image option_cursor;
-    // struct nk_image header;
-    struct nk_image window;
-    struct nk_image button;
-    struct nk_image button_hover;
-    struct nk_image button_active;
-};
+/* UI Stack */
+
+#define MAX_UI_DEPTH 16
+
+uint8_t stackPtr = 0;
+UICreatorFunc stack[MAX_UI_DEPTH] = {0}; // UI Stack
+
+void pushToStack(UICreatorFunc func) {
+    if (stackPtr != MAX_UI_DEPTH) {
+        stack[stackPtr] = func;
+        ++stackPtr;
+    }
+}
+
+void popFromStack() {
+    printf("popped from UI stack\n");
+    if (stackPtr != 0) {
+        --stackPtr;
+        stack[stackPtr] = NULL;
+    }
+}
+
+// return top-most func in stack
+UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1] : NULL; }
+
+/* Nuklear globals */
 
 struct nk_context ctx;
 
@@ -31,10 +45,9 @@ struct nk_font* font;
 struct nk_buffer cmds;
 struct nk_draw_null_texture texNull;
 
-struct media media;
-
 struct nk_font_atlas atlas;
 struct FontAtlasData fontAtlasData;
+
 
 /* Convenience function
  * makes setting the colour shorter and avoids needing to manually specify the exact index
@@ -53,8 +66,6 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
         .a = data[*currentIndex + 3]
     };
     *currentIndex += 4;
-
-    printf("Colour to be set: R = %d G = %d B = %d A = %d\n", color.r, color.g, color.b, color.a);
 
     return color;
 }
@@ -85,18 +96,8 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
     nk_init_default(&ctx, &font->handle); // init context with font
     {
 
-        /* --- Skin --- */
-        //media.skinId = loadSkinTex(_this, "assets/ui/skin.png"); // TODO: Edit skin to only include required objects and update rect sections
+        // UI Skin is not a priority, add back later, basic styling is fine for now
 
-        /*media.check = nk_subimage_id(media.skinId, 512,512, nk_rect(464,32,15,15));
-        media.check_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(450,34,11,11));
-        media.option = nk_subimage_id(media.skinId, 512,512, nk_rect(464,64,15,15));
-        media.option_cursor = nk_subimage_id(media.skinId, 512,512, nk_rect(451,67,9,9));
-        //media.header = nk_subimage_id(media.skin, 512,512, nk_rect(128,0,127,24)); // UNUSED
-        media.window = nk_subimage_id(media.skinId, 512,512, nk_rect(128,23,127,104));
-        media.button = nk_subimage_id(media.skinId, 512,512, nk_rect(384,336,127,31));
-        media.button_hover = nk_subimage_id(media.skinId, 512,512, nk_rect(384,368,127,31));
-        media.button_active = nk_subimage_id(media.skinId, 512,512, nk_rect(384,400,127,31));*/
 
         /* --- colour styles and padding --- */
 
@@ -114,9 +115,6 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         /* window */
         ctx.style.window.background = setColor(stylesheetData, &currentIndex);
         ctx.style.window.border_color = setColor(stylesheetData, &currentIndex);
-        //ctx.style.window.background = nk_rgba(0, 0, 0, 128);
-        //ctx.style.window.border_color = nk_rgba(43, 74, 140, 255);
-
         ctx.style.window.padding = nk_vec2(4,4); // px
         ctx.style.window.border = 3; // px
 
@@ -126,11 +124,6 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         {
             struct nk_style_toggle* toggle;
             toggle = &ctx.style.checkbox;
-            toggle->normal          = nk_style_item_image(media.check);
-            toggle->hover           = nk_style_item_image(media.check);
-            toggle->active          = nk_style_item_image(media.check);
-            toggle->cursor_normal   = nk_style_item_image(media.check_cursor);
-            toggle->cursor_hover    = nk_style_item_image(media.check_cursor);
             toggle->text_normal     = setColor(stylesheetData, &currentIndex);
             toggle->text_hover      = setColor(stylesheetData, &currentIndex);
             toggle->text_active     = setColor(stylesheetData, &currentIndex);
@@ -140,11 +133,6 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         {
             struct nk_style_toggle* toggle;
             toggle = &ctx.style.option;
-            toggle->normal          = nk_style_item_image(media.option);
-            toggle->hover           = nk_style_item_image(media.option);
-            toggle->active          = nk_style_item_image(media.option);
-            toggle->cursor_normal   = nk_style_item_image(media.option_cursor);
-            toggle->cursor_hover    = nk_style_item_image(media.option_cursor);
             toggle->text_normal     = setColor(stylesheetData, &currentIndex);
             toggle->text_hover      = setColor(stylesheetData, &currentIndex);
             toggle->text_active     = setColor(stylesheetData, &currentIndex);;
@@ -152,9 +140,7 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
         }
 
         /* default button */
-        ctx.style.button.normal = nk_style_item_image(media.button);
-        ctx.style.button.hover = nk_style_item_image(media.button_hover);
-        ctx.style.button.active = nk_style_item_image(media.button_active);
+
         ctx.style.button.border_color = setColor(stylesheetData, &currentIndex);
         ctx.style.button.text_background = setColor(stylesheetData, &currentIndex);
         ctx.style.button.text_normal = setColor(stylesheetData, &currentIndex);
@@ -253,10 +239,12 @@ void mapView() {}
 // in-game pause menu
 void pauseMenu() {
 
-    if (nk_begin(&ctx, "Pause Menu", nk_rect(0, 0, 100, 240),
+    pushToStack(pauseMenu);
+
+    if (nk_begin(&ctx, "Pause Menu", nk_rect(0, 0, 140, 240),
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
-        // Nuklear only has rows as a UI container, each row has a specified number of colums
+        // Nuklear only has rows as a UI container, each row has a specified number of columns
         // a column container with specified rows doesn't exist
 
         /* Layout of pause menu
@@ -271,25 +259,27 @@ void pauseMenu() {
          * Map
          */
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
-        if (nk_button_label(&ctx, "Pokemon")) {}
+        nk_layout_row_static(&ctx, 20, 120, 1);
+        if (nk_button_label(&ctx, "Pokemon")) { // Will be implemented first
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        }
+
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Bag")) {/*handle event*/}
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Profile")) {/*handle event*/}
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Options")) {/*handle event*/}
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Multiplyr")) {/*handle event*/}
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Save")) {/*handle event*/}
 
-        nk_layout_row_static(&ctx, 20, 100, 1);
+        nk_layout_row_static(&ctx, 20, 120, 1);
         if (nk_button_label(&ctx, "Map")) {/*handle event*/}
 
     }

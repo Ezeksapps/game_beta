@@ -1,4 +1,5 @@
 #include "ui.h"
+#include <iostream>
 
 /* For easier editing of UI colours, the RGB values will be saved in an external stylesheet and then loaded
  * when the Renderer first initialises the UI (by calling initUI())
@@ -33,7 +34,7 @@ constexpr uint16_t arraySize = (
     + sizeof(vec4) * 11               // edit
 );
 
-using json = nlohmann::json;
+using json = nlohmann::ordered_json; // FIXED: JSON parser does not preserve key order w/o explicitly being set as ordered JSON
 
 // Nuklear uses 8 bits to represent each colour channel (R8G8B8A8)
 const uint8_t* loadStylesheet() {
@@ -55,9 +56,9 @@ const uint8_t* loadStylesheet() {
         for (const json& vec : obj) { // for every key
             // each vec is a fixed-size array
             if (vec.size() == 4) { // vec4
-                for (int i = 0; i < vec.size(); ++i) stylesheetData[++index] = vec[i];
+                for (int i = 0; i < vec.size(); ++i) stylesheetData[index++] = vec[i]; // NOTE: post-increment index
             }
-            else throw std::runtime_error("Cannot parse stylesheet, an key is assigned to an array of incorrect size (must be either vec2 or vec4)");
+            else throw std::runtime_error("Cannot parse stylesheet, a key was assigned to a non-vec4 value");
         }
     }
     // By this point, all data should be successfully copied to the array

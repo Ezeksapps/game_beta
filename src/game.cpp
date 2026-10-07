@@ -2,6 +2,7 @@
 #include "engine/common.hpp"
 #include "engine/engine.hpp"
 #include "engine/entity/entity.hpp"
+#include "engine/ui/ui.h"
 
 std::vector<std::shared_ptr<Entity>>* entities = nullptr;
 
@@ -10,11 +11,16 @@ void handleInput(GameCmd input) {
         case UI_PROGRESS:
             break;
         case UI_ESCAPE:
+            popFromStack();
             // send message pop back UI stack to handler, ignored if no UI elem(s) active
             break;
         case UI_OPEN:
-            g_pEngine->m_pRenderer->testUiSystem();
+            pauseMenu();
             // pauseMenu(), only used in overworld
+            break;
+        case UI_DOWN:
+            break;
+        case UI_UP:
             break;
     }
 }

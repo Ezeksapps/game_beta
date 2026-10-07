@@ -794,7 +794,6 @@ Segmentation fault         (core dumped) ./build/game
 
 The rejection test only really tries to answer one question, which is if the overlap between bbox A and bbox B would have a greater
 area than it did previously, and if so, it should reject the pending translation
-The current system is overcomplicated and can most likely be optimised signficantly by just performing an overlap area calculation
 before and after and checking if they are different (floating point arithmetic may cause slight differences, so have a small allowance)
 
 Eevee:
@@ -809,4 +808,8 @@ Vulpix:
 dx = 23 - 7 = 16 + 2 px
 dy = 22 - 3 = 19 + 2 px
 
+TODO: Also need a bool to check if a UI elem is active, if so, block movement until no longer true
+
+Nuklear seems to prioritise mouse navigation (with nk_input), which is not what is expected here.
+The way the UI should be interacted with is through the keyboard only
 

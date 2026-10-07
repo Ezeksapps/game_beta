@@ -1,11 +1,5 @@
 #pragma once
 
-// TODO:
-
-// [Engine code]
-// set one entity as the player, others as their corresponding subclass of entity
-// Create dialogue system
-
 // CURRENTLY COMPLETE:
 // Renderer init
 // glTF loader (Now complete with ability to handle more than one material)
@@ -16,7 +10,9 @@
 // shaders for both pipelines
 // Camera system
 // sprite billboards' positioning relative to camera
-// separation of game and engine code
+
+// separation of game and engine code (DEPRECATED, to be reverted, this distinction doesn't matter rn)
+
 // sprites owned by Entity objects (distinct types of entities such as NPCs will later extend that class)
 // sprite sheet animation system, complete with directions
 // sprite sheet cache
@@ -30,6 +26,8 @@
 
 // WIP: Collision detection (sptl hash done, quadtree + slope handling todo),
 // Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
+
+// CHECK: Why is my stylesheet loader broken
 
 // TODO: Remove Engine class, it isn't needed
 // TODO: Alpha transparency for entities doesn't consider other entities (low pri)

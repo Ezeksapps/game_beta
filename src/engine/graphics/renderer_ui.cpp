@@ -255,7 +255,8 @@ void Renderer::renderUi() {
 
     m_pImmediateContext->SetViewports(1, &g_viewport, static_cast<uint32_t>(g_viewport.Width), static_cast<uint32_t>(g_viewport.Height));
 
-    if (m_pCurrentUiElemFunc != nullptr) m_pCurrentUiElemFunc(); // execute creator func for currently active UI elem
+    UICreatorFunc func = getCurrentUICreatorFunc();
+    if (func != NULL) func();
     else return; // UI draw cannot continue if the active UI constructor command is null
 
     // Convert from command queue into draw list and draw to screen

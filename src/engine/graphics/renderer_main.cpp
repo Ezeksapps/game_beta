@@ -99,10 +99,6 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
-void Renderer::testUiSystem() {
-    m_pCurrentUiElemFunc = pauseMenu;
-}
-
 // CHECK: Maybe rename index to event?
 void Renderer::cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 

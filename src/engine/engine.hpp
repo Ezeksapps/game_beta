@@ -29,6 +29,8 @@ enum GameCmd : uint8_t {
     UI_PROGRESS = 0,
     UI_ESCAPE   = 1,
     UI_OPEN     = 2,
+    UI_DOWN     = 3,
+    UI_UP       = 4
 
 };
 
