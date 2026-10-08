@@ -1,6 +1,7 @@
 /* UI related function implementations and core Nuklear implementation */
 
 #include "ui.h"
+#include <string.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -9,6 +10,10 @@
 #define NK_INCLUDE_FONT_BAKING
 #define NK_IMPLEMENTATION
 #include "nuklear.h"
+
+/* Macros */
+
+#define NUMELEMS(x)  (sizeof(x) / sizeof((x)[0])) // https://stackoverflow.com/questions/37538
 
 /* UI Stack */
 
@@ -48,6 +53,12 @@ struct nk_draw_null_texture texNull;
 struct nk_font_atlas atlas;
 struct FontAtlasData fontAtlasData;
 
+typedef struct MenuState {
+    uint8_t selectedUIElem;
+    uint8_t numItems;
+} MenuState;
+
+struct MenuState g_curMenuState = {0};
 
 /* Convenience function
  * makes setting the colour shorter and avoids needing to manually specify the exact index
@@ -68,6 +79,15 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
     *currentIndex += 4;
 
     return color;
+}
+
+void up() {
+    if (g_curMenuState.selectedUIElem > 0) --g_curMenuState.selectedUIElem;
+    else g_curMenuState.selectedUIElem = g_curMenuState.numItems - 1;
+}
+void down() {
+    if (g_curMenuState.selectedUIElem + 1 < g_curMenuState.numItems) ++g_curMenuState.selectedUIElem;
+    else g_curMenuState.selectedUIElem = 0;
 }
 
 void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFilepath)) {
@@ -223,6 +243,8 @@ void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rec
     nk_clear(&ctx);
 }
 
+
+
 /* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
 /* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
 
@@ -235,54 +257,51 @@ void saveMenu() {}
 void mapView() {}
 
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
+// For now, I'm not going to use header, might be done in future, UI is currently in early stage
 
-// in-game pause menu
-void pauseMenu() {
+// https://stackoverflow.com/questions/37538
+void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
 
-    pushToStack(pauseMenu);
+    if (getCurrentUICreatorFunc() != creatorFunc) { // only push to stack and init menu state on first creation of menu
+        pushToStack(creatorFunc);
+        g_curMenuState = (MenuState) {
+            .selectedUIElem = 0,
+            .numItems = numLabels
+        };
+    }
 
-    if (nk_begin(&ctx, "Pause Menu", nk_rect(0, 0, 140, 240),
+    if (nk_begin(&ctx, "", nk_rect(0, 0, 140, 240), // TODO: make dimensions customisable via func argument?
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
         // Nuklear only has rows as a UI container, each row has a specified number of columns
         // a column container with specified rows doesn't exist
+        nk_layout_row_dynamic(&ctx, 20, 1);
 
-        /* Layout of pause menu
-         * -=-=-=-=-=-=-=-=-=-=-=-
-         *
-         * Pokemon
-         * Bag
-         * Profile
-         * Options
-         * Multiplayer
-         * Save
-         * Map
-         */
+        for (uint8_t i = 0; i < g_curMenuState.numItems; ++i) {
+            bool isSelected = (g_curMenuState.selectedUIElem == i);
 
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Pokemon")) { // Will be implemented first
 
+            if (isSelected) {
+                // TODO: change
+                struct nk_style_item normalStyleItem = ctx.style.button.normal;
+                ctx.style.button.normal = nk_style_item_color(ctx.style.button.text_hover);
+
+                if (nk_button_label(&ctx, labels[i])) { itemFuncs[i](); }
+
+                ctx.style.button.normal = normalStyleItem;
+            }
+            else if (nk_button_label(&ctx, labels[i])) { itemFuncs[i](); }
         }
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Bag")) {/*handle event*/}
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Profile")) {/*handle event*/}
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Options")) {/*handle event*/}
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Multiplyr")) {/*handle event*/}
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Save")) {/*handle event*/}
-
-        nk_layout_row_static(&ctx, 20, 120, 1);
-        if (nk_button_label(&ctx, "Map")) {/*handle event*/}
-
     }
     nk_end(&ctx);
+}
+
+// in-game pause menu
+void pauseMenu() {
+
+    const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplyr", "Save", "Map"};
+    const UICreatorFunc itemFuncs[] = {NULL, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
+
+    createMenu(pauseMenu, NUMELEMS(itemLabels), itemLabels, itemFuncs);
 }
 

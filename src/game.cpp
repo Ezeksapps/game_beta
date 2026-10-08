@@ -19,8 +19,10 @@ void handleInput(GameCmd input) {
             // pauseMenu(), only used in overworld
             break;
         case UI_DOWN:
+            down();
             break;
         case UI_UP:
+            up();
             break;
     }
 }

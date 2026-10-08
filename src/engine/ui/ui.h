@@ -32,6 +32,9 @@ const uint8_t* loadStylesheet();
 UICreatorFunc getCurrentUICreatorFunc();
 void popFromStack();
 
+void up();
+void down();
+
 /* This C interface cannot use or include Diligent directly, but texture data is still required to be loaded for skinning purposes
  * initUi() takes a callback which should be a function C++-side that can generate and return the texture data as int
  */
