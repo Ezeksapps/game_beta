@@ -109,6 +109,10 @@ void Scene::resolveCollisions() {
                     m_pEntities[a]->m_knownCollisions.push_back(b);
                     m_pEntities[b]->m_knownCollisions.push_back(a);
                 }
+                if (a == 0) { // b can never be 0, entity 0 is always the player
+                    // needs more complex logic
+                    // interactableEntity = m_pEntities[b];
+                }
                 // TODO: also check if one of the entities intersecting is the player, because if so, then an
                 // NPC interaction is possible
             }

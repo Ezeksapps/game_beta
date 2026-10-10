@@ -41,6 +41,7 @@ struct EngineConfig {
     Diligent::RENDER_DEVICE_TYPE renderBackend;
 };
 
+
 class Engine {
 
 public:

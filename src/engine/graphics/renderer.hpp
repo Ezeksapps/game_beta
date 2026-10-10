@@ -152,7 +152,7 @@ private:
     /* Number of sprites game is currently rendering */
     int m_numSprites = 0;
     /* Max number of sprites (aka. Entities that can use this renderer at one time) */
-    static const int m_maxInstances = 32;
+    static const int m_maxInstances = 255;
     /* the maximum dimensions of a sprite sheet */
     static constexpr int m_maxSpriteDimensions = 8 * 10;
 

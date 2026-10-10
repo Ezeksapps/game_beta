@@ -1,9 +1,12 @@
 #include "entity.hpp"
 #include "../fileio.hpp"
+#include "glm/ext/scalar_uint_sized.hpp"
 #include <iostream>
 #include <json.hpp>
 
 using json = nlohmann::json;
+
+
 
 Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index) {
 
@@ -35,9 +38,23 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
     m_dxHalf = (bbox[0].get<int>() / 2) * 0.04;
     m_dyHalf = (bbox[1].get<int>() / 2) * 0.04;
 
+    if (index > 0) { // the player has no dialogue or pre-defined behaviour
+        const char* entityJson = readJsonAsset(entityJsonFilepath.c_str());
+
+        json dialogStrings = json::parse(entityJson)["dialog"];
+
+        for (json::iterator it = dialogStrings.begin(); it != dialogStrings.end(); ++it) {
+            m_dialogStrings.emplace(it.value(), it.key());
+        }
+    }
+
     doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
     m_direction = DIRECTION_WEST; // default direction
 }
+
+bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.contains(key); }
+
+std::string_view Entity::getDialogString(const std::string& key) { return m_dialogStrings[key]; }
 
 Entity::~Entity() {}
 

@@ -9,6 +9,7 @@ std::vector<std::shared_ptr<Entity>>* entities = nullptr;
 void handleInput(GameCmd input) {
     switch(input) {
         case UI_PROGRESS:
+            progressUI();
             break;
         case UI_ESCAPE:
             popFromStack();

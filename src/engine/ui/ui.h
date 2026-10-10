@@ -49,6 +49,8 @@ FontAtlasData* getFontAtlasData();
 int convertVertices(void* vertexBufferMem, void* indexBufferMem);
 void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount));
 
+void progressUI();
+
 /* DISPLAYS */
 
 void dialogBox();

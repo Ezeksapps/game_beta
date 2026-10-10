@@ -813,3 +813,5 @@ TODO: Also need a bool to check if a UI elem is active, if so, block movement un
 Nuklear seems to prioritise mouse navigation (with nk_input), which is not what is expected here.
 The way the UI should be interacted with is through the keyboard only
 
+A dialogue box only listens for UI_PROGRESS events
+

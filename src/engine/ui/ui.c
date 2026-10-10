@@ -53,11 +53,18 @@ struct nk_draw_null_texture texNull;
 struct nk_font_atlas atlas;
 struct FontAtlasData fontAtlasData;
 
+typedef enum WndType {
+    WND_TYPE_NONE,
+    WND_TYPE_DIALOG,
+    WND_TYPE_MENU
+} WndType;
+
 typedef struct MenuState {
     uint8_t selectedUIElem;
     uint8_t numItems;
 } MenuState;
 
+enum   WndType   g_curWndType = WND_TYPE_NONE;
 struct MenuState g_curMenuState = {0};
 
 /* Convenience function
@@ -245,16 +252,7 @@ void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rec
 
 
 
-/* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
-/* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
 
-
-void bagView() {}
-void profileView() {}
-void optionsMenu() {}
-void multiplayerView() {}
-void saveMenu() {}
-void mapView() {}
 
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 // For now, I'm not going to use header, might be done in future, UI is currently in early stage
@@ -264,6 +262,7 @@ void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const 
 
     if (getCurrentUICreatorFunc() != creatorFunc) { // only push to stack and init menu state on first creation of menu
         pushToStack(creatorFunc);
+        g_curWndType = WND_TYPE_MENU;
         g_curMenuState = (MenuState) {
             .selectedUIElem = 0,
             .numItems = numLabels
@@ -281,8 +280,8 @@ void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const 
             bool isSelected = (g_curMenuState.selectedUIElem == i);
 
 
-            if (isSelected) {
-                // TODO: change
+            if (isSelected) { // TODO: This and UI styling in general need work
+
                 struct nk_style_item normalStyleItem = ctx.style.button.normal;
                 ctx.style.button.normal = nk_style_item_color(ctx.style.button.text_hover);
 
@@ -296,12 +295,49 @@ void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const 
     nk_end(&ctx);
 }
 
+/* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
+/* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
+
+void pokemonView() {}
+void bagView() {}
+void profileView() {}
+void optionsMenu() {}
+void multiplayerView() {
+    const char* itemLabels[] = {"TEST", "TEST2"};
+    const UICreatorFunc itemFuncs[] = {NULL, NULL};
+
+    createMenu(multiplayerView, NUMELEMS(itemLabels), itemLabels, itemFuncs);
+}
+
+
+void saveMenu() {
+}
+
+void mapView() {}
+
 // in-game pause menu
 void pauseMenu() {
 
     const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplyr", "Save", "Map"};
-    const UICreatorFunc itemFuncs[] = {NULL, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
+    const UICreatorFunc itemFuncs[] = {pokemonView, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
 
     createMenu(pauseMenu, NUMELEMS(itemLabels), itemLabels, itemFuncs);
 }
 
+void progressUI() {
+    if (g_curWndType == WND_TYPE_DIALOG) {
+
+    }
+}
+
+void dialogBox() { // 270 * 480
+
+    g_curWndType = WND_TYPE_DIALOG;
+
+
+    if (nk_begin(&ctx, "", nk_rect(0, 210, 480, 60), // TODO: make dimensions customisable via func argument?
+        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+    }
+    nk_end(&ctx);
+}

@@ -13,8 +13,8 @@
 #include <iostream>
 
 /* size at which initial window is created */
-const uint32_t WIDTH_INITIAL = 800;
-const uint32_t HEIGHT_INITIAL = 600;
+const uint32_t WIDTH_INITIAL = 480;
+const uint32_t HEIGHT_INITIAL = 270;
 
 GLFWwindow* window;
 Diligent::NativeWindow wnd;
