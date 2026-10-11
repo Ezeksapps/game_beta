@@ -38,7 +38,7 @@ friend class Renderer; // TODO remove
 
 public:
 
-    Scene(const std::string& sceneDir);
+    Scene(const std::string& sceneDir, std::shared_ptr<Entity> player);
     ~Scene();
 
     // checks collisions between scene entities & 3D scene meshes

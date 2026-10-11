@@ -38,7 +38,7 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
     m_dxHalf = (bbox[0].get<int>() / 2) * 0.04;
     m_dyHalf = (bbox[1].get<int>() / 2) * 0.04;
 
-    if (index > 0) { // the player has no dialogue or pre-defined behaviour
+    if (index > 0) { // the player has no dialogue or pre-defined behaviour, the entityJson param will be blank
         const char* entityJson = readJsonAsset(entityJsonFilepath.c_str());
 
         json dialogStrings = json::parse(entityJson)["dialog"];

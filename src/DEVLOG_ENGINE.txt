@@ -815,3 +815,4 @@ The way the UI should be interacted with is through the keyboard only
 
 A dialogue box only listens for UI_PROGRESS events
 
+https://github.com/vurtun/nuklear/issues/683

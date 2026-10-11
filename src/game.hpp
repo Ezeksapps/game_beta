@@ -24,10 +24,8 @@
 // input system that properly controls movement with expected behaviour (entity moves so long as movement key(s) are held)
 // Collision detection between entities through a spatial hash system
 
-// WIP: Collision detection (sptl hash done, quadtree + slope handling todo),
+// WIP: Collision detection (sptl hash done, quadtree + slope handling todo), Dialogue system (80% done)
 // Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
-
-// CHECK: Why is my stylesheet loader broken
 
 // TODO: Remove Engine class, it isn't needed
 // TODO: Alpha transparency for entities doesn't consider other entities (low pri)

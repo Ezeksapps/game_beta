@@ -191,8 +191,8 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     return texArray;
 }
 
-void Renderer::setScene(const std::string& sceneDir) {
-    m_pScene = std::make_unique<Scene>(sceneDir);
+void Renderer::setScene(const std::string& sceneDir,  std::shared_ptr<Entity>& player) {
+    m_pScene = std::make_unique<Scene>(sceneDir, player);
 
     for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities /* TODO: CHANGE TO GETTER */) {
 

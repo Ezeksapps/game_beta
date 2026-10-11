@@ -65,6 +65,7 @@ typedef struct MenuState {
 } MenuState;
 
 enum   WndType   g_curWndType = WND_TYPE_NONE;
+const char* g_curDialogText = NULL;
 struct MenuState g_curMenuState = {0};
 
 /* Convenience function
@@ -325,18 +326,32 @@ void pauseMenu() {
 }
 
 void progressUI() {
-    if (g_curWndType == WND_TYPE_DIALOG) {
-
+    printf("Keypress of ENTER detected\n");
+    if (g_curWndType == WND_TYPE_NONE) {
+        printf("Attempting to start dialogue\n");
+        initiateDialog();
     }
+    if (g_curWndType == WND_TYPE_DIALOG) {
+        advanceDialog();
+    }
+    // else if menu should run creator func for next UI elem
 }
 
+void setDialogText(const char* text) { g_curDialogText = text; }
+
+// TODO: adapt text wrap
 void dialogBox() { // 270 * 480
+
+     if (getCurrentUICreatorFunc() != dialogBox) pushToStack(dialogBox);
 
     g_curWndType = WND_TYPE_DIALOG;
 
 
     if (nk_begin(&ctx, "", nk_rect(0, 210, 480, 60), // TODO: make dimensions customisable via func argument?
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+        nk_layout_row_dynamic(&ctx, 20, 1);
+        nk_text(&ctx, g_curDialogText, strlen(g_curDialogText), NK_TEXT_ALIGN_LEFT);
 
     }
     nk_end(&ctx);

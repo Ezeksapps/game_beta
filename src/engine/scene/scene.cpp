@@ -1,4 +1,5 @@
 #include "scene.hpp"
+#include "../ui/dialog.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -14,7 +15,7 @@ using json = nlohmann::json;
 
 namespace fs = std::filesystem;
 
-Scene::Scene(const std::string& sceneDir) {
+Scene::Scene(const std::string& sceneDir, std::shared_ptr<Entity> player) {
 
     // do not accept bad paths
     if (!fs::is_directory(sceneDir)) throw std::runtime_error("Scene constructor was provided with a non-directory");
@@ -42,6 +43,9 @@ Scene::Scene(const std::string& sceneDir) {
     if (gltfFilepath.stem() != jsonFilepath.stem()) throw std::runtime_error("Scene JSON and glTF filenames do not match");
 
     m_glbFilepath = gltfFilepath;
+
+    m_pEntities.push_back(player); // add player to entities first
+
     loadSceneJson(jsonFilepath);
 
     genSceneSptlHash();
@@ -55,8 +59,8 @@ void Scene::loadSceneJson(const std::string& sceneFilepath) {
     //json exits = json::parse(sceneJson)["exits"];
     json entities = json::parse(sceneJson)["entities"];
 
-    // entities is an array of objects
-    int entityIndex = 0;
+    // entities is an array of objects, start count from 1, slot 0 reserved for player
+    int entityIndex = 1;
     for (const json& entity : entities) {
         /* Entity format:
          * "type":    <name of entity subclass>
@@ -100,24 +104,41 @@ void Scene::resolveCollisions() {
         // https://stackoverflow.com/questions/26474995
         for (uint8_t i = 0; i < entities.size(); ++i) {
 
+            std::cout << "i = " << (int)i << std::endl;
+
             for (uint8_t j = i + 1; j < entities.size(); ++j) {
+
+                std::cout << "j = " << (int)j << std::endl;
+
                 const uint8_t& a = entities[i];
                 const uint8_t& b = entities[j];
+
+                std::cout << "a = " << (int)a << std::endl;
+                std::cout << "b = " << (int)b << std::endl;
 
                 // collision test
                 if (intersect(m_pEntities[a]->getAABB(), m_pEntities[b]->getAABB())) {
                     m_pEntities[a]->m_knownCollisions.push_back(b);
                     m_pEntities[b]->m_knownCollisions.push_back(a);
+
+                    if (a == 0) { // NOTE: j can never be 0, entity 0 is always the player
+                        std::cout << "A is 0\n";
+                        // needs more complex logic
+                        // interactableEntity = m_pEntities[b];
+                        setInteractableEntity(m_pEntities[b].get());
+                    }
+                    if (b == 0) {
+                        std::cout << "Why is b 0\n";
+                        setInteractableEntity(m_pEntities[a].get());
+                    }
                 }
-                if (a == 0) { // b can never be 0, entity 0 is always the player
-                    // needs more complex logic
-                    // interactableEntity = m_pEntities[b];
-                }
+
                 // TODO: also check if one of the entities intersecting is the player, because if so, then an
                 // NPC interaction is possible
             }
         }
     }
+    std::cout << "-=-=-=-=-=-=-=-=-=-=-=-\n";
 
     // TODO: quadtree
 }

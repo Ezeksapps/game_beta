@@ -1,0 +1,5 @@
+{
+    "dialog": {
+        "default": "This is a test of the dialogue system. Hello [player_name]!"
+    }
+}

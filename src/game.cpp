@@ -9,6 +9,7 @@ std::vector<std::shared_ptr<Entity>>* entities = nullptr;
 void handleInput(GameCmd input) {
     switch(input) {
         case UI_PROGRESS:
+            std::cout << "PROGRESS_UI\n";
             progressUI();
             break;
         case UI_ESCAPE:
@@ -46,7 +47,6 @@ void gameUpdate(void) {
 }
 
 void gameInit() {
-    g_pEngine->setScene("assets/scenes/debugScene");
     entities = &g_pEngine->getEntities();
     g_pEngine->setHandleMovementCallback(handleMovement);
 }

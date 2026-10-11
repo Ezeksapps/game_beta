@@ -1,11 +1,14 @@
 #pragma once
 
+
 // do not mangle func names when including from .cpp sources
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
 #include <stdint.h>
+
 
 /* Definitions of UI-related functions. Nuklear functions cannot be in here, as that would create a multiple definition */
 
@@ -50,6 +53,14 @@ int convertVertices(void* vertexBufferMem, void* indexBufferMem);
 void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rect clipRect, void* texPtr, unsigned int elemCount));
 
 void progressUI();
+
+/* Dialogue */
+
+void advanceDialog();
+void initiateDialog();
+
+// for dialog.cpp to communicate a final output const char* to the UI
+void setDialogText(const char* text);
 
 /* DISPLAYS */
 

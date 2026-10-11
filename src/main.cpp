@@ -29,6 +29,7 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 }
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+   // std::cout << key << std::endl;
     if (action != GLFW_RELEASE) g_pEngine->signalKeyPress(key);
     else g_pEngine->signalKeyRelease(key);
 }

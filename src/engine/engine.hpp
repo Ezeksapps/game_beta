@@ -42,7 +42,7 @@ struct EngineConfig {
 };
 
 
-class Engine {
+class Engine { // TODO: This system needs refactoring
 
 public:
 
@@ -55,6 +55,7 @@ public:
     // it can locate the JSON and glTF files corresponding to the scene and create the object
     // acts as a public-access way to call renderer's setScene()
     void setScene(const std::string& sceneDir);
+
 
     void setHandleMovementCallback(std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> callback);
 
@@ -80,5 +81,7 @@ public:
 private:
 
     std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> m_handleMovementCallback;
+
+    std::shared_ptr<Entity> m_pPlayer;
 
 };
