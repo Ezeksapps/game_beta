@@ -815,4 +815,17 @@ The way the UI should be interacted with is through the keyboard only
 
 A dialogue box only listens for UI_PROGRESS events
 
+for (json::iterator it = dialogStrings.begin(); it != dialogStrings.end(); ++it) {
+    m_dialogStrings.emplace(it.key(), it.value());
+}
+
+Iterating dialogue strings, CURRENT STR: default
+
+FIXED BUG, Dialogue strings were not loaded properly because key and value were in the wrong places
+
+Font actually does seem to load, only it seems like the colour doesn't work? Does text even get assigned any colour?
+setting the shader to ignore everything that isnt alpha and treat the alpha channel as the colour value for the other channels
+will show the text properly, which indicates that the way the text is drawn isn't as done properly, or maybe text is by default assigned a
+white background in Nuklear? (no, ctx.style.text has no background colour property)
+
 https://github.com/vurtun/nuklear/issues/683

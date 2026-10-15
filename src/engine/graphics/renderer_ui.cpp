@@ -218,7 +218,7 @@ void Renderer::createFontTexture() {
     m_pDevice->CreateTexture(desc, &data, &m_pFontTexture);
 
     m_pFontTextureView = m_pFontTexture->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
-    endFontAtlas(&m_pFontTextureView);
+    endFontAtlas(m_pFontTextureView.RawPtr<void>());
 
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pUiPipelineStateObj->CreateShaderResourceBinding(&m_pUiShaderResourceBinding, true);

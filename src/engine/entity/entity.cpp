@@ -44,7 +44,7 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
         json dialogStrings = json::parse(entityJson)["dialog"];
 
         for (json::iterator it = dialogStrings.begin(); it != dialogStrings.end(); ++it) {
-            m_dialogStrings.emplace(it.value(), it.key());
+            m_dialogStrings.emplace(it.key(), it.value());
         }
     }
 

@@ -104,31 +104,23 @@ void Scene::resolveCollisions() {
         // https://stackoverflow.com/questions/26474995
         for (uint8_t i = 0; i < entities.size(); ++i) {
 
-            std::cout << "i = " << (int)i << std::endl;
-
             for (uint8_t j = i + 1; j < entities.size(); ++j) {
-
-                std::cout << "j = " << (int)j << std::endl;
 
                 const uint8_t& a = entities[i];
                 const uint8_t& b = entities[j];
-
-                std::cout << "a = " << (int)a << std::endl;
-                std::cout << "b = " << (int)b << std::endl;
 
                 // collision test
                 if (intersect(m_pEntities[a]->getAABB(), m_pEntities[b]->getAABB())) {
                     m_pEntities[a]->m_knownCollisions.push_back(b);
                     m_pEntities[b]->m_knownCollisions.push_back(a);
 
-                    if (a == 0) { // NOTE: j can never be 0, entity 0 is always the player
+                    if (a == 0) {
                         std::cout << "A is 0\n";
                         // needs more complex logic
                         // interactableEntity = m_pEntities[b];
                         setInteractableEntity(m_pEntities[b].get());
                     }
-                    if (b == 0) {
-                        std::cout << "Why is b 0\n";
+                    if (b == 0) { // CHECK: why is this the only block that activates, it's meant to be a
                         setInteractableEntity(m_pEntities[a].get());
                     }
                 }
@@ -138,7 +130,7 @@ void Scene::resolveCollisions() {
             }
         }
     }
-    std::cout << "-=-=-=-=-=-=-=-=-=-=-=-\n";
+
 
     // TODO: quadtree
 }

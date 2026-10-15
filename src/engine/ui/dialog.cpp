@@ -26,7 +26,6 @@ DialogState state;
 Entity* g_entity = {};
 
 void setInteractableEntity(Entity* entity) {
-    std::cout << "setInteractableEntity called\n";
     g_entity = entity;
 }
 
@@ -87,6 +86,7 @@ void advanceDialog() {
                 break;
         }
     }
+    setDialogText(state.outStr.c_str());
     state.pendingOp = OP_CONTINUE_PRINT; // when loop has terminated, await a UI_PROGRESS cmd
 }
 
@@ -101,6 +101,8 @@ void initiateDialog() {
     std::cout << state.sourceStr << std::endl;
 
     advanceDialog(); // print initial piece of dialogue
+
+    std::cout << state.outStr << std::endl;
 
     dialogBox();
 

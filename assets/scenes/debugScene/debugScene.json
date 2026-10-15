@@ -16,6 +16,13 @@
             "json": "assets/placeholder.json",
             "posX": -2,
             "posY": -3
+        },
+        {
+            "type": 0,
+            "sprites": "assets/fennekin.json",
+            "json": "assets/placeholder.json",
+            "posX": -3,
+            "posY": 1
         }
     ]
 }

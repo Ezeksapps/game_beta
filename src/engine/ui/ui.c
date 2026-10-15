@@ -319,16 +319,14 @@ void mapView() {}
 // in-game pause menu
 void pauseMenu() {
 
-    const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplyr", "Save", "Map"};
+    const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplayer", "Save", "Map"};
     const UICreatorFunc itemFuncs[] = {pokemonView, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
 
     createMenu(pauseMenu, NUMELEMS(itemLabels), itemLabels, itemFuncs);
 }
 
 void progressUI() {
-    printf("Keypress of ENTER detected\n");
     if (g_curWndType == WND_TYPE_NONE) {
-        printf("Attempting to start dialogue\n");
         initiateDialog();
     }
     if (g_curWndType == WND_TYPE_DIALOG) {
