@@ -184,7 +184,7 @@ void Renderer::populateInstanceBuffer() {
 
     // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
     int i = 0;
-    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities) {
+    for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
 
         entity->update(0.5f); // TODO: entity should percieve an update of 1 frame, but this sets correct anim speed for now, check why setting m_fps doesnt work
         const std::shared_ptr<Sprite> activeSprite = entity->getActiveSprite();

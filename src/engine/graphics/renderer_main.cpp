@@ -180,7 +180,7 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
 
     // no SRV or SRB since this array is not for rendering
 
-    const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[entityIndex]; // maybe just pass this directly from setScene?
+    const std::shared_ptr<Entity>& entity = m_pScene->getEntities()[entityIndex]; // maybe just pass this directly from setScene?
     const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& spriteMap = entity->getSpriteMap();
 
     /* Loop through entity sprite map and load all Sprite objects into tex array */
@@ -192,9 +192,9 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
 }
 
 void Renderer::setScene(const std::string& sceneDir,  std::shared_ptr<Entity>& player) {
-    m_pScene = std::make_unique<Scene>(sceneDir, player);
+    m_pScene = std::make_unique<WorldScene>(sceneDir, player);
 
-    for (const std::shared_ptr<Entity>& entity : m_pScene->m_pEntities /* TODO: CHANGE TO GETTER */) {
+    for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
 
         // only add a new texture array to the cache if one doesn't already exist for the required sprite sheets
         // NOTE: use try_emplace() since checking the index requires operator[], which will always create that index if it doesnt exist
@@ -210,24 +210,15 @@ void Renderer::setScene(const std::string& sceneDir,  std::shared_ptr<Entity>& p
             this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
         });
 
-        entity->setStartMovementCallback([this](const int& index, vec3 translVec) {
-            m_translsMap.emplace(index, translVec);
-        });
+        // movement callbacks moved to WorldScene, BattleScene has no movement
 
-        entity->setChangeMovementDirectionCallback([this](const int& index, vec3 translVec) {
-            m_translsMap[index] = translVec; // update translation vector for this entity
-        });
-
-        entity->setEndMovementCallback([this](const int& index) {
-            m_translsMap.erase(index); // erase translation vector at index
-        });
     }
 
-    loadGLB(m_pScene->m_glbFilepath);
+    loadGLB(m_pScene->getGltfFilepath());
 }
 
 std::vector<std::shared_ptr<Entity>>& Renderer::getEntities() {
-    return m_pScene->m_pEntities;
+    return m_pScene->getEntities();
 }
 
 void Renderer::createSharedUniformBuffer() {
@@ -323,93 +314,9 @@ Diligent::IFramebuffer* Renderer::getCurrentFrameBuffer() {
 
 /* --- GAME DATA UPDATE FUNC --- */
 
-float getIntersectArea(const AABB& a, const AABB& b) {
-    // Find the overlapping rectangle on the X axis
-    float overlapMinX = std::max(a.min.x, b.min.x);
-    float overlapMaxX = std::min(a.max.x, b.max.x);
-
-    // Find the overlapping rectangle on the Y axis
-    float overlapMinY = std::max(a.min.y, b.min.y);
-    float overlapMaxY = std::min(a.max.y, b.max.y);
-
-    // do not test for no overlap, if this func has been executed, then there must be overlap
-
-    // The area of the intersection rectangle
-    return (overlapMaxX - overlapMinX) * (overlapMaxY - overlapMinY);
-}
-
-// a translation should be rejected if it would cause bbox A to further overlap with bbox B, assuming they are already overlapping
-// of course, the entity should still be able to move in the other directions which would not cause this
-// for diagonals, you can check either x or y, because both direction's translVecs are applied simultaneously
-bool rejectTransl(const AABB& a, const AABB& b, const vec3& translVec, const Direction& direction) {
-
-    // the AABB that a would become if the translation were not rejected
-    AABB translBbox = a;
-    translBbox.min += translVec;
-    translBbox.max += translVec;
-
-    const float allowance = 0.01f;
-    return getIntersectArea(translBbox, b) > (getIntersectArea(a, b) + allowance);
-}
-
 void Renderer::update() {
-
-    std::vector<uint8_t> translsToTerminate = {};
-
-    // update entity positions, including sptl hash positions
-    if (!m_translsMap.empty()) {
-        for (const auto& [index, translVec] : m_translsMap) {
-
-            const std::shared_ptr<Entity>& entity = m_pScene->m_pEntities[index];
-
-            std::vector<uint8_t>& knownCollisions = entity->m_knownCollisions;
-
-            /* Do not perform the translation yet, first test if the translation should be allowed.
-             * For example, the translation should be rejected if it would lead to further overlapping
-             * an entity that this entity is already colliding with
-             */
-            bool reject = false;
-            if (!entity->m_knownCollisions.empty()) {
-                for (uint8_t i = 0; i < entity->m_knownCollisions.size(); ++i) {
-                    AABB b = m_pScene->m_pEntities[entity->m_knownCollisions[i]]->getAABB();
-                    AABB a = entity->getAABB();
-                    reject = rejectTransl(a, b, translVec, entity->m_direction);
-                }
-            }
-            if (reject == true) {
-                // NOTE: don't run endMovement in this loop, because then that changes the indices in the transl map
-                // and since the program is actively iterating that map, a segfault will occur
-                translsToTerminate.push_back(index);
-                continue;
-            }
-            else entity->m_pos += translVec;
-
-            OccupiedCells prevOccupiedCells = getOccupiedCells(entity->getAABB());
-            OccupiedCells newOccupiedCells = getOccupiedCells(entity->getAABB());
-
-            // should remove entity index from any cells which it is no longer in and insert it into any newly occupied cells
-            // TODO: this can definitely be optimised somehow...
-            for (uint8_t i = 0; i < prevOccupiedCells.count; ++i) {
-                auto& cell = m_pScene->m_sptlHash[prevOccupiedCells.cells[i]];
-
-                auto it = std::find(cell.begin(), cell.end(), index);
-                if (it != cell.end()) cell.erase(it);
-            }
-
-            for (uint8_t i = 0; i < newOccupiedCells.count; ++i) {
-                m_pScene->m_sptlHash[newOccupiedCells.cells[i]].push_back(index);
-            }
-
-
-        }
-    }
-
-    for (const uint8_t& entityIndex : translsToTerminate) m_pScene->m_pEntities[entityIndex]->endMovement();
-
+    m_pScene->update();
     populateInstanceBuffer();
-
-    // check for collisions
-    m_pScene->resolveCollisions();
 }
 
 /* --- DRAW CALLS --- */
@@ -499,7 +406,7 @@ void Renderer::renderFrame() {
 
 void Renderer::updateUniformBuffer() {
     // TODO: Create proper Player designation, this isn't good enough (The player won't get defined in scene JSON)
-    m_pCamera->setTargetPos(m_pScene->m_pEntities[0]->m_pos);
+    m_pCamera->setTargetPos(m_pScene->getEntities()[0]->m_pos);
     // calculate new view matrix after pending changes
     m_viewMatrix = m_pCamera->getViewMatrix();
 }

@@ -2,12 +2,14 @@
 
 #include "scene.hpp"
 
-class BattleScene : Scene {
+class BattleScene : public Scene {
 public:
 
     // player and opponent should be entities already set up by the active WorldScene
     BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> player, std::shared_ptr<Entity> opponent);
     ~BattleScene();
+
+    void update() override;
 
 private:
 

@@ -21,3 +21,11 @@ Scene::Scene(const std::string& sceneDir, std::shared_ptr<Entity> player) {
 }
 
 Scene::~Scene() {}
+
+std::vector<std::shared_ptr<Entity>>& Scene::getEntities() {
+    return m_pEntities;
+}
+
+const std::string& Scene::getGltfFilepath() {
+    return m_glbFilepath;
+}

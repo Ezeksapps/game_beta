@@ -92,9 +92,9 @@ Engine::Engine(const EngineConfig& config) {
     initInputHandler();
 
     // load player/save data (will later be relocated to separate func in dedicated save/load system):
-    std::cout << "About to load player data\n";
+
     json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
-    std::cout << "loaded player data\n";
+
     m_pPlayer = std::make_shared<Entity>("", playerData["sprites"], 0);
     m_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
     setScene(playerData["lastScene"]);

@@ -4,7 +4,7 @@
 
 // quadtrees not being worked on currently, sptl hash WIP
 
-class WorldScene : Scene {
+class WorldScene : public Scene {
 
 public:
 
@@ -13,14 +13,20 @@ public:
 
     // checks collisions between scene entities & 3D scene meshes
     void resolveCollisions();
+    void update() override;
 
     std::vector<AABB> m_bboxes;
 
 private:
 
+    /* Maps translation vectors to currently moving entities */
+    std::unordered_map<int, vec3> m_translsMap;
+
     void loadSceneJson(const std::string& sceneFilepath);
 
     void genSceneSptlHash();
+
+    void setupEntityCallbacks(const int& entityIndex);
 
     // entity ID 8-bit, as 32 < 255
     std::unordered_map<uint32_t, std::vector<uint8_t>> m_sptlHash;

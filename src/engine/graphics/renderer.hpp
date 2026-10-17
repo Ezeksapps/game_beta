@@ -3,6 +3,7 @@
 #include "../common.hpp"
 #include "../entity/sprite.hpp"
 #include "../scene/scene.hpp"
+#include "../scene/world_scene.hpp"
 #include "camera.hpp"
 
 #include <chrono> // used for frame rate stabilisation & sprite animation timings
@@ -171,9 +172,6 @@ private:
     float m_timeAcc;
 
     /* NOTE: num sprites setter must not increment sprites past max instances */
-
-    /* Maps translation vectors to currently moving entities */
-    std::unordered_map<int, vec3> m_translsMap;
 
     /* Stores all pre-loaded sprite sheets for the current scene's entities */
     std::unordered_map<std::string, Diligent::RefCntAutoPtr<Diligent::ITexture>> m_entitySpriteCache;
