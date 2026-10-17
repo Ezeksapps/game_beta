@@ -6,7 +6,7 @@
 #include <string>
 #include "../event/game_event.hpp"
 
-#define DIALOG_BOX_MAX_CHARS 25
+#define DIALOG_BOX_MAX_CHARS 255
 
 enum PendingPrintOp {
     OP_NONE,
@@ -41,14 +41,14 @@ void handleCmdToken() {
     size_t endPos = state.sourceStr.find_first_of('$', state.pos + 1);
     std::string_view cmd = state.sourceStr.substr(state.pos + 1, endPos - 1);
     if (cmdMap.contains(cmd)) state.pendingOp = cmdMap[cmd];
-    state.pos = endPos; // continue char iteration from token end
+    state.pos = endPos + 1; // continue char iteration from token end
 }
 
 void handleWordToken() {
     size_t endPos = state.sourceStr.find_first_of(']', state.pos + 1);
-    std::string_view word = state.sourceStr.substr(state.pos + 1, endPos - 1);
+    std::string_view word = state.sourceStr.substr(state.pos + 1, ((endPos) - (state.pos + 1)));
     if (wordMap.contains(word)) state.outStr += wordMap[word]; // insert correct word
-    state.pos = endPos; // continue char iteration from token end
+    state.pos = endPos + 1; // continue char iteration from token end
 }
 
 
@@ -57,6 +57,7 @@ void advanceDialog() {
     /* First execute the pending op from last string */
     switch (state.pendingOp) {
         case OP_EXEC_BATTLE_START:
+            //
             break;
         case OP_CONTINUE_PRINT:
             state.outStr.clear();
@@ -68,6 +69,7 @@ void advanceDialog() {
 
     while (state.pos < state.sourceStr.size() && state.outStr.size() < DIALOG_BOX_MAX_CHARS) {
         const char c = state.sourceStr[state.pos];
+       // std::cout << c;
         switch(c) {
             case '$':
                 handleCmdToken();
@@ -86,7 +88,8 @@ void advanceDialog() {
                 break;
         }
     }
-    setDialogText(state.outStr.c_str());
+    std::cout << "\n" << state.outStr << std::endl;
+    setDialogText(state.outStr.data());
     state.pendingOp = OP_CONTINUE_PRINT; // when loop has terminated, await a UI_PROGRESS cmd
 }
 
@@ -98,12 +101,7 @@ void initiateDialog() {
     state.sourceStr = g_entity->getDialogString("default");
     state.pos = 0;
 
-    std::cout << state.sourceStr << std::endl;
-
     advanceDialog(); // print initial piece of dialogue
-
-    std::cout << state.outStr << std::endl;
-
     dialogBox();
 
 

@@ -14,6 +14,7 @@
 /* Macros */
 
 #define NUMELEMS(x)  (sizeof(x) / sizeof((x)[0])) // https://stackoverflow.com/questions/37538
+#define MAX_DIALOG_CHARS 255
 
 /* UI Stack */
 
@@ -65,7 +66,7 @@ typedef struct MenuState {
 } MenuState;
 
 enum   WndType   g_curWndType = WND_TYPE_NONE;
-const char* g_curDialogText = NULL;
+char g_curDialogText[MAX_DIALOG_CHARS] = "";
 struct MenuState g_curMenuState = {0};
 
 /* Convenience function
@@ -329,21 +330,20 @@ void progressUI() {
     if (g_curWndType == WND_TYPE_NONE) {
         initiateDialog();
     }
-    if (g_curWndType == WND_TYPE_DIALOG) {
+    else if (g_curWndType == WND_TYPE_DIALOG) {
         advanceDialog();
     }
     // else if menu should run creator func for next UI elem
 }
 
-void setDialogText(const char* text) { g_curDialogText = text; }
+void setDialogText(char* text) { strcpy(g_curDialogText, text); }
 
 // TODO: adapt text wrap
 void dialogBox() { // 270 * 480
 
-     if (getCurrentUICreatorFunc() != dialogBox) pushToStack(dialogBox);
+    if (getCurrentUICreatorFunc() != dialogBox) pushToStack(dialogBox);
 
     g_curWndType = WND_TYPE_DIALOG;
-
 
     if (nk_begin(&ctx, "", nk_rect(0, 210, 480, 60), // TODO: make dimensions customisable via func argument?
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {

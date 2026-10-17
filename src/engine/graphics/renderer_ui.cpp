@@ -31,6 +31,18 @@ void Renderer::createUiPipelineState() {
     /* initial supbpass to start render pass from */
     PipelineStateObjCreateInfo.GraphicsPipeline.SubpassIndex                            = 0;
 
+    /* Explicitly enable alpha blending, or Diligent ignores the channel. Alpha channel is required for text to draw! */
+    Diligent::RenderTargetBlendDesc blendDesc;
+    blendDesc.BlendEnable           = true;
+    blendDesc.SrcBlend              = Diligent::BLEND_FACTOR_SRC_ALPHA;
+    blendDesc.DestBlend             = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
+    blendDesc.BlendOp               = Diligent::BLEND_OPERATION_ADD;
+    blendDesc.SrcBlendAlpha         = Diligent::BLEND_FACTOR_INV_SRC_ALPHA;
+    blendDesc.DestBlendAlpha        = Diligent::BLEND_FACTOR_ZERO;
+    blendDesc.BlendOpAlpha          = Diligent::BLEND_OPERATION_ADD;
+    blendDesc.RenderTargetWriteMask = Diligent::COLOR_MASK_ALL;
+
+    PipelineStateObjCreateInfo.GraphicsPipeline.BlendDesc.RenderTargets[0] = blendDesc;
 
     Diligent::ShaderCreateInfo shaderCreateInfo;
 

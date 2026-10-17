@@ -828,4 +828,21 @@ setting the shader to ignore everything that isnt alpha and treat the alpha chan
 will show the text properly, which indicates that the way the text is drawn isn't as done properly, or maybe text is by default assigned a
 white background in Nuklear? (no, ctx.style.text has no background colour property)
 
+About to load player data
+loaded player data
+PROGRESS_UI
+Found word is: player_name
+Word maps to string: Jack Bacon -=-=-
+This is a test of the dialogue system. Hello Jack Bacon!
+
+
+UI creator function executing, nk_text about to be called with text This is a test of the dialogue system. Hello Jack Bacon! of length 56
+
+
+UI creator function executing, nk_text about to be called with text  of length 0
+UI creator function executing, nk_text about to be called with text  of length 0
+...
+
+Dialogue text being cleared every frame following first draw?
+
 https://github.com/vurtun/nuklear/issues/683

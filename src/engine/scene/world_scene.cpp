@@ -1,0 +1,134 @@
+#include "world_scene.hpp"
+#include "../ui/dialog.hpp"
+
+#include <cstdint>
+#include <filesystem>
+#include <stdexcept>
+#include <iostream>
+
+#include "json.hpp"
+#include "../fileio.hpp"
+
+#include "../entity/entity.hpp"
+
+using json = nlohmann::json;
+
+namespace fs = std::filesystem;
+
+WorldScene::WorldScene(const std::string& sceneDir, std::shared_ptr<Entity> player) : Scene(sceneDir, player) {
+
+    fs::path dir = sceneDir;
+
+    // find the two needed files (The scene JSON and glTF and validate directory)
+    fs::path jsonFilepath, gltfFilepath;
+    int jsonCounter = 0, gltfCounter = 0;
+    for (const fs::directory_entry& file : fs::recursive_directory_iterator(dir)) {
+
+        if (jsonCounter > 1 || gltfCounter > 1) throw std::runtime_error("Scene directory contains more than one JSON or glTF file");
+        if (!fs::is_regular_file(file)) continue; // ignore any non-standard files
+
+        if (file.path().extension() == ".json") {
+            ++jsonCounter;
+            jsonFilepath = file.path();
+        }
+        if (file.path().extension() == ".glb") {
+            ++gltfCounter;
+            gltfFilepath = file.path();
+        }
+    }
+
+    // JSON and glTF must have the same name
+    if (gltfFilepath.stem() != jsonFilepath.stem()) throw std::runtime_error("Scene JSON and glTF filenames do not match");
+
+    m_glbFilepath = gltfFilepath;
+
+    loadSceneJson(jsonFilepath);
+    genSceneSptlHash();
+}
+
+Scene::~Scene() {}
+
+void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
+    const char* sceneJson = readJsonAsset(sceneFilepath.c_str());
+
+    //json exits = json::parse(sceneJson)["exits"];
+    json entities = json::parse(sceneJson)["entities"];
+
+    // entities is an array of objects, start count from 1, slot 0 reserved for player
+    int entityIndex = 1;
+    for (const json& entity : entities) {
+        /* Entity format:
+         * "type":    <name of entity subclass>
+         * "sprites": <rel filepath to sprite sheet JSON>
+         * "json":    <rel filepath to entity info/behaviour JSON>
+         * "posX":    <position in x-axis>
+         * "posY":    <position in y-axis>
+         */
+
+        // should be able to create, based on 'type' an object of Entity's subclasses,
+        // for example  if type = "p", then make shared Pokemon
+        std::shared_ptr<Entity> pEntity = std::make_shared<Entity>(entity["json"], entity["sprites"], entityIndex);
+        pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
+        m_pEntities.push_back(pEntity);
+        ++entityIndex;
+    }
+    // TODO: Define scene JSON format
+}
+
+// check if two AABBs intersect
+// source: https://developer.mozilla.org/en-US/docs/Games/Techniques/3D_collision_detection
+bool intersect(const AABB& a, const AABB& b) {
+    return (
+        a.min.x <= b.max.x &&
+        a.max.x >= b.min.x &&
+        a.min.y <= b.max.y &&
+        a.max.y >= b.min.y
+    );
+}
+
+void WorldScene::resolveCollisions() {
+
+    // Clear last frame's collision data exactly once per entity
+    for (auto& e : m_pEntities) e->m_knownCollisions.clear();
+
+    for (const auto& [key, entities] : m_sptlHash) {
+        // https://stackoverflow.com/questions/26474995
+        for (uint8_t i = 0; i < entities.size(); ++i) {
+
+            for (uint8_t j = i + 1; j < entities.size(); ++j) {
+
+                const uint8_t& a = entities[i];
+                const uint8_t& b = entities[j];
+
+                // collision test
+                if (intersect(m_pEntities[a]->getAABB(), m_pEntities[b]->getAABB())) {
+                    m_pEntities[a]->m_knownCollisions.push_back(b);
+                    m_pEntities[b]->m_knownCollisions.push_back(a);
+
+                    if (a == 0) {
+                        std::cout << "A is 0\n";
+                        // needs more complex logic
+                        // interactableEntity = m_pEntities[b];
+                        setInteractableEntity(m_pEntities[b].get());
+                    }
+                    if (b == 0) { // CHECK: why is this the only block that activates, it's meant to be a
+                        setInteractableEntity(m_pEntities[a].get());
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO: quadtree
+}
+
+
+
+void WorldScene::genSceneSptlHash() {
+    for (uint8_t entityIndex = 0; entityIndex < m_pEntities.size(); ++entityIndex) {
+        // TODO: The size of geometry might eventually differ between entities, this must be handled! current size is const 1x1
+        // insert entity index into all cells that it occupies
+        OccupiedCells occupiedCells = getOccupiedCells(m_pEntities[entityIndex]->getAABB());
+        for (uint8_t i = 0; i < occupiedCells.count; ++i) m_sptlHash[occupiedCells.cells[i]].push_back(entityIndex);
+    }
+}

@@ -74,7 +74,6 @@ struct IVs {
     int hpIV;
 };
 
-// TODO: Need matchup chart
 enum Type {
     TYPE_NORMAL    = 0,
     TYPE_FIGHTING  = 1,

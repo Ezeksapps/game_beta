@@ -59,8 +59,8 @@ void progressUI();
 void advanceDialog();
 void initiateDialog();
 
-// for dialog.cpp to communicate a final output const char* to the UI
-void setDialogText(const char* text);
+// for dialog.cpp to communicate a final output char* to the UI
+void setDialogText(char* text);
 
 /* DISPLAYS */
 
