@@ -14,3 +14,4 @@ enum GameEvent : uint8_t {
     GAME_EVENT_ENTER_SCENE
 };
 
+void triggerEvent(const GameEvent& event);

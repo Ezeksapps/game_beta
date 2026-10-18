@@ -6,9 +6,7 @@
 
 using json = nlohmann::json;
 
-
-
-Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index) {
+Entity::Entity(const std::string& animJsonFilepath, const int& index) {
 
     m_index = index;
     m_animJsonFilepath = animJsonFilepath;
@@ -38,8 +36,13 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
     m_dxHalf = (bbox[0].get<int>() / 2) * 0.04;
     m_dyHalf = (bbox[1].get<int>() / 2) * 0.04;
 
-    if (index > 0) { // the player has no dialogue or pre-defined behaviour, the entityJson param will be blank
-        const char* entityJson = readJsonAsset(entityJsonFilepath.c_str());
+    doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
+    m_direction = DIRECTION_WEST; // default direction
+}
+
+void Entity::loadEntityJSON(const std::string& filepath) {
+    if (m_index > 0) { // the player has no dialogue or pre-defined behaviour
+        const char* entityJson = readJsonAsset(filepath.c_str());
 
         json dialogStrings = json::parse(entityJson)["dialog"];
 
@@ -47,9 +50,6 @@ Entity::Entity(const std::string& entityJsonFilepath, const std::string& animJso
             m_dialogStrings.emplace(it.key(), it.value());
         }
     }
-
-    doAnimEvent(ANIM_EVENT_IDLE); // default idle anim
-    m_direction = DIRECTION_WEST; // default direction
 }
 
 bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.contains(key); }

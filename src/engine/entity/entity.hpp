@@ -33,8 +33,10 @@ class Entity {
 
 public:
 
-    Entity(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index);
+    Entity(const std::string& animJsonFilepath, const int& index);
     ~Entity();
+
+    void loadEntityJSON(const std::string& filepath);
 
     /* Callback Setters */
 
@@ -90,8 +92,6 @@ public:
     std::string_view getDialogString(const std::string& key);
 
 protected:
-
-    //void printDialogStr(const std::string& key = "default");
 
 private:
 

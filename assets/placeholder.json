@@ -1,5 +1,31 @@
 {
     "dialog": {
         "default": "This is a test of the dialogue system. Hello [player_name]!"
-    }
+    },
+    "team": [
+        {
+            "spcname": "shinx",
+            "name": "Shinx",
+            "level": 45,
+            "moveset": [
+                "tackle", "thunder_fang", "charge", "discharge"
+            ],
+            "exp": 142,
+            "nature": "calm",
+            "hasHiddenAbility": true,
+            "isShiny": false
+        },
+        {
+            "spcname": "umbreon",
+            "name": "Umbreon",
+            "level": 50,
+            "moveset": [
+                "tackle", "quick_attack", "crunch", "torment"
+            ],
+            "exp": 233,
+            "nature": "lax",
+            "hasHiddenAbility": true,
+            "isShiny": true
+        }
+    ]
 }

@@ -44,7 +44,7 @@ public:
     bool initRenderer(const Diligent::NativeWindow& window, const Diligent::RENDER_DEVICE_TYPE& deviceType);
     void renderFrame();
 
-    void setScene(const std::string& sceneDir, std::shared_ptr<Entity>& player);
+    void setScene(const std::unique_ptr<Scene>& scene);
     std::vector<std::shared_ptr<Entity>>& getEntities();
 
     //TEMP, calls pauseMenu()

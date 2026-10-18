@@ -846,3 +846,29 @@ UI creator function executing, nk_text about to be called with text  of length 0
 Dialogue text being cleared every frame following first draw?
 
 https://github.com/vurtun/nuklear/issues/683
+
+Pokemon in a WorldScene are represented by Pokemon objects, so are those in BattleScenes.
+In a WorldScene, an entity needs its entity JSON, defining behaviours such as movement and dialogue.
+In a BattleScene, neither of those things can be done, so an entity JSON isn't needed and any data from it is unused
+Pokemon objects must be created from the Trainers' entity JSONs. These outline the basic data required for creation, but they
+don't link to any entity JSON, because they aren't needed.
+The problem comes from the fact that these entity JSONs are currently a required parameter in Entity's constructor
+and that all data from that JSON is loaded by the constructor. Unlike standard entities and Trainer objects, Pokemon objects
+are not guaranteed to exist prior to a battle starting. Even if Pokemon following gets implemented, only the first pokemon
+in the party is pre-loaded. If, at any point in the battle, the player or opponent switches their pokemon, a new Pokemon object will need to
+be created without any irrelevant data such as dialogue.
+
+The proposed solution is to instead make loading data from the entity JSON be done by another function which isn't called
+by the constructor. These interactions only need to be loaded when a WorldScene is initially loaded, so the loadSceneJson function
+in WorldScene can be the one that calls this new function to set all appropriate interactions for the new WorldScene, whilst anything
+created from a BattleScene can safely ignore these details
+
+The Pokemon constructor will also take the species name in place of the animJsonFilepath, as the sprites associated with each pokemon
+will be defined in a pokemon_assets JSON
+
+For battles to begin, the GameEvent system needs to be created so that it exposes a function 'triggerEvent(<enum val>)'
+this should then perform the actions associated with the event. In this case, triggering the battle.
+To do this, the scene should be replaced with a BattleScene.
+There is one thing to determine here, and that is if the Scene should actually be replaced, or if instead the WorldScene
+pointer is transferred somewhere else whilst the battle is being rendered the transferred back, so no data is lost
+

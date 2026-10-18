@@ -3,7 +3,7 @@
 #include "pokemon_common.h"
 
 Pokemon::Pokemon(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index)
-                : Entity(entityJsonFilepath, animJsonFilepath, index) {
+                : Entity(animJsonFilepath, index) {
 
     // in addition to the normal properties common to all entities, Pokemon will have other properties
     // defined in their entity JSON that require more specialised handling

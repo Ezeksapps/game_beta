@@ -82,9 +82,8 @@ void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
          * "posY":    <position in y-axis>
          */
 
-        // should be able to create, based on 'type' an object of Entity's subclasses,
-        // for example  if type = "p", then make shared Pokemon
-        std::shared_ptr<Entity> pEntity = std::make_shared<Entity>(entity["json"], entity["sprites"], entityIndex);
+        std::shared_ptr<Entity> pEntity = std::make_shared<Entity>(entity["sprites"], entityIndex);
+        pEntity->loadEntityJSON(entity["json"]);
         pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
 
         m_pEntities.push_back(pEntity);
@@ -110,9 +109,6 @@ float getIntersectArea(const AABB& a, const AABB& b) {
     return (overlapMaxX - overlapMinX) * (overlapMaxY - overlapMinY);
 }
 
-// a translation should be rejected if it would cause bbox A to further overlap with bbox B, assuming they are already overlapping
-// of course, the entity should still be able to move in the other directions which would not cause this
-// for diagonals, you can check either x or y, because both direction's translVecs are applied simultaneously
 bool rejectTransl(const AABB& a, const AABB& b, const vec3& translVec, const Direction& direction) {
 
     // the AABB that a would become if the translation were not rejected

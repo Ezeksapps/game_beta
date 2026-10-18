@@ -8,7 +8,7 @@
 
 using json = nlohmann::json;
 
-class Pokemon : Entity {
+class Pokemon : public Entity {
 
 public:
 

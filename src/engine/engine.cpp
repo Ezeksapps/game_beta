@@ -95,7 +95,7 @@ Engine::Engine(const EngineConfig& config) {
 
     json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
 
-    m_pPlayer = std::make_shared<Entity>("", playerData["sprites"], 0);
+    m_pPlayer = std::make_shared<Entity>(playerData["sprites"], 0);
     m_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
     setScene(playerData["lastScene"]);
 }
