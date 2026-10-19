@@ -872,3 +872,8 @@ To do this, the scene should be replaced with a BattleScene.
 There is one thing to determine here, and that is if the Scene should actually be replaced, or if instead the WorldScene
 pointer is transferred somewhere else whilst the battle is being rendered the transferred back, so no data is lost
 
+Another thing to do is to retire the Engine class. This was part of a scrapped idea where the internal code was generic and re-usable
+and all code specific to Pokemon was external to the renderer + scene handling and used the engine's API to interact with the core systems.
+This is not currently practical, if I do end up making such a system, it would be easier to do it after the final form of the code is reached
+anyway. For now, this distinction is only causing unecessary clutter. All main/init code is unified and all top-level functions are no longer enveloped
+in any class

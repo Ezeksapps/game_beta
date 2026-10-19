@@ -1,7 +1,9 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
-#include "engine/common.hpp"
+#include "common.hpp"
 #include "game.hpp"
+
+#include "fileio.hpp"
 
 #include <DiligentCore/Platforms/interface/NativeWindow.h>
 #include <DiligentCore/Graphics/GraphicsEngine/interface/GraphicsTypes.h>
@@ -20,8 +22,6 @@ GLFWwindow* window;
 Diligent::NativeWindow wnd;
 Diligent::RENDER_DEVICE_TYPE renderBackend;
 
-std::unique_ptr<Engine> g_pEngine;
-
 void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     //g_state->g_renderer->m_windowWidth = width;
     //g_state->g_renderer->m_windowHeight = height;
@@ -30,8 +30,8 @@ void framebufferResizeCallback(GLFWwindow* window, int width, int height) {
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
    // std::cout << key << std::endl;
-    if (action != GLFW_RELEASE) g_pEngine->signalKeyPress(key);
-    else g_pEngine->signalKeyRelease(key);
+    if (action != GLFW_RELEASE) signalKeyPress(key);
+    else signalKeyRelease(key);
 }
 
 void initWindow() {
@@ -75,23 +75,35 @@ void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
-         g_pEngine->renderFrame();
+         g_pRenderer->renderFrame();
          gameUpdate();
     }
+}
+
+void gameInit() {
+    // combine to one func?
+    g_pRenderer = std::make_unique<Renderer>(WIDTH_INITIAL, HEIGHT_INITIAL);
+    g_pRenderer->initRenderer(wnd, renderBackend);
+    // TODO: renderer needs to re-create swap chain when viewport size changed
+    initInputHandler();
+
+    // load player/save data (will later be relocated to separate func in dedicated save/load system):
+
+    json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
+
+    g_pPlayer = std::make_shared<Entity>(playerData["sprites"], 0);
+    g_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
+
+    std::unique_ptr<Scene> scene = std::make_unique<WorldScene>(playerData["lastScene"], g_pPlayer);
+    g_pRenderer->setScene(scene);
+
+    g_handleMovementCallback = handleMovement;
 }
 
 /* Entry point */
 int main() {
     try {
         initWindow();
-
-        EngineConfig config = {
-            .viewportWidth = WIDTH_INITIAL,
-            .viewportHeight = HEIGHT_INITIAL,
-            .window = wnd,
-            .renderBackend = renderBackend
-        };
-        g_pEngine = std::make_unique<Engine>(config);
 
         gameInit();
 

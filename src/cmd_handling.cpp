@@ -1,10 +1,7 @@
 #include "game.hpp"
-#include "engine/common.hpp"
-#include "engine/engine.hpp"
-#include "engine/entity/entity.hpp"
-#include "engine/ui/ui.h"
+#include "common.hpp"
 
-std::vector<std::shared_ptr<Entity>>* entities = nullptr;
+#include "ui/ui.h"
 
 void handleInput(GameCmd input) {
     switch(input) {
@@ -29,27 +26,19 @@ void handleInput(GameCmd input) {
     }
 }
 
+void gameUpdate(void) {
+    processCmds(handleInput);
+}
+
 /* NOTE: MovementCmd can be directly cast to a Direction, since the order of enumerators match between the enumerated types */
 void handleMovement(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd) {
     if (prevMovementCmd == ENTITY_STOP_MOVEMENT) {
         if (newMovementCmd == prevMovementCmd) return; // ignore repeat stop command, entity already stationary
         // otherwise entity should begin movement
-        else (*entities)[0]->move((Direction)newMovementCmd, ANIM_EVENT_WALK);
+        else g_pPlayer->move((Direction)newMovementCmd, ANIM_EVENT_WALK);
     }
     // if reaching here, then prev cmd was a movement command
-    else if (newMovementCmd == ENTITY_STOP_MOVEMENT) (*entities)[0]->endMovement();
+    else if (newMovementCmd == ENTITY_STOP_MOVEMENT) g_pPlayer->endMovement();
     // if here, prev cmd was movement and new command is not to stop, therefore we must be changing direction
-    else (*entities)[0]->changeMovementDirection((Direction)newMovementCmd);
+    else g_pPlayer->changeMovementDirection((Direction)newMovementCmd);
 }
-
-void gameUpdate(void) {
-    g_pEngine->processCmds(handleInput);
-}
-
-void gameInit() {
-    entities = &g_pEngine->getEntities();
-    g_pEngine->setHandleMovementCallback(handleMovement);
-}
-
-
-// IMPORTANT: Revise Engine API

@@ -191,8 +191,8 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     return texArray;
 }
 
-void Renderer::setScene(const std::unique_ptr<Scene>& scene) {
-    //m_pScene = std::move(scene)
+void Renderer::setScene(std::unique_ptr<Scene>& scene) {
+    m_pScene = std::move(scene);
 
     for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
 
@@ -210,8 +210,7 @@ void Renderer::setScene(const std::unique_ptr<Scene>& scene) {
             this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
         });
 
-        // movement callbacks moved to WorldScene, BattleScene has no movement
-
+        // movement callbacks moved to WorldScene, this is a generic scene setter and movement handling is only needed in a WorldScene
     }
 
     loadGLB(m_pScene->getGltfFilepath());

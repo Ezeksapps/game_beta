@@ -1,4 +1,4 @@
-#include "engine.hpp"
+#include "game.hpp"
 #include "fileio.hpp"
 
 #include <queue>
@@ -82,46 +82,7 @@ void initInputHandler() {
     }
 }
 
-/* --- CONSTRUCTOR/DESTRUCTOR --- */
-
-Engine::Engine(const EngineConfig& config) {
-    // combine to one func?
-    m_pRenderer = std::make_unique<Renderer>(config.viewportWidth, config.viewportHeight);
-    m_pRenderer->initRenderer(config.window, config.renderBackend);
-    // TODO: renderer needs to re-create swap chain when viewport size changed
-    initInputHandler();
-
-    // load player/save data (will later be relocated to separate func in dedicated save/load system):
-
-    json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
-
-    m_pPlayer = std::make_shared<Entity>(playerData["sprites"], 0);
-    m_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
-    setScene(playerData["lastScene"]);
-}
-
-Engine::~Engine() {}
-
-/* --- SCENES --- */
-
-void Engine::setScene(const std::string& sceneDir) {
-    m_pRenderer->setScene(sceneDir, m_pPlayer);
-}
-
-/* --- GETTERS --- */
-
-std::vector<std::shared_ptr<Entity>>& Engine::getEntities() {
-    return m_pRenderer->getEntities();
-}
-
-/* --- INPUT HANDLING --- */
-
-
-void Engine::setHandleMovementCallback(std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> callback) {
-    m_handleMovementCallback = callback;
-}
-
-void Engine::signalKeyPress(const int& keycode) {
+void signalKeyPress(const int& keycode) {
 
     // no need to check if this is a duplicate, since activeKeys is a set, it will reject any attempts to insert duplicate elements anyway
     activeKeys.insert(keycode);
@@ -164,13 +125,13 @@ void Engine::signalKeyPress(const int& keycode) {
     // only handle movement when the active command changes
     // the callback should not be called if the movement command is identical to the previous
     if (activeMovement != newMovementCmd) {
-        m_handleMovementCallback(activeMovement, newMovementCmd);
+        g_handleMovementCallback(activeMovement, newMovementCmd);
         activeMovement = newMovementCmd;
         activeMovementKey = newMovementKey;
     }
 }
 
-void Engine::signalKeyRelease(const int& keycode) {
+void signalKeyRelease(const int& keycode) {
 
     activeKeys.erase(keycode);
 
@@ -190,8 +151,8 @@ void Engine::signalKeyRelease(const int& keycode) {
                 newMovementKey = 0;
                 break;
 
-            // don't stop movement immediately. If the active movement is diagonal, then the new movement command
-            // needs to be set to whichever one the other active movement key maps to
+                // don't stop movement immediately. If the active movement is diagonal, then the new movement command
+                // needs to be set to whichever one the other active movement key maps to
             case ENTITY_MOVE_SOUTH_EAST:
             case ENTITY_MOVE_NORTH_EAST:
             case ENTITY_MOVE_NORTH_WEST:
@@ -209,22 +170,16 @@ void Engine::signalKeyRelease(const int& keycode) {
                 break;
         }
 
-        m_handleMovementCallback(activeMovement, newMovementCmd);
+        g_handleMovementCallback(activeMovement, newMovementCmd);
         activeMovement = newMovementCmd;
         activeMovementKey = newMovementKey;
     }
 }
 
-void Engine::processCmds(std::function<void(GameCmd cmd)> callback) {
+void processCmds(std::function<void(GameCmd cmd)> callback) {
     if (!pendingCmds.empty()) {
         GameCmd cmd = pendingCmds.front();
         pendingCmds.pop();
         callback(cmd);
     }
-}
-
-/* --- RENDERING --- */
-
-void Engine::renderFrame() {
-    m_pRenderer->renderFrame();
 }
