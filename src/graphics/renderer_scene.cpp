@@ -1,5 +1,6 @@
 #include "renderer.hpp"
 
+
 /* Contains renderer functions relevant to the scenes's pipeline only */
 
 /* --- PIPELINE --- */
@@ -112,47 +113,6 @@ void Renderer::createScenePipelineState() {
     /* Create a shader resource binding (SRB) through which we can alter the mutable value of shader variables */
     m_pScenePipelineStateObj->CreateShaderResourceBinding(&m_pSceneShaderResourceBinding, true);
 
-}
-
-/* --- LOADER FUNCS --- */
-
-void Renderer::loadGLB(const std::string& filename) {
-    Diligent::GLTF::ModelCreateInfo modelCreateInfo;
-    modelCreateInfo.FileName = filename.c_str();
-
-    m_pGlbModel = std::make_unique<Diligent::GLTF::Model>(m_pDevice, m_pImmediateContext, modelCreateInfo);
-
-    // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
-    m_pSceneVertexBuffer = m_pGlbModel->GetVertexBuffer(0, m_pDevice, m_pImmediateContext);
-
-    m_pSceneIndexBuffer = m_pGlbModel->GetIndexBuffer();
-
-    /* Get textures */
-
-    for (int i = 0; i < m_pGlbModel->GetTextureCount(); ++i) {
-        m_pSceneTextures.push_back(m_pGlbModel->GetTexture(i, m_pDevice, m_pImmediateContext));
-    }
-
-    // now must cache required data from these iterators
-    for (const Diligent::GLTF::Mesh& mesh : m_pGlbModel->Meshes) {
-
-        std::vector<PrimitiveData> primitives;
-
-        for (const Diligent::GLTF::Primitive& primitive : mesh.Primitives) {
-            primitives.push_back(PrimitiveData {
-                .texID      = (uint32_t)m_pGlbModel->Materials[primitive.MaterialId].GetTextureId(Diligent::GLTF::DefaultBaseColorTextureAttribId),
-                .indexCount = primitive.IndexCount,
-                .firstIndex = primitive.FirstIndex
-            });
-        }
-
-        m_sceneMeshes.push_back(MeshData {
-            .primitives  = primitives,
-            .boundingBox = mesh.BB // will be used later for collision detection
-        });
-    }
-
-    // vertex buffers, index buffer and textures now loaded, proceed to render scene glTF
 }
 
 /* --- DRAW CALLS --- */

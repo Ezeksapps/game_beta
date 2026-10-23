@@ -22,10 +22,6 @@
 // Collision detection between entities through a spatial hash system
 // Entity dialogue system
 
-// WIP: Collision detection (sptl hash done, quadtree + slope handling todo)
-// Pokemon back-end mechanics (starting), P2P initial tests (class and base code setup, needs integration and testing)
-
-// TODO: Remove Engine class, it isn't needed
 // TODO: Alpha transparency for entities doesn't consider other entities (low pri)
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 // TODO: Need to develop exit handling for Scenes
@@ -84,8 +80,8 @@ void processCmds(std::function<void(GameCmd cmd)> callback);
 
 /* --- GLOBALS --- */
 
-std::unique_ptr<Renderer> g_pRenderer = nullptr;
-std::shared_ptr<Entity>   g_pPlayer = nullptr;
+inline std::unique_ptr<Renderer> g_pRenderer;
+inline std::shared_ptr<Entity>   g_pPlayer;
 
-std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> g_handleMovementCallback = nullptr;
+inline std::function<void(MovementCmd& prevMovementCmd, MovementCmd& newMovementCmd)> g_handleMovementCallback;
 

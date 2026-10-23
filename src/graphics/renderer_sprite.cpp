@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "../asset_loader.hpp"
 #include "DiligentCore/Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include <cstdint>
 

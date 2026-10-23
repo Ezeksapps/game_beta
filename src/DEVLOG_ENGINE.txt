@@ -877,3 +877,14 @@ and all code specific to Pokemon was external to the renderer + scene handling a
 This is not currently practical, if I do end up making such a system, it would be easier to do it after the final form of the code is reached
 anyway. For now, this distinction is only causing unecessary clutter. All main/init code is unified and all top-level functions are no longer enveloped
 in any class
+
+current error, some issue with render/setting of index buffer
+Stack trace of thread 25176:
+    #0  0x00007f3a61091839 _ZN8Diligent19DeviceContextVkImpl14SetIndexBufferEPNS_7IBufferEmNS_30RESOURCE_STATE_TRANSITION_MODEE (libGraphicsEngineVk.so + 0x91839)
+    #1  0x0000000000424c59 _ZN8Renderer11renderSceneEv (game + 0x24c59)
+    #2  0x00000000004243f8 _ZN8Renderer11renderFrameEv (game + 0x243f8)
+    #3  0x000000000042bf3d _Z8mainLoopv (game + 0x2bf3d)
+    #4  0x000000000042c9ca main (game + 0x2c9ca)
+    #5  0x00007f3a6042b53e __libc_start_call_main (libc.so.6 + 0x2b53e)
+    #6  0x00007f3a6042b66b __libc_start_main@@GLIBC_2.34 (libc.so.6 + 0x2b66b)
+    #7  0x000000000040b0c5 _start (game + 0xb0c5)

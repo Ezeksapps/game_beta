@@ -49,8 +49,6 @@ WorldScene::WorldScene(const std::string& sceneDir, std::shared_ptr<Entity> play
     genSceneSptlHash();
 }
 
-WorldScene::~WorldScene() {}
-
 void WorldScene::setupEntityCallbacks(const int& entityIndex) {
     m_pEntities[entityIndex]->setStartMovementCallback([this](const int& index, vec3 translVec) {
         m_translsMap.emplace(index, translVec);
@@ -64,6 +62,8 @@ void WorldScene::setupEntityCallbacks(const int& entityIndex) {
         m_translsMap.erase(index); // erase translation vector at index
     });
 }
+
+WorldScene::~WorldScene() {}
 
 void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
     const char* sceneJson = readJsonAsset(sceneFilepath.c_str());

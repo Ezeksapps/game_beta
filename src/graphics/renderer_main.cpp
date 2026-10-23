@@ -99,6 +99,35 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     return true;
 }
 
+/* -- used by asset loader -- */
+
+uint32_t Renderer::emplaceSceneTexture(const std::string& filepath) {
+
+    Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
+    Diligent::TextureLoadInfo loadInfo;
+    loadInfo.IsSRGB = true;
+    Diligent::CreateTextureLoaderFromFile(filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
+
+    Diligent::ITexture* texture;
+    Diligent::TextureData texData = textureLoader->GetTextureData();
+
+    m_pDevice->CreateTexture(textureLoader->GetTextureDesc(), &texData, &texture);
+
+    m_pSceneTextures.push_back(texture);
+
+    return texture->GetUniqueID();
+}
+
+void Renderer::pushSceneTexture(Diligent::ITexture* texture) {
+    m_pSceneTextures.push_back(texture);
+}
+
+void Renderer::pushSceneMesh(const MeshData& meshData) {
+    m_sceneMeshes.push_back(meshData);
+}
+
+/* --------------------------- */
+
 // CHECK: Maybe rename index to event?
 void Renderer::cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 
@@ -191,7 +220,7 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     return texArray;
 }
 
-void Renderer::setScene(std::unique_ptr<Scene>& scene) {
+void Renderer::setSceneImpl(std::unique_ptr<Scene>& scene) {
     m_pScene = std::move(scene);
 
     for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
@@ -212,12 +241,18 @@ void Renderer::setScene(std::unique_ptr<Scene>& scene) {
 
         // movement callbacks moved to WorldScene, this is a generic scene setter and movement handling is only needed in a WorldScene
     }
-
-    loadGLB(m_pScene->getGltfFilepath());
 }
 
-std::vector<std::shared_ptr<Entity>>& Renderer::getEntities() {
-    return m_pScene->getEntities();
+// textured version
+void Renderer::setScene(std::unique_ptr<Scene>& scene) {
+    setSceneImpl(scene);
+    loadTexturedAsset(m_pScene->getGltfFilepath(), m_pDevice, m_pImmediateContext, m_pSceneVertexBuffer, m_pSceneIndexBuffer);
+}
+
+// untextured version
+void Renderer::setScene(std::unique_ptr<Scene>& scene, const std::unordered_map<std::string, std::string>& textureMapping) {
+    setSceneImpl(scene);
+    loadTexturelessAsset(scene->getGltfFilepath(), m_pDevice, m_pImmediateContext, m_pSceneVertexBuffer, m_pSceneIndexBuffer, textureMapping);
 }
 
 void Renderer::createSharedUniformBuffer() {

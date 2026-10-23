@@ -3,6 +3,7 @@
 #include "../common.hpp"
 #include "../entity/sprite.hpp"
 #include "../scene/scene.hpp"
+#include "../asset_loader.hpp"
 #include "../scene/world_scene.hpp"
 #include "camera.hpp"
 
@@ -26,8 +27,6 @@
 
 #include <DiligentCore/Graphics/GraphicsTools/interface/MapHelper.hpp>
 
-#include <DiligentTools/AssetLoader/interface/GLTFLoader.hpp>
-
 #include <DiligentTools/RenderStateNotation/interface/RenderStateNotationLoader.h>
 
 using namespace glm;
@@ -44,11 +43,15 @@ public:
     bool initRenderer(const Diligent::NativeWindow& window, const Diligent::RENDER_DEVICE_TYPE& deviceType);
     void renderFrame();
 
+    // standard textured scene version
     void setScene(std::unique_ptr<Scene>& scene);
-    std::vector<std::shared_ptr<Entity>>& getEntities();
+    // untextured scene version
+    void setScene(std::unique_ptr<Scene>& scene, const std::unordered_map<std::string, std::string>& textureMapping);
 
-    //TEMP, calls pauseMenu()
-    void testUiSystem();
+    // used by asset loader
+    uint32_t emplaceSceneTexture(const std::string& filepath);
+    void pushSceneTexture(Diligent::ITexture* texture);
+    void pushSceneMesh(const MeshData& meshData);
 
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
@@ -65,17 +68,6 @@ private:
         float texArrayIndex;
         float width;
         float height;
-    };
-
-    struct PrimitiveData {
-        uint32_t texID;
-        uint32_t indexCount;
-        uint32_t firstIndex;
-    };
-
-    struct MeshData {
-        std::vector<PrimitiveData> primitives;
-        Diligent::BoundBox         boundingBox;
     };
 
     std::vector<MeshData> m_sceneMeshes;
@@ -105,10 +97,6 @@ private:
      * For the sake of saving time, I'll deal with this post-release
      */
     std::unordered_map<Diligent::ITextureView*, Diligent::RefCntAutoPtr<Diligent::IFramebuffer>> m_frameBufferMap;
-
-    /* Scene glTF file data */
-    std::unique_ptr<Diligent::GLTF::Model>            m_pGlbModel;
-
 
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
@@ -194,6 +182,9 @@ private:
     Diligent::IFramebuffer* getCurrentFrameBuffer();
 
     void loadGLB(const std::string& filename); // TODO: rename to loadGlTF
+
+    // exists so common code isn't repeated for the two versions of setScene
+    void setSceneImpl(std::unique_ptr<Scene>& scene);
 
     void renderScene();
     void renderSprites();
