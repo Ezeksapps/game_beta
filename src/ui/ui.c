@@ -31,7 +31,6 @@ void pushToStack(UICreatorFunc func) {
 }
 
 void popFromStack() {
-    printf("popped from UI stack\n");
     if (stackPtr != 0) {
         --stackPtr;
         stack[stackPtr] = NULL;
@@ -351,6 +350,45 @@ void dialogBox() { // 270 * 480
         nk_layout_row_dynamic(&ctx, 20, 1);
         nk_text(&ctx, g_curDialogText, strlen(g_curDialogText), NK_TEXT_ALIGN_LEFT);
 
+    }
+    nk_end(&ctx);
+}
+
+
+
+// this a terrible name, come up with a better one
+// no lower screen, so forced to take up screen space w/ this
+// this is a slightly modified dialogue box + menu
+// base is the box for text info display, on right will be a 2x2 menu with options: "attack", "bag", "run" and "pkmn"
+// run is disabled for now, it will serve a purpose later
+void battleDashboard() {
+    // init will go here, not current point
+
+    // TODO: figure out the rect dimensions
+
+    pushToStack(battleDashboard); // TEMP
+
+    // for base dialogue box, there should be setter func like normal dialogue box
+    // for its text that the battle manager can interact with
+
+    if (nk_begin(&ctx, "", nk_rect(0, 210, 240, 140), // BASE DLG BOX
+        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+        nk_layout_row_dynamic(&ctx, 20, 1);
+        nk_text(&ctx, "What will TEST_ENTITY do?", strlen("What will TEST_ENTITY do?"), NK_TEXT_ALIGN_LEFT);
+
+        if (nk_begin(&ctx, "", nk_rect(140, 210, 240, 140), // Overlapping 2-column menu
+            NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+            nk_layout_row_dynamic(&ctx, 20, 2); // 2 cols
+
+            const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
+
+            for (int i = 0; i < NUMELEMS(labels); ++i) {
+                // subseq. add buttons
+                nk_button_label(&ctx, labels[i]);
+            }
+        }
     }
     nk_end(&ctx);
 }

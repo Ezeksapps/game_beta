@@ -21,8 +21,8 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
     /* Camera view matrix */
     m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
     //m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
-    m_pCamera->setOffset(vec3(0.0f, -5.0f, 15.0f));
-    m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.05, 0.0f, 0.0f));
+    m_pCamera->setOffset(vec3(0.0f, -8.0f, 2.0f));
+    m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.2, 0.0f, 0.0f));
 
     m_viewMatrix = m_pCamera->getViewMatrix(); // get initial view matrix
 
@@ -113,9 +113,11 @@ uint32_t Renderer::emplaceSceneTexture(const std::string& filepath) {
 
     m_pDevice->CreateTexture(textureLoader->GetTextureDesc(), &texData, &texture);
 
+    const uint32_t texID = static_cast<uint32_t>(m_pSceneTextures.size());
+
     m_pSceneTextures.push_back(texture);
 
-    return texture->GetUniqueID();
+    return texID;
 }
 
 void Renderer::pushSceneTexture(Diligent::RefCntAutoPtr<Diligent::ITexture> texture) {

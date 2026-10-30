@@ -881,3 +881,28 @@ in any class
 Battle scene now loads semi-successfully, entity positions need to be set properly and battle system needs to be implemented
 
 The objects in Blender actually correspond to nodes, a node owns the meshes and primitives
+
+handling a cmd token
+battle_start
+Battle start event to be triggered
+Diligent Engine: Info: MemoryManager 'Global resource memory manager': created new device-local page. (4.00 GB, type idx: 0). Current allocated size: 8.02 GB
+Node opponent_stage     Has texID: 3
+Node player_stage       Has texID: 4
+Node foreground Has texID: 5
+Node background Has texID: 6
+background      Node contains mesh with name: Plane.002
+associated texID for node: 6
+Primitive index count: 6, first index :0
+foreground      Node contains mesh with name: Plane.003
+associated texID for node: 5
+Primitive index count: 6, first index :6
+opponent_stage  Node contains mesh with name: Circle.004
+associated texID for node: 3
+Primitive index count: 90, first index :12
+player_stage    Node contains mesh with name: Circle.005
+associated texID for node: 4
+Primitive index count: 90, first index :102
+
+To position both Pokemon on their stages, the battle scene needs to be aware of the centre positions of those stages
+the scene objects should not have any direct access to rendering details. There must instead be some function to
+query the position of a node by name. Additionally, for this to work, the model will now need to be persisted in memory

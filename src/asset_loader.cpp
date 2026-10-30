@@ -1,36 +1,38 @@
 #include "asset_loader.hpp"
 #include "game.hpp"
 
+std::unique_ptr<Diligent::GLTF::Model> g_model;
+
 void loadTexturedAsset(const std::string& filename, Diligent::RefCntAutoPtr<Diligent::IRenderDevice>& renderDevice,
                        Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
                        Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf) {
 
-    Diligent::GLTF::ModelCreateInfo modelCreateInfo;
-    modelCreateInfo.FileName = filename.c_str();
+    Diligent::GLTF::ModelCreateInfo g_modelCreateInfo;
+    g_modelCreateInfo.FileName = filename.c_str();
 
-    // to later transfer ownership to renderer
-    std::unique_ptr<Diligent::GLTF::Model> model = std::make_unique<Diligent::GLTF::Model>(renderDevice, immediateContext, modelCreateInfo);
+
+    g_model = std::make_unique<Diligent::GLTF::Model>(renderDevice, immediateContext, g_modelCreateInfo);
 
     // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
-    vertexBuf = model->GetVertexBuffer(0, renderDevice, immediateContext);
+    vertexBuf = g_model->GetVertexBuffer(0, renderDevice, immediateContext);
 
-    indexBuf = model->GetIndexBuffer();
+    indexBuf = g_model->GetIndexBuffer();
 
     /* Get textures */
 
-    for (int i = 0; i < model->GetTextureCount(); ++i) {
-        Diligent::ITexture* texture = model->GetTexture(i, renderDevice, immediateContext);
+    for (int i = 0; i < g_model->GetTextureCount(); ++i) {
+        Diligent::ITexture* texture = g_model->GetTexture(i, renderDevice, immediateContext);
         g_pRenderer->pushSceneTexture(Diligent::RefCntAutoPtr<Diligent::ITexture>{texture});
     }
 
     // now must cache required data from these iterators
-    for (const Diligent::GLTF::Mesh& mesh : model->Meshes) {
+    for (const Diligent::GLTF::Mesh& mesh : g_model->Meshes) {
 
         std::vector<PrimitiveData> primitives;
 
         for (const Diligent::GLTF::Primitive& primitive : mesh.Primitives) {
             primitives.push_back(PrimitiveData {
-                .texID      = (uint32_t)model->Materials[primitive.MaterialId].GetTextureId(Diligent::GLTF::DefaultBaseColorTextureAttribId),
+                .texID      = (uint32_t)g_model->Materials[primitive.MaterialId].GetTextureId(Diligent::GLTF::DefaultBaseColorTextureAttribId),
                 .indexCount = primitive.IndexCount,
                 .firstIndex = primitive.FirstIndex
             });
@@ -49,41 +51,34 @@ void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<D
                           Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
                           Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf, const std::unordered_map<std::string, std::string>& textureMapping) {
 
-    Diligent::GLTF::ModelCreateInfo modelCreateInfo;
-    modelCreateInfo.FileName = filename.c_str();
+    Diligent::GLTF::ModelCreateInfo g_modelCreateInfo;
+    g_modelCreateInfo.FileName = filename.c_str();
 
-    // to later transfer ownership to renderer
-    std::unique_ptr<Diligent::GLTF::Model> model = std::make_unique<Diligent::GLTF::Model>(renderDevice, immediateContext, modelCreateInfo);
+    g_model = std::make_unique<Diligent::GLTF::Model>(renderDevice, immediateContext, g_modelCreateInfo);
 
     // Both POSITION and TEXCOORD_0 have been loaded to vertex buffer at index 0, use that
-    vertexBuf = model->GetVertexBuffer(0, renderDevice, immediateContext);
+    vertexBuf = g_model->GetVertexBuffer(0, renderDevice, immediateContext);
 
-    indexBuf = model->GetIndexBuffer();
+    indexBuf = g_model->GetIndexBuffer();
 
     /* Get textures */
 
-    /* Need to:
-       not create duplicate textures for the same image
-       use the node as the parent for this data
-     */
-
     std::unordered_map<std::string_view, uint32_t> idMapping;
 
-    if (model->GetTextureCount() > 0) throw std::runtime_error("Attempted to load a textured glTF as a textureless glTF");
+    if (g_model->GetTextureCount() > 0) throw std::runtime_error("Attempted to load a textured glTF as a textureless glTF");
     for (const auto& [key, filepath] : textureMapping) {
-        uint32_t texID = g_pRenderer->emplaceSceneTexture(filepath);
+        uint32_t texID = g_pRenderer->emplaceSceneTexture(filepath); // TODO: figure out how to make this not duplicate textures
         idMapping.emplace(key, texID);
     }
 
     // NODE -> MESH -> PRIMITIVE (MULTIPLE)
     // TODO: rename MeshData to NodeData
 
-    for (const Diligent::GLTF::Node& node : model->Nodes) {
-        std::cout << node.Name << "\t";
-        std::cout << "Node contains mesh with name: " << node.pMesh->Name << std::endl;
+    for (const Diligent::GLTF::Node& node : g_model->Nodes) {
 
+        std::cout << node.Name << std::endl;
         /*
-         s td*::cout << "Displaying mesh with AABB defined as:\n"
+         std::cout << "Displaying mesh with AABB defined as:\n"
          << "min coord: [" << mesh.BB.Min.x << ", " << mesh.BB.Min.y << ", " << mesh.BB.Min.z << "]\n"
          << "max coord: [" << mesh.BB.Max.x << ", " << mesh.BB.Max.y << ", " << mesh.BB.Max.z << "]\n";
          */
@@ -91,8 +86,9 @@ void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<D
         std::vector<PrimitiveData> primitives;
 
         for (const Diligent::GLTF::Primitive& primitive : node.pMesh->Primitives) {
+
             primitives.push_back(PrimitiveData {
-                .texID      = idMapping[node.Name],
+                .texID      = idMapping.at(node.Name),
                 .indexCount = primitive.IndexCount,
                 .firstIndex = primitive.FirstIndex
             });
@@ -104,5 +100,18 @@ void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<D
         });
     }
 
+
     // vertex buffers, index buffer and textures now loaded, proceed to render scene glTF
 }
+
+vec3 getNodePosition(const std::string& nodeName) {
+    auto it = std::find_if(g_model->Nodes.begin(), g_model->Nodes.end(),
+                           [nodeName](const Diligent::GLTF::Node& node) { return node.Name == nodeName; });
+
+    if (it == g_model->Nodes.end()) throw std::runtime_error("Node " + nodeName + " not found");
+
+    vec3 min = vec3(it->pMesh->BB.Min.x, it->pMesh->BB.Min.y, it->pMesh->BB.Min.z);
+    vec3 max = vec3(it->pMesh->BB.Max.x, it->pMesh->BB.Max.y, it->pMesh->BB.Max.z);
+    return (min + max) / 2.0f;
+}
+

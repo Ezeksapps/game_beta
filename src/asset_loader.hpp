@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include <glm/glm.hpp>
+
+using namespace glm;
+
 #include "common.hpp"
 
 #include <DiligentTools/AssetLoader/interface/GLTFLoader.hpp>
@@ -27,3 +31,5 @@ void loadTexturedAsset(const std::string& filename, Diligent::RefCntAutoPtr<Dili
 void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<Diligent::IRenderDevice>& renderDevice,
                           Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
                           Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf, const std::unordered_map<std::string, std::string>& textureMapping);
+
+vec3 getNodePosition(const std::string& nodeName);

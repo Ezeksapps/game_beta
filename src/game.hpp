@@ -21,6 +21,7 @@
 // input system that properly controls movement with expected behaviour (entity moves so long as movement key(s) are held)
 // Collision detection between entities through a spatial hash system
 // Entity dialogue system
+// Battle scene loading
 
 // TODO: Alpha transparency for entities doesn't consider other entities (low pri)
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback

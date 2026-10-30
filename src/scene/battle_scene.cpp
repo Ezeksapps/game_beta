@@ -13,6 +13,8 @@ namespace fs = std::filesystem;
 BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> player, std::shared_ptr<Entity> opponent, const std::string& env)
                          : Scene::Scene(sceneDir, player) {
 
+    m_pEntities.push_back(opponent);
+
     fs::path dir = sceneDir;
 
     fs::path jsonFilepath, gltfFilepath;

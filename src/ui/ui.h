@@ -69,6 +69,8 @@ void optionBox();
 
 /* UI ELEMENTS */
 
+void battleDashboard();
+
 void pauseMenu();
 
 void bagView();
