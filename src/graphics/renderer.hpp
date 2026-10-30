@@ -50,7 +50,7 @@ public:
 
     // used by asset loader
     uint32_t emplaceSceneTexture(const std::string& filepath);
-    void pushSceneTexture(Diligent::ITexture* texture);
+    void pushSceneTexture(Diligent::RefCntAutoPtr<Diligent::ITexture> texture);
     void pushSceneMesh(const MeshData& meshData);
 
     uint32_t m_windowWidth;
@@ -98,6 +98,12 @@ private:
      */
     std::unordered_map<Diligent::ITextureView*, Diligent::RefCntAutoPtr<Diligent::IFramebuffer>> m_frameBufferMap;
 
+    /* ---- Scene pipeline buffers & textures ---- */
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>               m_pSceneVertexBuffer;
+    std::vector<Diligent::RefCntAutoPtr<Diligent::ITexture>> m_pSceneTextures;
+    Diligent::RefCntAutoPtr<Diligent::IBuffer>               m_pSceneIndexBuffer;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView>          m_pSceneShaderResourceView;
+
     /* ---- Shared UBO, holding matrices for current frame ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pFrameConstants;
     /* ---- Per-sprite UBO, holding model matrix and texture array index for individual sprites ---- */
@@ -113,12 +119,6 @@ private:
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
-
-    /* ---- Scene pipeline buffers & textures ---- */
-    Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSceneVertexBuffer;
-    std::vector<Diligent::ITexture*>                  m_pSceneTextures;
-    Diligent::IBuffer*                                m_pSceneIndexBuffer;
-    Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSceneShaderResourceView;
 
     /* ---- UI pipeline buffers & textures ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiVertexBuffer;

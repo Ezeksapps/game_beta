@@ -1,0 +1,6 @@
+{
+    "backgroundTex": "assets/textures/ground.png",
+    "foregroundTex": "assets/textures/ground.png",
+    "playerStageTex": "assets/textures/grass.png",
+    "opponentStageTex": "assets/textures/grass.png"
+}

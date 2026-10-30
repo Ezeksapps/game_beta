@@ -23,9 +23,13 @@ struct DialogState {
 
 DialogState state;
 
-Entity* g_entity = {};
+std::shared_ptr<Entity> g_entity = {};
 
-void setInteractableEntity(Entity* entity) {
+std::shared_ptr<Entity> getInteractingEntity() {
+    return g_entity;
+}
+
+void setInteractableEntity(std::shared_ptr<Entity> entity) {
     g_entity = entity;
 }
 
@@ -39,7 +43,11 @@ std::unordered_map<std::string_view, std::string> wordMap = {
 
 void handleCmdToken() {
     size_t endPos = state.sourceStr.find_first_of('$', state.pos + 1);
-    std::string_view cmd = state.sourceStr.substr(state.pos + 1, endPos - 1);
+    std::string_view cmd = state.sourceStr.substr(state.pos + 1, ((endPos) - (state.pos + 1)));
+
+    std::cout << "handling a cmd token\n";
+    std::cout << cmd << "\n";
+
     if (cmdMap.contains(cmd)) state.pendingOp = cmdMap[cmd];
     state.pos = endPos + 1; // continue char iteration from token end
 }
@@ -57,7 +65,8 @@ void advanceDialog() {
     /* First execute the pending op from last string */
     switch (state.pendingOp) {
         case OP_EXEC_BATTLE_START:
-            //
+            std::cout << "Battle start event to be triggered\n";
+            triggerEvent(GAME_EVENT_BATTLE_START);
             break;
         case OP_CONTINUE_PRINT:
             state.outStr.clear();
@@ -69,7 +78,6 @@ void advanceDialog() {
 
     while (state.pos < state.sourceStr.size() && state.outStr.size() < DIALOG_BOX_MAX_CHARS) {
         const char c = state.sourceStr[state.pos];
-       // std::cout << c;
         switch(c) {
             case '$':
                 handleCmdToken();
@@ -88,7 +96,7 @@ void advanceDialog() {
                 break;
         }
     }
-    std::cout << "\n" << state.outStr << std::endl;
+
     setDialogText(state.outStr.data());
     state.pendingOp = OP_CONTINUE_PRINT; // when loop has terminated, await a UI_PROGRESS cmd
 }

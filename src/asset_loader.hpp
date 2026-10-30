@@ -21,8 +21,9 @@ struct MeshData {
 };
 
 void loadTexturedAsset(const std::string& filename, Diligent::RefCntAutoPtr<Diligent::IRenderDevice>& renderDevice,
-                       Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, void* vertexBuf, void* indexBuf);
+                       Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
+                       Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf);
 
 void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<Diligent::IRenderDevice>& renderDevice,
-                          Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, void* vertexBuf, void* indexBuf,
-                          const std::unordered_map<std::string, std::string>& textureMapping);
+                          Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
+                          Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf, const std::unordered_map<std::string, std::string>& textureMapping);

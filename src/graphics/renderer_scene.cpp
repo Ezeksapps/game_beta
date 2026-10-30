@@ -118,6 +118,7 @@ void Renderer::createScenePipelineState() {
 /* --- DRAW CALLS --- */
 
 void Renderer::renderScene() {
+
     m_pImmediateContext->SetVertexBuffers(0, 1, &m_pSceneVertexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE, Diligent::SET_VERTEX_BUFFERS_FLAG_RESET);
     m_pImmediateContext->SetIndexBuffer(m_pSceneIndexBuffer, 0, Diligent::RESOURCE_STATE_TRANSITION_MODE_NONE);
     m_pImmediateContext->SetPipelineState(m_pScenePipelineStateObj); // set pipeline to use
@@ -140,6 +141,7 @@ void Renderer::renderScene() {
             drawAttribs.BaseVertex = 0;
             drawAttribs.IndexType = Diligent::VT_UINT32;
             drawAttribs.Flags = Diligent::DRAW_FLAG_VERIFY_ALL;
+
             m_pImmediateContext->DrawIndexed(drawAttribs);
         }
     }

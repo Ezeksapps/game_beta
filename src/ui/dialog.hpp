@@ -2,4 +2,6 @@
 
 #include "../entity/entity.hpp"
 
-void setInteractableEntity(Entity* entity);
+
+std::shared_ptr<Entity> getInteractingEntity();
+void setInteractableEntity(std::shared_ptr<Entity> entity);

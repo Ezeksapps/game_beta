@@ -15,7 +15,6 @@ BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> pl
 
     fs::path dir = sceneDir;
 
-    // find the two needed files (The scene JSON and glTF and validate directory)
     fs::path jsonFilepath, gltfFilepath;
     int gltfCounter = 0;
     bool envJsonPresent = false; // check that the JSON needed for the environment exists
@@ -26,7 +25,10 @@ BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> pl
         if (!fs::is_regular_file(file)) continue; // ignore any non-standard files
 
         // the environment string passed must match the name of the environment JSON, this check is case-sensitive
-        if (file.path().extension() == ".json" && file.path().stem() == env) envJsonPresent = true;
+        if (file.path().extension() == ".json" && file.path().stem() == env) {
+            envJsonPresent = true;
+            jsonFilepath = file.path();
+        }
 
         if (file.path().extension() == ".glb") {
             ++gltfCounter;
@@ -55,8 +57,8 @@ void BattleScene::loadEnvJson(const std::string& jsonFilepath) {
 
     m_sceneTexMapping.emplace("background", envJson["backgroundTex"].get<std::string>());
     m_sceneTexMapping.emplace("foreground", envJson["foregroundTex"].get<std::string>());
-    m_sceneTexMapping.emplace("playerStage", envJson["playerStageTex"].get<std::string>());
-    m_sceneTexMapping.emplace("opponentStage", envJson["opponentStageTex"].get<std::string>());
+    m_sceneTexMapping.emplace("player_stage", envJson["playerStageTex"].get<std::string>());
+    m_sceneTexMapping.emplace("opponent_stage", envJson["opponentStageTex"].get<std::string>());
 
     // Scene object will not do anything more with this data, tex mapping will only be used by game event system
     // if GAME_EVENT_BATTLE_START is triggered

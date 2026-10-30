@@ -20,7 +20,8 @@ Renderer::Renderer(const uint32_t& windowWidth, const uint32_t& windowHeight) {
 
     /* Camera view matrix */
     m_pCamera->setTargetPos(vec3(0.0f, 0.0f, 0.0f));
-    m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
+    //m_pCamera->setOffset(vec3(0.0f, -3.0f, 4.0f));
+    m_pCamera->setOffset(vec3(0.0f, -5.0f, 15.0f));
     m_pCamera->rotate(vec3(-std::numbers::pi_v<float> * 0.05, 0.0f, 0.0f));
 
     m_viewMatrix = m_pCamera->getViewMatrix(); // get initial view matrix
@@ -91,7 +92,6 @@ bool Renderer::initRenderer(const Diligent::NativeWindow& window, const Diligent
     createSpritePipelineState();
 
     createInstanceBuffer();
-    createSpriteTextureArray();
 
     createUiPipelineState();
     createFontTexture();
@@ -108,7 +108,7 @@ uint32_t Renderer::emplaceSceneTexture(const std::string& filepath) {
     loadInfo.IsSRGB = true;
     Diligent::CreateTextureLoaderFromFile(filepath.c_str(), Diligent::IMAGE_FILE_FORMAT_PNG, loadInfo, &textureLoader);
 
-    Diligent::ITexture* texture;
+    Diligent::RefCntAutoPtr<Diligent::ITexture> texture;
     Diligent::TextureData texData = textureLoader->GetTextureData();
 
     m_pDevice->CreateTexture(textureLoader->GetTextureDesc(), &texData, &texture);
@@ -118,7 +118,7 @@ uint32_t Renderer::emplaceSceneTexture(const std::string& filepath) {
     return texture->GetUniqueID();
 }
 
-void Renderer::pushSceneTexture(Diligent::ITexture* texture) {
+void Renderer::pushSceneTexture(Diligent::RefCntAutoPtr<Diligent::ITexture> texture) {
     m_pSceneTextures.push_back(texture);
 }
 
@@ -220,8 +220,16 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     return texArray;
 }
 
+
 void Renderer::setSceneImpl(std::unique_ptr<Scene>& scene) {
     m_pScene = std::move(scene);
+
+    // reset all data for new scene
+    m_numSprites = 0;
+    m_instanceData.clear();
+    m_entitySpriteCache.clear();
+    createSpriteTextureArray();
+    // END reset --- //
 
     for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
 
@@ -252,7 +260,7 @@ void Renderer::setScene(std::unique_ptr<Scene>& scene) {
 // untextured version
 void Renderer::setScene(std::unique_ptr<Scene>& scene, const std::unordered_map<std::string, std::string>& textureMapping) {
     setSceneImpl(scene);
-    loadTexturelessAsset(scene->getGltfFilepath(), m_pDevice, m_pImmediateContext, m_pSceneVertexBuffer, m_pSceneIndexBuffer, textureMapping);
+    loadTexturelessAsset(m_pScene->getGltfFilepath(), m_pDevice, m_pImmediateContext, m_pSceneVertexBuffer, m_pSceneIndexBuffer, textureMapping);
 }
 
 void Renderer::createSharedUniformBuffer() {

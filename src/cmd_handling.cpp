@@ -6,7 +6,6 @@
 void handleInput(GameCmd input) {
     switch(input) {
         case UI_PROGRESS:
-            std::cout << "PROGRESS_UI\n";
             progressUI();
             break;
         case UI_ESCAPE:

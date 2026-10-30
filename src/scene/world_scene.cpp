@@ -211,10 +211,10 @@ void WorldScene::resolveCollisions() {
                         std::cout << "A is 0\n";
                         // needs more complex logic
                         // interactableEntity = m_pEntities[b];
-                        setInteractableEntity(m_pEntities[b].get());
+                        setInteractableEntity(m_pEntities[b]);
                     }
                     if (b == 0) { // CHECK: why is this the only block that activates, it's meant to be a
-                        setInteractableEntity(m_pEntities[a].get());
+                        setInteractableEntity(m_pEntities[a]);
                     }
                 }
             }

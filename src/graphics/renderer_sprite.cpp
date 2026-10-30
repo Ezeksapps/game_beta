@@ -1,3 +1,4 @@
+#include "DiligentCore/Graphics/GraphicsEngine/interface/ShaderResourceVariable.h"
 #include "renderer.hpp"
 #include "../asset_loader.hpp"
 #include "DiligentCore/Graphics/GraphicsEngine/interface/DeviceContext.h"
@@ -106,7 +107,7 @@ void Renderer::createSpritePipelineState() {
      * Set shader variables that can be set in this code
      */
     Diligent::ShaderResourceVariableDesc shaderVars[] = {
-        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_MUTABLE}
+        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
     };
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.Variables    = shaderVars;
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(shaderVars);
