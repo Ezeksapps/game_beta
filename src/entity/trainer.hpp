@@ -10,8 +10,10 @@ class Trainer : public Entity {
 
 public:
 
-    Trainer(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index);
+    Trainer(const std::string& animJsonFilepath, const int& index);
     ~Trainer();
+
+    void loadEntityJSON(const std::string& filepath) override;
 
 private:
 

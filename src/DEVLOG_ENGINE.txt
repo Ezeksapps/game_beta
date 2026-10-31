@@ -936,3 +936,14 @@ crash report:
 #10 0x000000000042d1c2 _Z8mainLoopv (game + 0x2d1c2)
 #11 0x000000000042dc4a main (game + 0x2dc4a)
 
+There is one small issue with how all the Pokemon in a Trainer's party are represented
+The Pokemon class is a subclass of Entity.
+Entities belong to a scene, they are used to represent something that is not the UI or 3D environment that
+should be dislayed by the renderer. The problem is that only two Pokemon (since only single battles are being implemented for now)
+should be held by a battle scene at any time. If I were to represent the whole party of both sides with Pokemon objects that means I need
+up to 12 objects, which the renderer would then attempt to display.
+Instead I need some structure that instead acts as a reresentation of an actively rendered pokemon, containing all the needed data to create
+a Pokemon object
+I'll call this the Pokemon's descriptor (I'm stealing Vulkan's naming conventions now)
+
+TODO: $battle_start$ can only be executed if the interacting entity is a Trainer object

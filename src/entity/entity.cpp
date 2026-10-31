@@ -56,8 +56,6 @@ bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.co
 
 std::string_view Entity::getDialogString(const std::string& key) { return m_dialogStrings[key]; }
 
-Entity::~Entity() {}
-
 void Entity::update(const float& deltaTime) {
 
     m_frameTimer += deltaTime;

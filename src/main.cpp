@@ -1,6 +1,7 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
 #include "common.hpp"
+#include "entity/trainer.hpp"
 #include "game.hpp"
 
 #include "fileio.hpp"
@@ -91,7 +92,7 @@ void gameInit() {
 
     json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
 
-    g_pPlayer = std::make_shared<Entity>(playerData["sprites"], 0);
+    g_pPlayer = std::make_shared<Trainer>(playerData["sprites"], 0);
     g_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
 
     std::unique_ptr<Scene> scene = std::make_unique<WorldScene>(playerData["lastScene"], g_pPlayer);

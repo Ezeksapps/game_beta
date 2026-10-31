@@ -41,6 +41,8 @@ BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> pl
     m_glbFilepath = gltfFilepath;
 
     loadEnvJson(jsonFilepath);
+
+    m_battleManager = std::make_unique<BattleManager>(dynamic_pointer_cast<Trainer>(player), dynamic_pointer_cast<Trainer>(opponent));
 }
 
 BattleScene::~BattleScene() {}

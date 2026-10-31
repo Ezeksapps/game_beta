@@ -1,6 +1,7 @@
 #pragma once
 
 #include "scene.hpp"
+#include "../battle/battle_manager.hpp"
 
 class BattleScene : public Scene {
 public:
@@ -13,6 +14,8 @@ public:
 
     // used only by game event system
     const std::unordered_map<std::string, std::string>& getTexMapping();
+
+    std::unique_ptr<BattleManager> m_battleManager;
 
 private:
 

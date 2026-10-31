@@ -6,6 +6,13 @@
 #include "../ui/ui.h"
 #include "../game.hpp"
 
+BattleManager::BattleManager(std::shared_ptr<Trainer> player, std::shared_ptr<Trainer> opponent) {
+    m_player = player;
+    m_opponent = opponent;
+}
+
+BattleManager::~BattleManager() {}
+
 void triggerBattleStart() {
     std::shared_ptr<Entity> opponentEntity = getInteractingEntity();
     std::unique_ptr<BattleScene> battleScene = std::make_unique<BattleScene>("assets/scenes/battleScene", g_pPlayer, opponentEntity, "plains");

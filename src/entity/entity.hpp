@@ -34,9 +34,9 @@ class Entity {
 public:
 
     Entity(const std::string& animJsonFilepath, const int& index);
-    ~Entity();
+    virtual ~Entity() = default; // mark this class as polymorphic
 
-    void loadEntityJSON(const std::string& filepath);
+    virtual void loadEntityJSON(const std::string& filepath);
 
     /* Callback Setters */
 
@@ -93,6 +93,8 @@ public:
 
 protected:
 
+    std::unordered_map<std::string, std::string> m_dialogStrings;
+
 private:
 
     // filepath for the JSON defining this entity's sprite sheets, used by the renderer to lookup the cached textures associated with this Entity
@@ -109,8 +111,6 @@ private:
     std::unordered_map<AnimEvent, std::shared_ptr<Sprite>> m_spriteMap;
     // will match whatever the current or last event's corresponding Sprite obj was set by doAnimEvent()
     std::shared_ptr<Sprite> m_pActiveSprite;
-
-    std::unordered_map<std::string, std::string> m_dialogStrings;
 
     float m_frameTimer;
 
