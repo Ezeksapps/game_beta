@@ -45,9 +45,6 @@ void handleCmdToken() {
     size_t endPos = state.sourceStr.find_first_of('$', state.pos + 1);
     std::string_view cmd = state.sourceStr.substr(state.pos + 1, ((endPos) - (state.pos + 1)));
 
-    std::cout << "handling a cmd token\n";
-    std::cout << cmd << "\n";
-
     if (cmdMap.contains(cmd)) state.pendingOp = cmdMap[cmd];
     state.pos = endPos + 1; // continue char iteration from token end
 }
@@ -65,7 +62,6 @@ void advanceDialog() {
     /* First execute the pending op from last string */
     switch (state.pendingOp) {
         case OP_EXEC_BATTLE_START:
-            std::cout << "Battle start event to be triggered\n";
             triggerEvent(GAME_EVENT_BATTLE_START);
             break;
         case OP_CONTINUE_PRINT:
@@ -83,6 +79,7 @@ void advanceDialog() {
                 handleCmdToken();
                 /* early return, or the final line outside the loop will overwrite
                  * the pending op to OP_CONTINUE_PRINT instead of the correct one */
+                setDialogText(state.outStr.data());
                 return;
             case '[':
                 handleWordToken();
@@ -104,13 +101,13 @@ void advanceDialog() {
 
 
 void initiateDialog() {
+    if (g_entity == nullptr) return; // there is no colliding entity and this was called on empty space
     // if (!entity->hasDialogString(getCurrentStoryEvent())) {} // ignore other string until they are implemented
 
     state.sourceStr = g_entity->getDialogString("default");
+
     state.pos = 0;
 
     advanceDialog(); // print initial piece of dialogue
-    dialogBox();
-
-
+    entityDialogBox();
 }

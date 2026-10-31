@@ -64,7 +64,7 @@ void setDialogText(char* text);
 
 /* DISPLAYS */
 
-void dialogBox();
+void entityDialogBox();
 void optionBox();
 
 /* UI ELEMENTS */

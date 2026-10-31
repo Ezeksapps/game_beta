@@ -906,3 +906,33 @@ Primitive index count: 90, first index :102
 To position both Pokemon on their stages, the battle scene needs to be aware of the centre positions of those stages
 the scene objects should not have any direct access to rendering details. There must instead be some function to
 query the position of a node by name. Additionally, for this to work, the model will now need to be persisted in memory
+
+The UI system is currently disorganised and needs to be cleaned up to form a proper system
+Nuklear identifies windows based on their titles. Since I'm not using window headers, those titles aren't visible,
+this means that I can generate a random ID of set length when I need to create a new window, its uniqueness can be ensured
+by using std::srand with the current system time as the seed
+
+There are two current basic UI window types, which are dialogue windows and menus
+At all times, there is one window which is considered to be active, this can be set by the creator function
+
+For example, in the battle dashboard (needs better name), either the dialogue window or the menu are focused, which one
+is set by the battle manager by an interface function. The systems external to the UI system don't know what the unique random IDs
+for the windows are.
+
+KNOWN BUGS:
+Trying to start a battle with any entity other than entity zero (shinx) crashes the game
+crash report:
+
+#0  0x0000000000423bfb _ZN8Renderer23createEntitySpriteCacheERKi (game + 0x23bfb)
+#1  0x0000000000424fa2 _ZN8Renderer12setSceneImplERSt10unique_ptrI5SceneSt14default_deleteIS1_EE (game + 0x24fa2)
+#2  0x00000000004250fc _ZN8Renderer8setSceneERSt10unique_ptrI5SceneSt14default_deleteIS1_EERKSt13unordered_mapINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESC_St4hashISC_ESt8equal_toISC_ESaISt4pairIKSC_SC_EEE (game + 0x250fc)
+#3  0x000000000040d35c _Z18triggerBattleStartv (game + 0xd35c)
+#4  0x0000000000420b1d _Z12triggerEventRK9GameEvent (game + 0x20b1d)
+#5  0x0000000000435e6e advanceDialog (game + 0x35e6e)
+#6  0x000000000040da01 _Z11handleInput7GameCmd (game + 0xda01)
+#7  0x000000000040db9a _ZNSt17_Function_handlerIFv7GameCmdEPS1_E9_M_invokeERKSt9_Any_dataOS0_ (game + 0xdb9a)
+#8  0x0000000000429916 _Z11processCmdsSt8functionIFv7GameCmdEE (game + 0x29916)
+#9  0x000000000040da53 _Z10gameUpdatev (game + 0xda53)
+#10 0x000000000042d1c2 _Z8mainLoopv (game + 0x2d1c2)
+#11 0x000000000042dc4a main (game + 0x2dc4a)
+

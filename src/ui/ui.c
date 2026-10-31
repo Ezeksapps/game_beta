@@ -2,6 +2,7 @@
 
 #include "ui.h"
 #include <string.h>
+#include <stdlib.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -63,6 +64,10 @@ typedef struct MenuState {
     uint8_t selectedUIElem;
     uint8_t numItems;
 } MenuState;
+
+typedef struct UIWindow {
+
+} UIWindow;
 
 enum   WndType   g_curWndType = WND_TYPE_NONE;
 char g_curDialogText[MAX_DIALOG_CHARS] = "";
@@ -253,16 +258,24 @@ void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rec
 
 
 
-
+const char* genWindowID(char* buffer, int* counter) {
+    ++*counter;
+    sprintf(buffer, "wnd%d", *counter);
+    return buffer;
+}
 
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 // For now, I'm not going to use header, might be done in future, UI is currently in early stage
 
-// https://stackoverflow.com/questions/37538
-void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
 
-    if (getCurrentUICreatorFunc() != creatorFunc) { // only push to stack and init menu state on first creation of menu
-        pushToStack(creatorFunc);
+/* --- BASE UI ELEM TYPES --- */
+
+// https://stackoverflow.com/questions/37538
+void createMenu(struct nk_rect dimensions, const int numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
+                const uint8_t numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
+
+    // if the caller hasn't pushed itself to the stack, then the menu state needs to be initialised
+    if (getCurrentUICreatorFunc() != creatorFunc) {
         g_curWndType = WND_TYPE_MENU;
         g_curMenuState = (MenuState) {
             .selectedUIElem = 0,
@@ -270,18 +283,18 @@ void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const 
         };
     }
 
-    if (nk_begin(&ctx, "", nk_rect(0, 0, 140, 240), // TODO: make dimensions customisable via func argument?
+    char windowID[16] = {};
+    if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
-        // Nuklear only has rows as a UI container, each row has a specified number of columns
-        // a column container with specified rows doesn't exist
-        nk_layout_row_dynamic(&ctx, 20, 1);
+        nk_layout_row_dynamic(&ctx, 20, numColumns);
 
         for (uint8_t i = 0; i < g_curMenuState.numItems; ++i) {
             bool isSelected = (g_curMenuState.selectedUIElem == i);
 
+            // BEGIN NEEDS WORK
 
-            if (isSelected) { // TODO: This and UI styling in general need work
+            if (isSelected) {
 
                 struct nk_style_item normalStyleItem = ctx.style.button.normal;
                 ctx.style.button.normal = nk_style_item_color(ctx.style.button.text_hover);
@@ -291,10 +304,32 @@ void createMenu(const UICreatorFunc creatorFunc, const uint8_t numLabels, const 
                 ctx.style.button.normal = normalStyleItem;
             }
             else if (nk_button_label(&ctx, labels[i])) { itemFuncs[i](); }
+
+            // END NEEDS WORK
         }
     }
     nk_end(&ctx);
 }
+
+void setDialogText(char* text) { strcpy(g_curDialogText, text); }
+
+// TODO: adapt text wrap
+void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
+
+    g_curWndType = WND_TYPE_DIALOG;
+
+    char windowID[16] = {};
+    if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
+        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+        nk_layout_row_dynamic(&ctx, 20, 1);
+        nk_text(&ctx, g_curDialogText, strlen(g_curDialogText), NK_TEXT_ALIGN_LEFT);
+    }
+    nk_end(&ctx);
+}
+
+// END ---
+
 
 /* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
 /* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
@@ -303,17 +338,8 @@ void pokemonView() {}
 void bagView() {}
 void profileView() {}
 void optionsMenu() {}
-void multiplayerView() {
-    const char* itemLabels[] = {"TEST", "TEST2"};
-    const UICreatorFunc itemFuncs[] = {NULL, NULL};
-
-    createMenu(multiplayerView, NUMELEMS(itemLabels), itemLabels, itemFuncs);
-}
-
-
-void saveMenu() {
-}
-
+void multiplayerView() {}
+void saveMenu() {}
 void mapView() {}
 
 // in-game pause menu
@@ -322,7 +348,12 @@ void pauseMenu() {
     const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplayer", "Save", "Map"};
     const UICreatorFunc itemFuncs[] = {pokemonView, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
 
-    createMenu(pauseMenu, NUMELEMS(itemLabels), itemLabels, itemFuncs);
+    int counter = 0;
+    createMenu(nk_rect(0, 0, 140, 240), 1, pauseMenu, &counter, NUMELEMS(itemLabels), itemLabels, itemFuncs);
+
+    if (getCurrentUICreatorFunc() != pauseMenu) {
+        pushToStack(pauseMenu);
+    }
 }
 
 void progressUI() {
@@ -335,60 +366,28 @@ void progressUI() {
     // else if menu should run creator func for next UI elem
 }
 
-void setDialogText(char* text) { strcpy(g_curDialogText, text); }
+void entityDialogBox() {
+    int counter = 0;
+    dialogBox(nk_rect(0, 210, 480, 60), &counter);
 
-// TODO: adapt text wrap
-void dialogBox() { // 270 * 480
-
-    if (getCurrentUICreatorFunc() != dialogBox) pushToStack(dialogBox);
-
-    g_curWndType = WND_TYPE_DIALOG;
-
-    if (nk_begin(&ctx, "", nk_rect(0, 210, 480, 60), // TODO: make dimensions customisable via func argument?
-        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-
-        nk_layout_row_dynamic(&ctx, 20, 1);
-        nk_text(&ctx, g_curDialogText, strlen(g_curDialogText), NK_TEXT_ALIGN_LEFT);
-
+    if (getCurrentUICreatorFunc() != entityDialogBox) {
+        pushToStack(entityDialogBox);
     }
-    nk_end(&ctx);
 }
 
-
-
-// this a terrible name, come up with a better one
-// no lower screen, so forced to take up screen space w/ this
-// this is a slightly modified dialogue box + menu
-// base is the box for text info display, on right will be a 2x2 menu with options: "attack", "bag", "run" and "pkmn"
 // run is disabled for now, it will serve a purpose later
 void battleDashboard() {
-    // init will go here, not current point
 
-    // TODO: figure out the rect dimensions
+    int counter = 0;
 
-    pushToStack(battleDashboard); // TEMP
+    char* text = "What will TEST ENTITY do?"; // TEMP
+    setDialogText(text); // battle manager should call this function
+    dialogBox(nk_rect(0, 210, 240, 60), &counter);
 
-    // for base dialogue box, there should be setter func like normal dialogue box
-    // for its text that the battle manager can interact with
+    const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
+    const UICreatorFunc itemFuncs[] = {NULL, NULL, NULL, NULL};
 
-    if (nk_begin(&ctx, "", nk_rect(0, 210, 240, 140), // BASE DLG BOX
-        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+    createMenu(nk_rect(240, 210, 240, 60), 2, battleDashboard, &counter, NUMELEMS(labels), labels, itemFuncs);
 
-        nk_layout_row_dynamic(&ctx, 20, 1);
-        nk_text(&ctx, "What will TEST_ENTITY do?", strlen("What will TEST_ENTITY do?"), NK_TEXT_ALIGN_LEFT);
-
-        if (nk_begin(&ctx, "", nk_rect(140, 210, 240, 140), // Overlapping 2-column menu
-            NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-
-            nk_layout_row_dynamic(&ctx, 20, 2); // 2 cols
-
-            const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
-
-            for (int i = 0; i < NUMELEMS(labels); ++i) {
-                // subseq. add buttons
-                nk_button_label(&ctx, labels[i]);
-            }
-        }
-    }
-    nk_end(&ctx);
+    if (getCurrentUICreatorFunc() != battleDashboard) pushToStack(battleDashboard);
 }

@@ -76,13 +76,6 @@ void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<D
 
     for (const Diligent::GLTF::Node& node : g_model->Nodes) {
 
-        std::cout << node.Name << std::endl;
-        /*
-         std::cout << "Displaying mesh with AABB defined as:\n"
-         << "min coord: [" << mesh.BB.Min.x << ", " << mesh.BB.Min.y << ", " << mesh.BB.Min.z << "]\n"
-         << "max coord: [" << mesh.BB.Max.x << ", " << mesh.BB.Max.y << ", " << mesh.BB.Max.z << "]\n";
-         */
-
         std::vector<PrimitiveData> primitives;
 
         for (const Diligent::GLTF::Primitive& primitive : node.pMesh->Primitives) {
