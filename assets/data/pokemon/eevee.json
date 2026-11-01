@@ -1,0 +1,123 @@
+{
+    "dexno": 133,
+    "exprate": "MEDIUM_FAST",
+    "sprites": "assets/data/sprites/eevee.json",
+    "stats": {
+        "hp": 55,
+        "attack": 55,
+        "defense": 50,
+        "spAttack": 45,
+        "spDefense": 65,
+        "speed": 55
+    },
+    "type": "NORMAL",
+    "abilities": ["RUN_AWAY", "ADAPTABILITY"],
+    "hiddenAbility": "ANTICIPATION",
+    "evolutions": [
+        {
+            "spcname": "vaporeon",
+            "itemReq": "water_stone"
+        },
+        {
+            "spcname": "jolteon",
+            "itemReq": "thunder_stone"
+        },
+        {
+            "spcname": "flareon",
+            "itemReq": "fire_stone"
+        },
+        {
+            "spcname": "espeon",
+            "friendshipReq": 220,
+            "timeReq": "DAY"
+        },
+        {
+            "spcname": "umbreon",
+            "friendshipReq": 220,
+            "timeReq": "NIGHT"
+        },
+        {
+            "spcname": "leafeon",
+            "itemReq": "leafStone"
+        },
+        {
+            "spcname": "glaceon",
+            "itemReq": "iceStone"
+        },
+        {
+            "spcname": "sylveon",
+            "friendshipReq": 220,
+            "moveTypeReq": "FAIRY"
+        }
+    ],
+    "learnset": [
+        {
+            "name": "COVET",
+            "levelReq": 1
+        },
+        {
+            "name": "GROWL",
+            "levelReq": 1
+        },
+        {
+            "name": "HELPING_HAND",
+            "levelReq": 1
+        },
+        {
+            "name": "TACKLE",
+            "levelReq": 1
+        },
+        {
+            "name": "TAIL_WHIP",
+            "levelReq": 1
+        },
+        {
+            "name": "SAND_ATTACK",
+            "levelReq": 5
+        },
+        {
+            "name": "BABY_DOLL_EYES",
+            "levelReq": 9
+        },
+        {
+            "name": "QUICK_ATTACK",
+            "levelReq": 13
+        },
+        {
+            "name": "BITE",
+            "levelReq": 17
+        },
+        {
+            "name": "SWIFT",
+            "levelReq": 17
+        },
+        {
+            "name": "REFRESH",
+            "levelReq": 20
+        },
+        {
+            "name": "TAKE_DOWN",
+            "levelReq": 25
+        },
+        {
+            "name": "CHARM",
+            "levelReq": 29
+        },
+        {
+            "name": "BATON_PASS",
+            "levelReq": 33
+        },
+        {
+            "name": "DOUBLE_EDGE",
+            "levelReq": 37
+        },
+        {
+            "name": "LAST_RESORT",
+            "levelReq": 41
+        },
+        {
+            "name": "TRUMP_CARD",
+            "levelReq": 45
+        }
+    ]
+}

@@ -1,0 +1,76 @@
+{
+    "dexno": 403,
+    "exprate": "MEDIUM_SLOW",
+    "sprites": "assets/data/sprites/shinx.json",
+    "stats": {
+        "hp": 45,
+        "attack": 65,
+        "defense": 34,
+        "spAttack": 40,
+        "spDefense": 34,
+        "speed": 45
+    },
+    "type": "ELECTRIC",
+    "abilities": ["RIVALRY", "INTIMIDATE"],
+    "hiddenAbility": "GUTS",
+    "evolutions": [
+        {
+            "spcname": "luxio",
+            "levelReq": 15
+        }
+    ],
+    "learnset": [
+        {
+            "name": "TACKLE",
+            "levelReq": 1
+        },
+        {
+            "name": "LEER",
+            "levelReq": 5
+        },
+        {
+            "name": "CHARGE",
+            "levelReq": 9
+        },
+        {
+            "name": "BABY_DOLL_EYES",
+            "levelReq": 11
+        },
+        {
+            "name": "SPARK",
+            "levelReq": 13
+        },
+        {
+            "name": "BITE",
+            "levelReq": 17
+        },
+        {
+            "name": "ROAR",
+            "levelReq": 21
+        },
+        {
+            "name": "SWAGGER",
+            "levelReq": 25
+        },
+        {
+            "name": "THUNER_FANG",
+            "levelReq": 29
+        },
+        {
+            "name": "CRUNCH",
+            "levelReq": 33
+        },
+        {
+            "name": "SCARY_FACE",
+            "levelReq": 37
+        },
+        {
+            "name": "DISCHARGE",
+            "levelReq": 41
+        },
+        {
+            "name": "WILD_CHARGE",
+            "levelReq": 45
+        }
+    ]
+}

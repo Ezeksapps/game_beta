@@ -6,14 +6,14 @@
 #include "json.hpp"
 #include "../fileio.hpp"
 
+#include "../battle/battle_manager.hpp"
+
 using json = nlohmann::json;
 
 namespace fs = std::filesystem;
 
 BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> player, std::shared_ptr<Entity> opponent, const std::string& env)
                          : Scene::Scene(sceneDir, player) {
-
-    m_pEntities.push_back(opponent);
 
     fs::path dir = sceneDir;
 
@@ -42,7 +42,7 @@ BattleScene::BattleScene(const std::string& sceneDir, std::shared_ptr<Entity> pl
 
     loadEnvJson(jsonFilepath);
 
-    m_battleManager = std::make_unique<BattleManager>(dynamic_pointer_cast<Trainer>(player), dynamic_pointer_cast<Trainer>(opponent));
+    m_battleManager = std::make_unique<BattleManager>(dynamic_pointer_cast<Trainer>(player), dynamic_pointer_cast<Trainer>(opponent), this);
 }
 
 BattleScene::~BattleScene() {}
@@ -71,6 +71,14 @@ void BattleScene::loadEnvJson(const std::string& jsonFilepath) {
 
 const std::unordered_map<std::string, std::string>& BattleScene::getTexMapping() {
     return m_sceneTexMapping;
+}
+
+void BattleScene::pushPokemonToScene(std::shared_ptr<Pokemon>& entity) {
+    m_pEntities.push_back(entity);
+}
+
+void BattleScene::removePokemonFromScene(std::shared_ptr<Pokemon>& entity) {
+    m_pEntities.erase(std::find(m_pEntities.begin(), m_pEntities.end(), entity));
 }
 
 void BattleScene::update() {}

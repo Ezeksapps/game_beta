@@ -1,0 +1,104 @@
+{
+    "dexno": 37,
+    "exprate": "MEDIUM_FAST",
+    "sprites": "assets/data/sprites/vulpix_fire.json",
+    "stats": {
+        "hp": 38,
+        "attack": 41,
+        "defense": 40,
+        "spAttack": 50,
+        "spDefense": 65,
+        "speed": 65
+    },
+    "type": "FIRE",
+    "abilities": ["FLASH_FIRE"],
+    "hiddenAbility": "DROUGHT",
+    "evolutions": [
+        {
+            "spcname": "ninetales_fire",
+            "itemReq": "fire_stone"
+        }
+    ],
+    "learnset": [
+        {
+            "name": "EMBER",
+            "levelReq": 1
+        },
+        {
+            "name": "TAIL_WHIP",
+            "levelReq": 4
+        },
+        {
+            "name": "ROAR",
+            "levelReq": 7
+        },
+        {
+            "name": "BABY_DOLL_EYES",
+            "levelReq": 9
+        },
+        {
+            "name": "QUICK_ATTACK",
+            "levelReq": 10
+        },
+        {
+            "name": "CONFUSE_RAY",
+            "levelReq": 12
+        },
+        {
+            "name": "FIRE_SPIN",
+            "levelReq": 15
+        },
+        {
+            "name": "PAYBACK",
+            "levelReq": 18
+        },
+        {
+            "name": "WILL_O_WISP",
+            "levelReq": 20
+        },
+        {
+            "name": "FEINT_ATTACK",
+            "levelReq": 23
+        },
+        {
+            "name": "HEX",
+            "levelReq": 26
+        },
+        {
+            "name": "FLAME_BURST",
+            "levelReq": 28
+        },
+        {
+            "name": "EXTRASENSORY",
+            "levelReq": 31
+        },
+        {
+            "name": "SAFEGUARD",
+            "levelReq": 34
+        },
+        {
+            "name": "FLAMETHROWER",
+            "levelReq": 36
+        },
+        {
+            "name": "IMPRISON",
+            "levelReq": 39
+        },
+        {
+            "name": "FIRE_BLAST",
+            "levelReq": 42
+        },
+        {
+            "name": "GRUDGE",
+            "levelReq": 44
+        },
+        {
+            "name": "CAPTIVATE",
+            "levelReq": 47
+        },
+        {
+            "name": "INFERNO",
+            "levelReq": 50
+        },
+    ]
+}

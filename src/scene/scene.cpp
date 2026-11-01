@@ -17,7 +17,8 @@ Scene::Scene(const std::string& sceneDir, std::shared_ptr<Entity> player) {
     // do not accept bad paths
     if (!fs::is_directory(sceneDir)) throw std::runtime_error("Scene constructor was provided with a non-directory");
 
-    m_pEntities.push_back(player); // add player to entities first
+    // do not assume a base class wishes to add the player to its entity vector
+    // (BattleScene should only have two Pokemon in that vector, not the player)
 }
 
 Scene::~Scene() {}

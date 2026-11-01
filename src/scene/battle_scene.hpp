@@ -1,7 +1,9 @@
 #pragma once
 
 #include "scene.hpp"
-#include "../battle/battle_manager.hpp"
+#include "../entity/trainer.hpp"
+
+class BattleManager;
 
 class BattleScene : public Scene {
 public:
@@ -14,6 +16,10 @@ public:
 
     // used only by game event system
     const std::unordered_map<std::string, std::string>& getTexMapping();
+
+    // these will be used by the battle manager so it can add/remove pokemon as needed
+    void pushPokemonToScene(std::shared_ptr<Pokemon>& entity);
+    void removePokemonFromScene(std::shared_ptr<Pokemon>& entity);
 
     std::unique_ptr<BattleManager> m_battleManager;
 

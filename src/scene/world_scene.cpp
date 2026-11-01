@@ -19,6 +19,7 @@ namespace fs = std::filesystem;
 
 WorldScene::WorldScene(const std::string& sceneDir, std::shared_ptr<Entity> player) : Scene(sceneDir, player) {
 
+    m_pEntities.push_back(player); // add player to entities first
     setupEntityCallbacks(0); // setup callbacks for player entity
 
     fs::path dir = sceneDir;

@@ -45,3 +45,5 @@ void Trainer::loadEntityJSON(const std::string& filepath) {
         ++counter;
     }
 }
+
+std::array<PokemonDesc, 6> Trainer::getTeam() { return m_team; }

@@ -5,21 +5,21 @@
     "entities": [
         {
             "type": 2,
-            "sprites": "assets/shinx.json",
+            "sprites": "assets/data/sprites/shinx.json",
             "json": "assets/placeholder.json",
             "posX": 3,
             "posY": 1
         },
         {
             "type": 2,
-            "sprites": "assets/vulpix_fire.json",
+            "sprites": "assets/data/sprites/vulpix_fire.json",
             "json": "assets/placeholder.json",
             "posX": -2,
             "posY": -3
         },
         {
             "type": 2,
-            "sprites": "assets/fennekin.json",
+            "sprites": "assets/data/sprites/fennekin.json",
             "json": "assets/placeholder.json",
             "posX": -3,
             "posY": 1
