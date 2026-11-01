@@ -10,6 +10,8 @@
 #include "../fileio.hpp"
 
 #include "../entity/entity.hpp"
+#include "../entity//trainer.hpp"
+#include "../pokemon/pokemon.hpp"
 
 using json = nlohmann::json;
 
@@ -82,7 +84,23 @@ void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
          * "posY":    <position in y-axis>
          */
 
-        std::shared_ptr<Entity> pEntity = std::make_shared<Entity>(entity["sprites"], entityIndex);
+        int type = entity["type"];
+        std::shared_ptr<Entity> pEntity;
+        switch (type) {
+            case 0: // base entity
+                pEntity = std::make_shared<Entity>(entity["sprites"], entityIndex);
+                break;
+            case 1: // pokemon
+                pEntity = std::make_shared<Pokemon>(entity["spcname"], entity["sprites"], entityIndex);
+                break;
+            case 2: // trainer
+                pEntity = std::make_shared<Trainer>(entity["sprites"], entityIndex);
+                break;
+            default:
+                throw std::runtime_error("An entity was assigned to an invalid type (not in range 0 =< x =< 2)");
+                break;
+        }
+        // the entity JSON is a separate file that defines dialogue for generic entity types and other type-specific attributes
         pEntity->loadEntityJSON(entity["json"]);
         pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
 

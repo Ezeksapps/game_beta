@@ -2,13 +2,26 @@
 #include "../fileio.hpp"
 #include "pokemon_common.h"
 
-Pokemon::Pokemon(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index)
-                : Entity(animJsonFilepath, index) {
+Pokemon::Pokemon(const std::string& spcname, const std::string& animJsonFilepath, const int& index)
+                : Entity(animJsonFilepath, index) { m_spcname = spcname; }
+
+void Pokemon::loadEntityJSON(const std::string& filepath) {
+
+    const char* entityJson = readJsonAsset(filepath.c_str());
+
+    if (m_index > 0) { // the player has no dialogue or pre-defined behaviour
+
+        json dialogStrings = json::parse(entityJson)["dialog"];
+
+        for (json::iterator it = dialogStrings.begin(); it != dialogStrings.end(); ++it) {
+            m_dialogStrings.emplace(it.key(), it.value());
+        }
+    }
+
 
     // in addition to the normal properties common to all entities, Pokemon will have other properties
     // defined in their entity JSON that require more specialised handling
 
-    const char* entityJson = readJsonAsset(entityJsonFilepath.c_str());
     json root = json::parse(entityJson);
 
     json stats = root["stats"];

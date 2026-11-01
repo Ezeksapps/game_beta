@@ -11,7 +11,7 @@
                 "tackle", "thunder_fang", "charge", "discharge"
             ],
             "exp": 142,
-            "nature": "calm",
+            "nature": "CALM",
             "hasHiddenAbility": true,
             "isShiny": false
         },
@@ -23,7 +23,7 @@
                 "tackle", "quick_attack", "crunch", "torment"
             ],
             "exp": 233,
-            "nature": "lax",
+            "nature": "LAX",
             "hasHiddenAbility": true,
             "isShiny": true
         }

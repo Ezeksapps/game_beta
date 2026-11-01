@@ -12,10 +12,14 @@ class Pokemon : public Entity {
 
 public:
 
-    Pokemon(const std::string& entityJsonFilepath, const std::string& animJsonFilepath, const int& index);
+    Pokemon(const std::string& spcname, const std::string& animJsonFilepath, const int& index);
     ~Pokemon();
 
+    void loadEntityJSON(const std::string& filepath) override;
+
 private:
+
+    std::string m_spcname;
 
     IVs   m_IVs;
     Stats m_stats;

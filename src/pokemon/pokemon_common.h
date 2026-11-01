@@ -5,55 +5,16 @@
 /* Common structures and enums */
 
 enum Ability { // list kept short for now, only holds abilities of placeholders
-
-    ABILITY_NONE, // default val for empty slots
-
-    // 133
-    ABILITY_RUN_AWAY,
-    ABILITY_ADAPTABILITY,
-    ABILITY_ANTICIPATION,
-
-    // 37 f
-    ABILITY_FLASH_FIRE,
-    ABILITY_DROUGHT,
-
-    // 37 i
-    ABILITY_SNOW_CLOAK,
-    ABILITY_SNOW_WARNING,
-
-    // 403
-    ABILITY_INTIMIDATE,
-    ABILITY_RIVALRY,
-    ABILITY_GUTS,
+#define X(name) ABILITY_##name,
+#include "abilities.xvals"
+#undef X
 };
 
 // TODO: Map to affected stats and flavours
 enum Nature {
-    NATURE_HARDY,
-    NATURE_LONELY,
-    NATURE_BRAVE,
-    NATURE_ADAMANT,
-    NATURE_NAUGHTY,
-    NATURE_BOLD,
-    NATURE_DOCILE,
-    NATURE_RELAXED,
-    NATURE_IMPISH,
-    NATURE_LAX,
-    NATURE_TIMID,
-    NATURE_HASTY,
-    NATURE_SERIOUS,
-    NATURE_JOLLY,
-    NATURE_NAIVE,
-    NATURE_MODEST,
-    NATURE_MILD,
-    NATURE_QUIET,
-    NATURE_BASHFUL,
-    NATURE_RASH,
-    NATURE_CALM,
-    NATURE_GENTLE,
-    NATURE_SASSY,
-    NATURE_CAREFUL,
-    NATURE_QUIRKY
+#define X(name) NATURE_##name,
+#include "natures.xvals"
+#undef X
 };
 
 struct Stats {
