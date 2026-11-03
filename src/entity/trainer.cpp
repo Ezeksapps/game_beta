@@ -4,6 +4,8 @@
 
 #include "../pokemon/pokemon_utils.hpp"
 
+#include <iostream>
+
 using json = nlohmann::json;
 
 Trainer::Trainer(const std::string& animJsonFilepath, const int& index)
@@ -13,6 +15,25 @@ Trainer::Trainer(const std::string& animJsonFilepath, const int& index)
 }
 
 Trainer::~Trainer() {}
+
+void Trainer::loadTeamJSON(const json& teamJson) {
+    // This team is the trainer's team of Pokemon, these will be represented as Pokemon descriptors
+
+    int counter = 0;
+    for (const json& pokemon : teamJson) {
+        PokemonDesc desc = {
+            .spcname          = pokemon["spcname"],
+            .name             = pokemon["name"],
+            .nature           = strToNature(pokemon["nature"]),
+            .moveset          = pokemon["moveset"],
+            .level            = pokemon["level"],
+            .exp              = pokemon["exp"],
+            .hasHiddenAbility = pokemon["hasHiddenAbility"]
+        };
+        m_team[counter] = desc;
+        ++counter;
+    }
+}
 
 void Trainer::loadEntityJSON(const std::string& filepath) {
     const char* entityJson = readJsonAsset(filepath.c_str());
@@ -27,23 +48,7 @@ void Trainer::loadEntityJSON(const std::string& filepath) {
     }
 
     json team = json::parse(entityJson)["team"];
-
-    // This team is the trainer's team of Pokemon, these will be represented as Pokemon descriptors
-
-    int counter = 0;
-    for (const json& pokemon : team) {
-        PokemonDesc desc = {
-            .spcname          = pokemon["spcname"],
-            .name             = pokemon["name"],
-            .nature           = strToNature(pokemon["nature"]),
-            .moveset          = pokemon["moveset"],
-            .level            = pokemon["level"],
-            .exp              = pokemon["exp"],
-            .hasHiddenAbility = pokemon["hasHiddenAbility"]
-        };
-        m_team[counter] = desc;
-        ++counter;
-    }
+    loadTeamJSON(team);
 }
 
 std::array<PokemonDesc, 6> Trainer::getTeam() { return m_team; }

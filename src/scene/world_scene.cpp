@@ -103,6 +103,7 @@ void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
         }
         // the entity JSON is a separate file that defines dialogue for generic entity types and other type-specific attributes
         pEntity->loadEntityJSON(entity["json"]);
+        std::cout << "loaded entity JSON\n";
         pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
 
         m_pEntities.push_back(pEntity);

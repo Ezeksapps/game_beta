@@ -53,6 +53,9 @@ public:
     void pushSceneTexture(Diligent::RefCntAutoPtr<Diligent::ITexture> texture);
     void pushSceneMesh(const MeshData& meshData);
 
+    // used by battle scene, needs to be called if a new entity is added to the scene after it was initially passed to the renderer
+    void registerEntity(const std::shared_ptr<Entity>& entity);
+
     uint32_t m_windowWidth;
     uint32_t m_windowHeight;
 

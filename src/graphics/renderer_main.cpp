@@ -222,35 +222,36 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
     return texArray;
 }
 
+void Renderer::registerEntity(const std::shared_ptr<Entity>& entity) {
+    // only add a new texture array to the cache if one doesn't already exist for the required sprite sheets
+    // NOTE: use try_emplace() since checking the index requires operator[], which will always create that index if it doesnt exist
+    m_entitySpriteCache.try_emplace(entity->getCacheKey(), createEntitySpriteCache(entity->m_index));
+
+    /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
+    if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->getCacheKey(), entity->m_event);
+
+    /* --- Callbacks --- */
+
+    entity->setSpriteChangeCallback([this, entity](const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite) {
+        /* Swap sprite for new sprite */
+        this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
+    });
+
+    // movement callbacks moved to WorldScene, this is a generic scene setter and movement handling is only needed in a WorldScene
+}
 
 void Renderer::setSceneImpl(std::unique_ptr<Scene>& scene) {
     m_pScene = std::move(scene);
 
+    m_pScene->setRegisterEntityCallback(registerEntity);
+
     // reset all data for new scene
     m_numSprites = 0;
     m_instanceData.clear();
-    m_entitySpriteCache.clear();
     createSpriteTextureArray();
     // END reset --- //
 
-    for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) {
-
-        // only add a new texture array to the cache if one doesn't already exist for the required sprite sheets
-        // NOTE: use try_emplace() since checking the index requires operator[], which will always create that index if it doesnt exist
-        m_entitySpriteCache.try_emplace(entity->getCacheKey(), createEntitySpriteCache(entity->m_index));
-
-        /* Register initial sprite (whatever default AnimEvent the entity is performing based on scene JSON) */
-        if (entity->getActiveSprite()) registerSprite(entity->getActiveSprite(), entity->getCacheKey(), entity->m_event);
-
-        /* --- Callbacks --- */
-
-        entity->setSpriteChangeCallback([this, entity](const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite) {
-            /* Swap sprite for new sprite */
-            this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
-        });
-
-        // movement callbacks moved to WorldScene, this is a generic scene setter and movement handling is only needed in a WorldScene
-    }
+    for (const std::shared_ptr<Entity>& entity : m_pScene->getEntities()) registerEntity(entity);
 }
 
 // textured version

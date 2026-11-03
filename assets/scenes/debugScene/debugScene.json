@@ -18,9 +18,10 @@
             "posY": -3
         },
         {
-            "type": 2,
+            "type": 1,
             "sprites": "assets/data/sprites/fennekin.json",
-            "json": "assets/placeholder.json",
+            "spcname": "fennekin",
+            "json": "assets/placeholder_pkmn.json",
             "posX": -3,
             "posY": 1
         }

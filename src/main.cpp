@@ -1,5 +1,6 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
+#include "X11/X.h"
 #include "common.hpp"
 #include "entity/trainer.hpp"
 #include "game.hpp"
@@ -92,8 +93,13 @@ void gameInit() {
 
     json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
 
-    g_pPlayer = std::make_shared<Trainer>(playerData["sprites"], 0);
-    g_pPlayer->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
+    std::shared_ptr<Trainer> player = std::make_shared<Trainer>(playerData["sprites"], 0);
+    // because player is a trainer type entity, data on a pokemon team is required, this is normally stored as part
+    // of an entity JSON, the player doesn't have this, so must be loaded from savedata
+    // TODO: Make a save/load system
+    player->loadTeamJSON(playerData["team"]);
+    player->m_pos = vec3(playerData["posX"], playerData["posY"], 0.5f);
+    g_pPlayer = dynamic_pointer_cast<Entity>(player);
 
     std::unique_ptr<Scene> scene = std::make_unique<WorldScene>(playerData["lastScene"], g_pPlayer);
     g_pRenderer->setScene(scene);

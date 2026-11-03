@@ -4,14 +4,14 @@
     },
     "team": [
         {
-            "spcname": "shinx",
-            "name": "Shinx",
+            "spcname": "eevee",
+            "name": "Eevee",
             "level": 45,
             "moveset": [
-                "tackle", "thunder_fang", "charge", "discharge"
+                "bite", "take_down", "double_edge", "tail_whip"
             ],
             "exp": 142,
-            "nature": "CALM",
+            "nature": "LONELY",
             "hasHiddenAbility": true,
             "isShiny": false
         },

@@ -1,0 +1,13 @@
+{
+    "dialog": {
+        "default": "I am an actual Pokemon"
+    },
+    "stats": {
+        "hp": 45,
+        "attack": 65,
+        "defense": 34,
+        "spAttack": 40,
+        "spDefense": 34,
+        "speed": 45
+    }
+}

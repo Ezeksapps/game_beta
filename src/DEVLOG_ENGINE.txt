@@ -920,7 +920,7 @@ is set by the battle manager by an interface function. The systems external to t
 for the windows are.
 
 KNOWN BUGS:
-Trying to start a battle with any entity other than entity zero (shinx) crashes the game
+Trying to start a battle with any entity other than entity one (shinx) crashes the game
 crash report:
 
 #0  0x0000000000423bfb _ZN8Renderer23createEntitySpriteCacheERKi (game + 0x23bfb)
@@ -935,6 +935,9 @@ crash report:
 #9  0x000000000040da53 _Z10gameUpdatev (game + 0xda53)
 #10 0x000000000042d1c2 _Z8mainLoopv (game + 0x2d1c2)
 #11 0x000000000042dc4a main (game + 0x2dc4a)
+
+KNOWN BUG: Because attempts at movement are not blocked whilst in battle scenes, pressing any movement key during a battle will crash the game
+(Callbacks for movement are not registered in BattleScene objects)
 
 TODO: $battle_start$ can only be executed if the interacting entity is a Trainer object
 

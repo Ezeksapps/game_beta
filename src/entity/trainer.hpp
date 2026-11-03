@@ -12,6 +12,8 @@ public:
     ~Trainer();
 
     void loadEntityJSON(const std::string& filepath) override;
+    // used by the save read system to init the player's team, since player has no entity JSON
+    void loadTeamJSON(const json& teamJson);
 
     std::array<PokemonDesc, 6> getTeam();
 

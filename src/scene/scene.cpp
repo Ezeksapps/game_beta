@@ -30,3 +30,7 @@ std::vector<std::shared_ptr<Entity>>& Scene::getEntities() {
 const std::string& Scene::getGltfFilepath() {
     return m_glbFilepath;
 }
+
+void Scene::setRegisterEntityCallback(std::function<void(const std::shared_ptr<Entity> entity)> callback) {
+    m_registerEntityCallback = callback;
+}

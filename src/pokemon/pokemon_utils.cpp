@@ -4,6 +4,8 @@
 #include "json.hpp"
 #include "../fileio.hpp"
 
+#include <iostream>
+
 using json = nlohmann::json;
 
 #include <unordered_map>
@@ -35,6 +37,8 @@ std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const in
      * per species. The correct file for this Pokemon will be loaded from the species name 'spcname'
      */
     json pokemonJson = json::parse(readJsonAsset(std::string("assets/data/pokemon/" + desc.spcname + ".json").c_str()));
+
+    std::cout << "Sprite JSON located at: " << pokemonJson["sprites"] << std::endl;
 
     std::shared_ptr<Pokemon> pokemon = std::make_shared<Pokemon>(desc.spcname, pokemonJson["sprites"], index);
     return pokemon;

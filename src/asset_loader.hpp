@@ -32,4 +32,5 @@ void loadTexturelessAsset(const std::string& filename, Diligent::RefCntAutoPtr<D
                           Diligent::RefCntAutoPtr<Diligent::IDeviceContext>& immediateContext, Diligent::RefCntAutoPtr<Diligent::IBuffer>& vertexBuf,
                           Diligent::RefCntAutoPtr<Diligent::IBuffer>& indexBuf, const std::unordered_map<std::string, std::string>& textureMapping);
 
+// specifically the centre position of its mesh's AABB
 vec3 getNodePosition(const std::string& nodeName);

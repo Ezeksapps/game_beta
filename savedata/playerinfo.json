@@ -1,8 +1,33 @@
 {
-    "type": 0,
     "name": "",
-    "sprites": "assets/data/pokemon/eevee.json",
+    "sprites": "assets/data/sprites/eevee.json",
     "lastScene": "assets/scenes/debugScene",
     "posX": 0,
-    "posY": 0
+    "posY": 0,
+    "team": [
+        {
+            "spcname": "shinx",
+            "name": "Shinx",
+            "level": 45,
+            "moveset": [
+                "tackle", "thunder_fang", "charge", "discharge"
+            ],
+            "exp": 142,
+            "nature": "CALM",
+            "hasHiddenAbility": true,
+            "isShiny": false
+        },
+        {
+            "spcname": "umbreon",
+            "name": "Umbreon",
+            "level": 50,
+            "moveset": [
+                "tackle", "quick_attack", "crunch", "torment"
+            ],
+            "exp": 233,
+            "nature": "LAX",
+            "hasHiddenAbility": true,
+            "isShiny": true
+        }
+    ]
 }
