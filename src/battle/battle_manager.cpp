@@ -11,14 +11,6 @@ BattleManager::BattleManager(std::shared_ptr<Trainer> player, std::shared_ptr<Tr
     m_player = player;
     m_opponent = opponent;
     m_scene = scene;
-
-    std::cout << "Basic vars initialised\n";
-
-    // the first operation should be to bring out the first pokemon in both the player's and the opponent's teams
-    std::shared_ptr<Pokemon> playerPkmn = createPokemonFromDesc(m_player->getTeam()[0], 0);
-    std::shared_ptr<Pokemon> opponentPkmn = createPokemonFromDesc(m_opponent->getTeam()[0], 1);
-
-    std::cout << "Created both Pokemon objs\n";
 }
 
 void BattleManager::prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::shared_ptr<Pokemon> opponentPkmn) {
@@ -26,9 +18,7 @@ void BattleManager::prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::share
     opponentPkmn->m_pos = getNodePosition("opponent_stage");
 
     m_scene->pushPokemonToScene(playerPkmn);
-    std::cout << "push op1\n";
     m_scene->pushPokemonToScene(opponentPkmn);
-    std::cout << "push op2\n";
 }
 
 BattleManager::~BattleManager() {}
@@ -42,11 +32,11 @@ void triggerBattleStart() { // creates the battle scene, which will then recieve
     std::unordered_map<std::string, std::string> texMapping = battleScene->getTexMapping();
     std::unique_ptr<Scene> scene = std::move(battleScene);
 
-    battleSceneTemp->m_battleManager->prepareStage(createPokemonFromDesc(dynamic_pointer_cast<Trainer>(g_pPlayer)->getTeam()[0], 0),
-                                                   createPokemonFromDesc(dynamic_pointer_cast<Trainer>(opponentEntity)->getTeam()[0], 0));
-
-
     g_pRenderer->setScene(scene, texMapping);
+
+    // NOTE: This can only be called after setScene, as prepareStage depends on the glTF asset being loaded for its getNodePosition() calls
+    battleSceneTemp->m_battleManager->prepareStage(createPokemonFromDesc(dynamic_pointer_cast<Trainer>(g_pPlayer)->getTeam()[0], 0),
+                                                   createPokemonFromDesc(dynamic_pointer_cast<Trainer>(opponentEntity)->getTeam()[0], 1));
 }
 
 

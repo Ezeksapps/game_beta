@@ -939,6 +939,9 @@ crash report:
 KNOWN BUG: Because attempts at movement are not blocked whilst in battle scenes, pressing any movement key during a battle will crash the game
 (Callbacks for movement are not registered in BattleScene objects)
 
+KNOWN BUG: In some cases, for an unknown reason (maybe race condition), entities do not play any visible animation. Reason unknown
+(This is inconsistent, most of the time animations work as expected)
+
 TODO: $battle_start$ can only be executed if the interacting entity is a Trainer object
 
 There is one small issue with how all the Pokemon in a Trainer's party are represented
@@ -962,3 +965,12 @@ SOLUTION: The battle scene doesnt need to push the two trainer entities to its '
 scene needs to do that, it's only necessary because that will cause it to be visible to the renderer for it to be displayed
 In this case, the structure that needs the trainer entities is the battle manager, so the battle scene's constructor can pass
 them to the battle manager's constructor and never have to deal with the trainer entities again
+
+The setup for the battle scene and battle manager as well as all the required systems to start them properly have all been completed
+Now it's time to determine how to proceed, right now I need:
+- the battle manager to be able to obtain the move list and info so that it can pass that information to the UI whenever the
+  move selection menu needs to be displayed (problem, a UI creator func cannot take arguments and this info shouldn't be stored as globals in UI system)
+- the UI needs to have the mouse emulated so selection can function properly
+- ignoring items for now, the battle manager should be able to process a turn (in which a move is used) input from the UI and a pre-set move
+  from the opponent (to later be replaced with battle AI)
+

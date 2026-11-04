@@ -13,8 +13,6 @@ void Pokemon::loadEntityJSON(const std::string& filepath) {
 
     if (m_index > 0) { // the player has no dialogue or pre-defined behaviour
 
-        std::cout << "This works\n";
-
         json dialogStrings = json::parse(entityJson)["dialog"];
 
         for (json::iterator it = dialogStrings.begin(); it != dialogStrings.end(); ++it) {

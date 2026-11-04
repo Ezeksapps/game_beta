@@ -74,11 +74,16 @@ const std::unordered_map<std::string, std::string>& BattleScene::getTexMapping()
 }
 
 void BattleScene::pushPokemonToScene(std::shared_ptr<Pokemon>& entity) {
+    // NOTE: Order matter here, if you don't push the entity before running the callback,
+    // entity->m_index will refer to a non-existant index in the entities vec
     m_pEntities.push_back(entity);
+    m_registerEntityCallback(entity);
 }
 
 void BattleScene::removePokemonFromScene(std::shared_ptr<Pokemon>& entity) {
     m_pEntities.erase(std::find(m_pEntities.begin(), m_pEntities.end(), entity));
+    // no de-register func needed, since the instance buffer is cleared and updated every frame
+    // that update only looks at entities in the entity vec, which the removed Pokemon is no longer inside of
 }
 
 void BattleScene::update() {}

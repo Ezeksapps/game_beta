@@ -103,7 +103,6 @@ void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
         }
         // the entity JSON is a separate file that defines dialogue for generic entity types and other type-specific attributes
         pEntity->loadEntityJSON(entity["json"]);
-        std::cout << "loaded entity JSON\n";
         pEntity->m_pos = vec3(entity["posX"], entity["posY"], 0.5f);
 
         m_pEntities.push_back(pEntity);
@@ -248,7 +247,6 @@ void WorldScene::resolveCollisions() {
 
 void WorldScene::genSceneSptlHash() {
     for (uint8_t entityIndex = 0; entityIndex < m_pEntities.size(); ++entityIndex) {
-        // TODO: The size of geometry might eventually differ between entities, this must be handled! current size is const 1x1
         // insert entity index into all cells that it occupies
         OccupiedCells occupiedCells = getOccupiedCells(m_pEntities[entityIndex]->getAABB());
         for (uint8_t i = 0; i < occupiedCells.count; ++i) m_sptlHash[occupiedCells.cells[i]].push_back(entityIndex);

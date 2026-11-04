@@ -182,7 +182,6 @@ void Renderer::createInstanceBuffer() {
 void Renderer::populateInstanceBuffer() {
 
     m_instanceData.clear();
-    //m_instanceData.reserve(m_pScene->m_pEntities.size());
 
     // update frame timings for all entities, then repopulate instance buffer w/ any new changes to frame
     int i = 0;

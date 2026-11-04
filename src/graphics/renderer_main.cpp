@@ -243,11 +243,12 @@ void Renderer::registerEntity(const std::shared_ptr<Entity>& entity) {
 void Renderer::setSceneImpl(std::unique_ptr<Scene>& scene) {
     m_pScene = std::move(scene);
 
-    m_pScene->setRegisterEntityCallback(registerEntity);
+    m_pScene->setRegisterEntityCallback([this](const std::shared_ptr<Entity>& entity) { this->registerEntity(entity); });
 
     // reset all data for new scene
     m_numSprites = 0;
     m_instanceData.clear();
+    m_entitySpriteCache.clear();
     createSpriteTextureArray();
     // END reset --- //
 
@@ -450,7 +451,6 @@ void Renderer::renderFrame() {
 }
 
 void Renderer::updateUniformBuffer() {
-    // TODO: Create proper Player designation, this isn't good enough (The player won't get defined in scene JSON)
     m_pCamera->setTargetPos(m_pScene->getEntities()[0]->m_pos);
     // calculate new view matrix after pending changes
     m_viewMatrix = m_pCamera->getViewMatrix();

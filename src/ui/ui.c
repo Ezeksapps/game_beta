@@ -65,13 +65,22 @@ typedef struct MenuState {
     uint8_t numItems;
 } MenuState;
 
-typedef struct UIWindow {
-
-} UIWindow;
-
+// NOTE: Multiple windows can exist simultaneously, this refers to the window considered to be 'focused'
 enum   WndType   g_curWndType = WND_TYPE_NONE;
+
+// UI elem type states
 char g_curDialogText[MAX_DIALOG_CHARS] = "";
 struct MenuState g_curMenuState = {0};
+
+// global 'mouse' state (this mouse being a cursor controlled by keyboard input)
+typedef struct vec2 {int x; int y;} vec2;
+vec2 g_mousePos = vec2(0, 0);
+
+// constants
+
+#define WND_PADDING 4
+#define MENU_ELEM_HEIGHT 20
+
 
 /* Convenience function
  * makes setting the colour shorter and avoids needing to manually specify the exact index
@@ -94,6 +103,7 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
     return color;
 }
 
+// TODO: For multi-column menus, UI_RIGHT and UI_DOWN should be added
 void up() {
     if (g_curMenuState.selectedUIElem > 0) --g_curMenuState.selectedUIElem;
     else g_curMenuState.selectedUIElem = g_curMenuState.numItems - 1;

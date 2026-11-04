@@ -60,12 +60,6 @@ void Entity::update(const float& deltaTime) {
 
     m_frameTimer += deltaTime;
 
-    std::cout << "Active sprite: " << m_pActiveSprite << '\n';
-    std::cout << "Frame: " << m_pActiveSprite->frame << '\n';
-    std::cout << "Frames per row: " << m_pActiveSprite->framesPerRow << '\n';
-    std::cout << "Frame durations size: "
-    << m_pActiveSprite->frameDurations.size() << '\n';
-
     // intended duration of current frame of sprite sheet in frames
     float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
 
