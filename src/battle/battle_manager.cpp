@@ -17,6 +17,9 @@ void BattleManager::prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::share
     playerPkmn->m_pos = getNodePosition("player_stage");
     opponentPkmn->m_pos = getNodePosition("opponent_stage");
 
+    playerPkmn->m_direction = DIRECTION_EAST;
+    opponentPkmn->m_direction = DIRECTION_WEST;
+
     m_scene->pushPokemonToScene(playerPkmn);
     m_scene->pushPokemonToScene(opponentPkmn);
 }
@@ -37,6 +40,9 @@ void triggerBattleStart() { // creates the battle scene, which will then recieve
     // NOTE: This can only be called after setScene, as prepareStage depends on the glTF asset being loaded for its getNodePosition() calls
     battleSceneTemp->m_battleManager->prepareStage(createPokemonFromDesc(dynamic_pointer_cast<Trainer>(g_pPlayer)->getTeam()[0], 0),
                                                    createPokemonFromDesc(dynamic_pointer_cast<Trainer>(opponentEntity)->getTeam()[0], 1));
+
+    popFromStack();
+    battleDashboard();
 }
 
 

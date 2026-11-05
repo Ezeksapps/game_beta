@@ -942,6 +942,9 @@ KNOWN BUG: Because attempts at movement are not blocked whilst in battle scenes,
 KNOWN BUG: In some cases, for an unknown reason (maybe race condition), entities do not play any visible animation. Reason unknown
 (This is inconsistent, most of the time animations work as expected)
 
+In evey case where this bug does occur, the sprites have been confirmed to be loaded to cache, so issue doesn't originate with any failure to
+load the sprites, maybe update() is faulty?
+
 TODO: $battle_start$ can only be executed if the interacting entity is a Trainer object
 
 There is one small issue with how all the Pokemon in a Trainer's party are represented

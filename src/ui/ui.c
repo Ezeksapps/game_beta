@@ -3,6 +3,7 @@
 #include "ui.h"
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -63,6 +64,8 @@ typedef enum WndType {
 typedef struct MenuState {
     uint8_t selectedUIElem;
     uint8_t numItems;
+    uint8_t numColumns;
+    int widgetWidth;
 } MenuState;
 
 // NOTE: Multiple windows can exist simultaneously, this refers to the window considered to be 'focused'
@@ -74,13 +77,13 @@ struct MenuState g_curMenuState = {0};
 
 // global 'mouse' state (this mouse being a cursor controlled by keyboard input)
 typedef struct vec2 {int x; int y;} vec2;
-vec2 g_mousePos = vec2(0, 0);
+vec2 g_mousePos = (vec2) {.x = 0, .y = 0};
 
-// constants
+// constants (px)
 
 #define WND_PADDING 4
+#define WND_BORDER 3
 #define MENU_ELEM_HEIGHT 20
-
 
 /* Convenience function
  * makes setting the colour shorter and avoids needing to manually specify the exact index
@@ -104,12 +107,41 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
 }
 
 // TODO: For multi-column menus, UI_RIGHT and UI_DOWN should be added
+// TODO: Finish the changes for the new cursor system
+
 void up() {
-    if (g_curMenuState.selectedUIElem > 0) --g_curMenuState.selectedUIElem;
+    nk_input_begin(&ctx);
+    if (g_curMenuState.selectedUIElem > 0) {
+        int prevColumn = g_curMenuState.selectedUIElem % g_curMenuState.numColumns; // column old selection is in
+        --g_curMenuState.selectedUIElem;
+        // the column the new selected elem belongs to can be determined like this:
+        // selectedUIElem % numColumns
+        // whether any dx is required depends on if new col = old col
+        // there is always dy. If no col change, then dy is negative (up)
+        // if there is col change, then dy is positive
+        int column = g_curMenuState.selectedUIElem % g_curMenuState.numColumns; // column new selection is in
+        if (prevColumn == column) {
+            // no dx because no column change
+            // negative dy
+            int newY = g_mousePos.y - MENU_ELEM_HEIGHT - WND_PADDING;
+            nk_input_motion(&ctx, g_mousePos.x, newY);
+        }
+        else {
+            // TODO: Handle the wrap around case where dx is not positive
+            int newX = g_mousePos.x + g_curMenuState.widgetWidth + WND_PADDING;
+            // previous y position was at the bottom of the window
+            int newY = g_mousePos.y - MENU_ELEM_HEIGHT - WND_PADDING;
+        }
+        //nk_input_motion(&ctx, x, y);
+    }
     else g_curMenuState.selectedUIElem = g_curMenuState.numItems - 1;
+    nk_input_end(&ctx);
 }
+
 void down() {
-    if (g_curMenuState.selectedUIElem + 1 < g_curMenuState.numItems) ++g_curMenuState.selectedUIElem;
+    if (g_curMenuState.selectedUIElem + 1 < g_curMenuState.numItems) {
+        ++g_curMenuState.selectedUIElem;
+    }
     else g_curMenuState.selectedUIElem = 0;
 }
 
@@ -281,7 +313,7 @@ const char* genWindowID(char* buffer, int* counter) {
 /* --- BASE UI ELEM TYPES --- */
 
 // https://stackoverflow.com/questions/37538
-void createMenu(struct nk_rect dimensions, const int numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
+void createMenu(struct nk_rect dimensions, const uint8_t numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
                 const uint8_t numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
 
     // if the caller hasn't pushed itself to the stack, then the menu state needs to be initialised
@@ -289,33 +321,33 @@ void createMenu(struct nk_rect dimensions, const int numColumns, const UICreator
         g_curWndType = WND_TYPE_MENU;
         g_curMenuState = (MenuState) {
             .selectedUIElem = 0,
-            .numItems = numLabels
+            .numItems = numLabels,
+            .numColumns = numColumns,
+            .widgetWidth = (int)(dimensions.w - WND_PADDING - WND_BORDER) * (1 / numColumns)
         };
+        nk_input_begin(&ctx);
+        int initX = dimensions.x + WND_BORDER + WND_PADDING;
+        int initY = dimensions.y + WND_BORDER + WND_PADDING;
+        nk_input_motion(&ctx, initX, initY);
+        nk_input_end(&ctx);
     }
 
     char windowID[16] = {};
     if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
+        // https://stackoverflow.com/questions/64008512
+        uint8_t numRows = ceil(numLabels / numColumns);
+
         nk_layout_row_dynamic(&ctx, 20, numColumns);
 
-        for (uint8_t i = 0; i < g_curMenuState.numItems; ++i) {
-            bool isSelected = (g_curMenuState.selectedUIElem == i);
+        for (uint8_t row = 0; row < numRows; ++row) { // for each row
+            for (uint8_t col = 0; col < numColumns; ++col) { // for each column in this row
+                uint8_t index = col * numRows + row;
 
-            // BEGIN NEEDS WORK
-
-            if (isSelected) {
-
-                struct nk_style_item normalStyleItem = ctx.style.button.normal;
-                ctx.style.button.normal = nk_style_item_color(ctx.style.button.text_hover);
-
-                if (nk_button_label(&ctx, labels[i])) { itemFuncs[i](); }
-
-                ctx.style.button.normal = normalStyleItem;
+                if (index >= g_curMenuState.numItems) continue;
+                if (nk_button_label(&ctx, labels[index])) {}
             }
-            else if (nk_button_label(&ctx, labels[i])) { itemFuncs[i](); }
-
-            // END NEEDS WORK
         }
     }
     nk_end(&ctx);
