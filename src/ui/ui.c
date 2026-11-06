@@ -22,7 +22,7 @@
 
 #define MAX_UI_DEPTH 16
 
-uint8_t stackPtr = 0;
+int stackPtr = 0;
 UICreatorFunc stack[MAX_UI_DEPTH] = {0}; // UI Stack
 
 void pushToStack(UICreatorFunc func) {
@@ -62,10 +62,13 @@ typedef enum WndType {
 } WndType;
 
 typedef struct MenuState {
-    uint8_t selectedUIElem;
-    uint8_t numItems;
-    uint8_t numColumns;
+    int selectedUIElem;
+    int numItems;
+    // these values are persisted so that they don't need to be constantly re-calculated
+    int numRows;
     int widgetWidth;
+    int initX;
+    int initY;
 } MenuState;
 
 // NOTE: Multiple windows can exist simultaneously, this refers to the window considered to be 'focused'
@@ -106,43 +109,32 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
     return color;
 }
 
-// TODO: For multi-column menus, UI_RIGHT and UI_DOWN should be added
-// TODO: Finish the changes for the new cursor system
+void moveCursorToItem(int index) {
 
-void up() {
+    int column = index / g_curMenuState.numRows;
+    int row = index % g_curMenuState.numRows;
+
+    int newX = g_curMenuState.initX + column * (g_curMenuState.widgetWidth + WND_PADDING);
+    int newY = g_curMenuState.initY + row * (MENU_ELEM_HEIGHT + WND_PADDING);
+
     nk_input_begin(&ctx);
-    if (g_curMenuState.selectedUIElem > 0) {
-        int prevColumn = g_curMenuState.selectedUIElem % g_curMenuState.numColumns; // column old selection is in
-        --g_curMenuState.selectedUIElem;
-        // the column the new selected elem belongs to can be determined like this:
-        // selectedUIElem % numColumns
-        // whether any dx is required depends on if new col = old col
-        // there is always dy. If no col change, then dy is negative (up)
-        // if there is col change, then dy is positive
-        int column = g_curMenuState.selectedUIElem % g_curMenuState.numColumns; // column new selection is in
-        if (prevColumn == column) {
-            // no dx because no column change
-            // negative dy
-            int newY = g_mousePos.y - MENU_ELEM_HEIGHT - WND_PADDING;
-            nk_input_motion(&ctx, g_mousePos.x, newY);
-        }
-        else {
-            // TODO: Handle the wrap around case where dx is not positive
-            int newX = g_mousePos.x + g_curMenuState.widgetWidth + WND_PADDING;
-            // previous y position was at the bottom of the window
-            int newY = g_mousePos.y - MENU_ELEM_HEIGHT - WND_PADDING;
-        }
-        //nk_input_motion(&ctx, x, y);
-    }
-    else g_curMenuState.selectedUIElem = g_curMenuState.numItems - 1;
+    nk_input_motion(&ctx, newX, newY);
     nk_input_end(&ctx);
 }
 
+// TODO: For multi-column menus, UI_RIGHT and UI_DOWN should be added
+// TODO: Up and down don't handle wrapping to the next/prev column
+
+void up() {
+    if (g_curMenuState.selectedUIElem > 0) --g_curMenuState.selectedUIElem;
+    else g_curMenuState.selectedUIElem = g_curMenuState.numItems - 1;
+    moveCursorToItem(g_curMenuState.selectedUIElem);
+}
+
 void down() {
-    if (g_curMenuState.selectedUIElem + 1 < g_curMenuState.numItems) {
-        ++g_curMenuState.selectedUIElem;
-    }
+    if (g_curMenuState.selectedUIElem + 1 < g_curMenuState.numItems) ++g_curMenuState.selectedUIElem;
     else g_curMenuState.selectedUIElem = 0;
+    moveCursorToItem(g_curMenuState.selectedUIElem);
 }
 
 void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFilepath)) {
@@ -313,22 +305,27 @@ const char* genWindowID(char* buffer, int* counter) {
 /* --- BASE UI ELEM TYPES --- */
 
 // https://stackoverflow.com/questions/37538
-void createMenu(struct nk_rect dimensions, const uint8_t numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
-                const uint8_t numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
+void createMenu(struct nk_rect dimensions, const int numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
+                const int numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
 
     // if the caller hasn't pushed itself to the stack, then the menu state needs to be initialised
     if (getCurrentUICreatorFunc() != creatorFunc) {
         g_curWndType = WND_TYPE_MENU;
+        // initialise menu state
         g_curMenuState = (MenuState) {
             .selectedUIElem = 0,
             .numItems = numLabels,
-            .numColumns = numColumns,
-            .widgetWidth = (int)(dimensions.w - WND_PADDING - WND_BORDER) * (1 / numColumns)
+            // https://stackoverflow.com/a/26122628
+            // https://stackoverflow.com/questions/64008512
+            .numRows = (numLabels + numColumns - 1) / numColumns,
+            // -------
+            .widgetWidth = (int)(dimensions.w - WND_PADDING - WND_BORDER) * (1 / numColumns),
+            .initX = (int)dimensions.x + WND_BORDER + WND_PADDING,
+            .initY = (int)dimensions.y + WND_BORDER + WND_PADDING
         };
+        // set initial cursor position
         nk_input_begin(&ctx);
-        int initX = dimensions.x + WND_BORDER + WND_PADDING;
-        int initY = dimensions.y + WND_BORDER + WND_PADDING;
-        nk_input_motion(&ctx, initX, initY);
+        nk_input_motion(&ctx, g_curMenuState.initX, g_curMenuState.initY);
         nk_input_end(&ctx);
     }
 
@@ -336,17 +333,17 @@ void createMenu(struct nk_rect dimensions, const uint8_t numColumns, const UICre
     if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
-        // https://stackoverflow.com/questions/64008512
-        uint8_t numRows = ceil(numLabels / numColumns);
-
         nk_layout_row_dynamic(&ctx, 20, numColumns);
 
-        for (uint8_t row = 0; row < numRows; ++row) { // for each row
-            for (uint8_t col = 0; col < numColumns; ++col) { // for each column in this row
-                uint8_t index = col * numRows + row;
+        for (int row = 0; row < g_curMenuState.numRows; ++row) { // for each row
+            for (int col = 0; col < numColumns; ++col) { // for each column in this row
+                int index = col * g_curMenuState.numRows + row;
 
                 if (index >= g_curMenuState.numItems) continue;
-                if (nk_button_label(&ctx, labels[index])) {}
+                if (nk_button_label(&ctx, labels[index])) {
+                    printf("Button pressed"); // on click function body not executing?
+                    itemFuncs[index]();
+                }
             }
         }
     }
@@ -377,7 +374,16 @@ void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
 /* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
 
 void pokemonView() {}
-void bagView() {}
+void bagView() {
+    int counter = 0;
+    char* testText = "This is the bag view";
+    setDialogText(testText);
+    dialogBox(nk_rect(0, 210, 480, 60), &counter);
+
+    if (getCurrentUICreatorFunc() != bagView) {
+        pushToStack(bagView);
+    }
+}
 void profileView() {}
 void optionsMenu() {}
 void multiplayerView() {}
@@ -404,6 +410,11 @@ void progressUI() {
     }
     else if (g_curWndType == WND_TYPE_DIALOG) {
         advanceDialog();
+    }
+    else {
+        nk_input_begin(&ctx);
+        nk_input_button(&ctx, NK_BUTTON_LEFT, g_mousePos.x, g_mousePos.y, 1);
+        nk_input_end(&ctx);
     }
     // else if menu should run creator func for next UI elem
 }
