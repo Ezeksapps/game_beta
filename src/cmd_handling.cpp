@@ -13,7 +13,7 @@ void handleInput(GameCmd input) {
             // send message pop back UI stack to handler, ignored if no UI elem(s) active
             break;
         case UI_OPEN:
-            pauseMenu();
+            pushToStack(pauseMenu);
             // pauseMenu(), only used in overworld
             break;
         case UI_DOWN:

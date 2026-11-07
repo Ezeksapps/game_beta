@@ -52,11 +52,11 @@
     ],
     "learnset": [
         {
-            "name": "COVET",
+            "name": "covet",
             "levelReq": 1
         },
         {
-            "name": "GROWL",
+            "name": "growl",
             "levelReq": 1
         },
         {

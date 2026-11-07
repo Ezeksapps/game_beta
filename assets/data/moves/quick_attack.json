@@ -1,0 +1,9 @@
+{
+    "name": "Quick Attack",
+    "type": "NORMAL",
+    "category": "PHYSICAL",
+    "pp": 30,
+    "power": 40,
+    "accuracy": 100,
+    "priority": 1
+}

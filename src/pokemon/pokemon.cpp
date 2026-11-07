@@ -1,11 +1,14 @@
 #include "pokemon.hpp"
 #include "../fileio.hpp"
-#include "pokemon_common.h"
+#include "pokemon_common.hpp"
 
-#include <iostream>
-
-Pokemon::Pokemon(const std::string& spcname, const std::string& animJsonFilepath, const int& index)
-                : Entity(animJsonFilepath, index) { m_spcname = spcname; }
+Pokemon::Pokemon(const std::string& spcname, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
+                const std::string& animJsonFilepath, const int& index) : Entity(animJsonFilepath, index) {
+                    m_spcname = spcname;
+                    m_nature = nature;
+                    m_moveset = moveset;
+                    // TODO: Handle hidden ability and initialise ability based on spcname + base stats
+                }
 
 void Pokemon::loadEntityJSON(const std::string& filepath) {
 
@@ -19,8 +22,6 @@ void Pokemon::loadEntityJSON(const std::string& filepath) {
             m_dialogStrings.emplace(it.key(), it.value());
         }
     }
-
-
 }
 
 Pokemon::~Pokemon() {}

@@ -67,6 +67,7 @@ void initInputHandler() {
     currentCommand = 0;
 
     for (const json& command : root["commands"]) {
+
         std::vector<uint16_t> keys;
         if (command["keycode"].is_array()) {
             for (const uint16_t& key : command["keycode"]) keys.push_back(key);
@@ -113,7 +114,8 @@ void signalKeyPress(const int& keycode) {
             }
         } // needs to handle dual-key!
         else {
-            pendingCmds.push(singleCmds[key]);
+            auto it = singleCmds.find(key);
+            if (it != singleCmds.end()) pendingCmds.push(it->second);
         }
     }
     // if no more than one movement key is currently active then issue the movement command bound to the key

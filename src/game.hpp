@@ -34,6 +34,7 @@
 
 using json = nlohmann::json;
 
+#include "ui/ui.h"
 #include "entity/entity.hpp"
 #include "scene/battle_scene.hpp"
 #include "scene/world_scene.hpp"

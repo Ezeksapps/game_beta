@@ -1,0 +1,8 @@
+{
+    "name": "Tackle",
+    "type": "NORMAL",
+    "category": "PHYSICAL",
+    "pp": 35,
+    "power": 40,
+    "accuracy": 100
+}

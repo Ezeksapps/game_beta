@@ -22,6 +22,12 @@ void BattleManager::prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::share
 
     m_scene->pushPokemonToScene(playerPkmn);
     m_scene->pushPokemonToScene(opponentPkmn);
+
+    m_playerPkmn = playerPkmn, m_opponentPkmn = opponentPkmn;
+}
+
+void BattleManager::setupMoves() {
+    // setup the Fight UI menu with the player's moveset, this way, the player can make their turn
 }
 
 BattleManager::~BattleManager() {}
@@ -42,7 +48,7 @@ void triggerBattleStart() { // creates the battle scene, which will then recieve
                                                    createPokemonFromDesc(dynamic_pointer_cast<Trainer>(opponentEntity)->getTeam()[0], 1));
 
     popFromStack();
-    battleDashboard();
+    pushToStack(battleDashboard);
 }
 
 

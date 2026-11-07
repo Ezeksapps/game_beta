@@ -1,14 +1,11 @@
 #pragma once
 
-
 // do not mangle func names when including from .cpp sources
 #ifdef __cplusplus
-
 extern "C" {
 #endif
 
 #include <stdint.h>
-
 
 /* Definitions of UI-related functions. Nuklear functions cannot be in here, as that would create a multiple definition */
 
@@ -28,11 +25,16 @@ typedef struct FontAtlasData {
     int w, h;
 } FontAtlasData;
 
-typedef void (*UICreatorFunc)(/* May add struct for extra data at some point, not currently needed */);
+typedef void (*UICreatorFunc)();
 
 const uint8_t* loadStylesheet();
 
 UICreatorFunc getCurrentUICreatorFunc();
+
+// since overloads don't exist in C, these need separate names
+void pushToStack(UICreatorFunc func);
+void pushToStackWithData(UICreatorFunc func, void* userData);
+
 void popFromStack();
 
 void up();
@@ -44,6 +46,8 @@ void down();
 void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFilepath));
 // Since this is a pure C interface, resource cleanup must be manually performed
 void cleanupUi();
+
+void handleUiInput();
 
 void endFontAtlas(void* texView);
 // returns standard pointer to font atlas's image data created on init
@@ -62,12 +66,10 @@ void initiateDialog();
 // for dialog.cpp to communicate a final output char* to the UI
 void setDialogText(char* text);
 
-/* DISPLAYS */
+/* UI WINDOWS, NOTE: Do not directly execute these functions */
 
 void entityDialogBox();
 void optionBox();
-
-/* UI ELEMENTS */
 
 void battleDashboard();
 
@@ -79,6 +81,8 @@ void optionsMenu();
 void multiplayerView();
 void saveMenu();
 void mapView();
+
+void moveSelector();
 
 #ifdef __cplusplus
 }

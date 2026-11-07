@@ -109,5 +109,5 @@ void initiateDialog() {
     state.pos = 0;
 
     advanceDialog(); // print initial piece of dialogue
-    entityDialogBox();
+    pushToStack(entityDialogBox);
 }

@@ -20,14 +20,31 @@
 
 /* UI Stack */
 
+// NOTE: If external code wants to open a UI window, then it should add its function to the stack, NOT directly run the function
+// EXAMPLE: pushToStack(pauseMenu);
+
 #define MAX_UI_DEPTH 16
 
+typedef struct StackEntry {
+    UICreatorFunc func;
+    bool isInitialised;
+    void* userData;     // optional
+} StackEntry;
+
 int stackPtr = 0;
-UICreatorFunc stack[MAX_UI_DEPTH] = {0}; // UI Stack
+StackEntry stack[MAX_UI_DEPTH] = {0}; // UI Stack
 
 void pushToStack(UICreatorFunc func) {
     if (stackPtr != MAX_UI_DEPTH) {
-        stack[stackPtr] = func;
+        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false };
+        ++stackPtr;
+    }
+}
+
+// used for UI windows that need extra data recieved from an external system to be created
+void pushToStackWithData(UICreatorFunc func, void* userData) {
+    if (stackPtr != MAX_UI_DEPTH) {
+        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false, .userData = userData };
         ++stackPtr;
     }
 }
@@ -35,12 +52,14 @@ void pushToStack(UICreatorFunc func) {
 void popFromStack() {
     if (stackPtr != 0) {
         --stackPtr;
-        stack[stackPtr] = NULL;
+        // technically, there's no reason to clear the data, as it won't be read anyway
     }
 }
 
 // return top-most func in stack
-UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1] : NULL; }
+UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1].func : NULL; }
+
+void* getCurrentUserData() { return stack[stackPtr - 1].userData; }
 
 /* Nuklear globals */
 
@@ -66,9 +85,9 @@ typedef struct MenuState {
     int numItems;
     // these values are persisted so that they don't need to be constantly re-calculated
     int numRows;
-    int widgetWidth;
-    int initX;
-    int initY;
+    float widgetWidth;
+    float initX;
+    float initY;
 } MenuState;
 
 // NOTE: Multiple windows can exist simultaneously, this refers to the window considered to be 'focused'
@@ -79,8 +98,11 @@ char g_curDialogText[MAX_DIALOG_CHARS] = "";
 struct MenuState g_curMenuState = {0};
 
 // global 'mouse' state (this mouse being a cursor controlled by keyboard input)
-typedef struct vec2 {int x; int y;} vec2;
+typedef struct vec2 {float x; float y;} vec2;
 vec2 g_mousePos = (vec2) {.x = 0, .y = 0};
+// has a button been clicked with UI_PROGRESS? (so that an emulated LMB click can be sent)
+bool isBtnClicked = false;
+bool handleBtnClick = false;
 
 // constants (px)
 
@@ -109,17 +131,30 @@ struct nk_color setColor(const uint8_t* data, int* currentIndex) {
     return color;
 }
 
+void handleUiInput() {
+    nk_input_begin(&ctx);
+    nk_input_motion(&ctx, g_mousePos.x, g_mousePos.y);
+    if (handleBtnClick) {
+        nk_input_button(&ctx, NK_BUTTON_LEFT, g_mousePos.x, g_mousePos.y, 0);
+        handleBtnClick = false;
+    }
+    if (isBtnClicked) {
+        nk_input_button(&ctx, NK_BUTTON_LEFT, g_mousePos.x, g_mousePos.y, 1);
+        isBtnClicked = false;
+        handleBtnClick = true;
+    }
+    nk_input_end(&ctx);
+}
+
 void moveCursorToItem(int index) {
 
     int column = index / g_curMenuState.numRows;
     int row = index % g_curMenuState.numRows;
 
-    int newX = g_curMenuState.initX + column * (g_curMenuState.widgetWidth + WND_PADDING);
-    int newY = g_curMenuState.initY + row * (MENU_ELEM_HEIGHT + WND_PADDING);
+    float newX = g_curMenuState.initX + column * (g_curMenuState.widgetWidth + WND_PADDING);
+    float newY = g_curMenuState.initY + row * (MENU_ELEM_HEIGHT + WND_PADDING);
 
-    nk_input_begin(&ctx);
-    nk_input_motion(&ctx, newX, newY);
-    nk_input_end(&ctx);
+    g_mousePos = (vec2) { .x = newX, .y = newY };
 }
 
 // TODO: For multi-column menus, UI_RIGHT and UI_DOWN should be added
@@ -308,8 +343,7 @@ const char* genWindowID(char* buffer, int* counter) {
 void createMenu(struct nk_rect dimensions, const int numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
                 const int numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
 
-    // if the caller hasn't pushed itself to the stack, then the menu state needs to be initialised
-    if (getCurrentUICreatorFunc() != creatorFunc) {
+    if (!stack[stackPtr].isInitialised) {
         g_curWndType = WND_TYPE_MENU;
         // initialise menu state
         g_curMenuState = (MenuState) {
@@ -319,14 +353,13 @@ void createMenu(struct nk_rect dimensions, const int numColumns, const UICreator
             // https://stackoverflow.com/questions/64008512
             .numRows = (numLabels + numColumns - 1) / numColumns,
             // -------
-            .widgetWidth = (int)(dimensions.w - WND_PADDING - WND_BORDER) * (1 / numColumns),
-            .initX = (int)dimensions.x + WND_BORDER + WND_PADDING,
-            .initY = (int)dimensions.y + WND_BORDER + WND_PADDING
+            .widgetWidth = (dimensions.w - WND_PADDING - WND_BORDER) * (1 / (float)numColumns),
+            .initX = dimensions.x + WND_BORDER + WND_PADDING,
+            .initY = dimensions.y + WND_BORDER + WND_PADDING
         };
-        // set initial cursor position
-        nk_input_begin(&ctx);
-        nk_input_motion(&ctx, g_curMenuState.initX, g_curMenuState.initY);
-        nk_input_end(&ctx);
+        // set initial cursor position (will be reflected next frame)
+        g_mousePos = (vec2) { .x = g_curMenuState.initX, .y = g_curMenuState.initY };
+        stack[stackPtr].isInitialised = true;
     }
 
     char windowID[16] = {};
@@ -341,8 +374,7 @@ void createMenu(struct nk_rect dimensions, const int numColumns, const UICreator
 
                 if (index >= g_curMenuState.numItems) continue;
                 if (nk_button_label(&ctx, labels[index])) {
-                    printf("Button pressed"); // on click function body not executing?
-                    itemFuncs[index]();
+                    pushToStack(itemFuncs[index]);
                 }
             }
         }
@@ -371,19 +403,16 @@ void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
 
 
 /* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
-/* TODO: Create screen 'stack' for screen history, so pressing ESC (equiv B) will properly return to previous screen */
 
 void pokemonView() {}
+
 void bagView() {
     int counter = 0;
     char* testText = "This is the bag view";
     setDialogText(testText);
     dialogBox(nk_rect(0, 210, 480, 60), &counter);
-
-    if (getCurrentUICreatorFunc() != bagView) {
-        pushToStack(bagView);
-    }
 }
+
 void profileView() {}
 void optionsMenu() {}
 void multiplayerView() {}
@@ -398,49 +427,34 @@ void pauseMenu() {
 
     int counter = 0;
     createMenu(nk_rect(0, 0, 140, 240), 1, pauseMenu, &counter, NUMELEMS(itemLabels), itemLabels, itemFuncs);
-
-    if (getCurrentUICreatorFunc() != pauseMenu) {
-        pushToStack(pauseMenu);
-    }
 }
 
 void progressUI() {
-    if (g_curWndType == WND_TYPE_NONE) {
-        initiateDialog();
-    }
-    else if (g_curWndType == WND_TYPE_DIALOG) {
-        advanceDialog();
-    }
-    else {
-        nk_input_begin(&ctx);
-        nk_input_button(&ctx, NK_BUTTON_LEFT, g_mousePos.x, g_mousePos.y, 1);
-        nk_input_end(&ctx);
-    }
-    // else if menu should run creator func for next UI elem
+    // may need to become a switch statement if more window/widget types are added
+    if (g_curWndType == WND_TYPE_NONE) initiateDialog();
+    else if (g_curWndType == WND_TYPE_DIALOG) advanceDialog();
+    else isBtnClicked = true;
 }
 
 void entityDialogBox() {
     int counter = 0;
     dialogBox(nk_rect(0, 210, 480, 60), &counter);
-
-    if (getCurrentUICreatorFunc() != entityDialogBox) {
-        pushToStack(entityDialogBox);
-    }
 }
 
 // run is disabled for now, it will serve a purpose later
 void battleDashboard() {
 
     int counter = 0;
-
     char* text = "What will TEST ENTITY do?"; // TEMP
     setDialogText(text); // battle manager should call this function
     dialogBox(nk_rect(0, 210, 240, 60), &counter);
 
     const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
-    const UICreatorFunc itemFuncs[] = {NULL, NULL, NULL, NULL};
+    const UICreatorFunc itemFuncs[] = {moveSelector, NULL, NULL, NULL};
 
     createMenu(nk_rect(240, 210, 240, 60), 2, battleDashboard, &counter, NUMELEMS(labels), labels, itemFuncs);
+}
 
-    if (getCurrentUICreatorFunc() != battleDashboard) pushToStack(battleDashboard);
+void moveSelector() {
+    void* moveData = getCurrentUserData();
 }

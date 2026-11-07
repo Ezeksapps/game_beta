@@ -36,25 +36,10 @@ struct IVs {
 };
 
 enum Type {
-    TYPE_NORMAL    = 0,
-    TYPE_FIGHTING  = 1,
-    TYPE_FLYING    = 2,
-    TYPE_POISON    = 3,
-    TYPE_GROUND    = 4,
-    TYPE_ROCK      = 5,
-    TYPE_BUG       = 6,
-    TYPE_GHOST     = 7,
-    TYPE_STEEL     = 8,
-    TYPE_FIRE      = 9,
-    TYPE_WATER     = 10,
-    TYPE_GRASS     = 11,
-    TYPE_ELECTRIC  = 12,
-    TYPE_PSYCHIC   = 13,
-    TYPE_ICE       = 14,
-    TYPE_DRAGON    = 15,
-    TYPE_DARK      = 16,
-    TYPE_FAIRY     = 17,
-    TYPE_COUNT     = 18 // number of enumerators
+    #define X(name) TYPE_##name,
+    #include "types.xvals"
+    #undef X
+    TYPE_COUNT // number of enumerators
 };
 
 enum Effectiveness {
@@ -65,12 +50,12 @@ enum Effectiveness {
 };
 
 enum MoveCategory {
-    MOVE_TYPE_PHYSICAL,
-    MOVE_TYPE_SPECIAL,
-    MOVE_TYPE_STATUS
+    #define X(name) MOVE_TYPE_##name,
+    #include "move_types.xvals"
+    #undef X
 };
 
-// game will load all moves from a JSON to a map, where each move has a unique ID for the key
+// move data is stored as JSON assets and is lazy-loaded
 struct Move {
     std::string  name;
     Type         type;
@@ -78,4 +63,5 @@ struct Move {
     int          pp;
     int          power;
     int          accuracy;
+    int          priority;
 };

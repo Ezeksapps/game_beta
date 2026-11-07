@@ -1,0 +1,8 @@
+{
+    "name": "Take Down",
+    "type": "NORMAL",
+    "category": "PHYSICAL",
+    "pp": 20,
+    "power": 90,
+    "accuracy": 85
+}

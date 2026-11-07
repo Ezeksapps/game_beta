@@ -8,7 +8,7 @@
             "name": "Eevee",
             "level": 45,
             "moveset": [
-                "bite", "take_down", "double_edge", "tail_whip"
+                "bite", "take_down", "quick_attack", "tail_whip"
             ],
             "exp": 142,
             "nature": "LONELY",

@@ -1,6 +1,5 @@
 /* Program entry point for GNU/Linux & Windows builds */
 
-#include "X11/X.h"
 #include "common.hpp"
 #include "entity/trainer.hpp"
 #include "game.hpp"
@@ -77,6 +76,7 @@ void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
+         handleUiInput();
          g_pRenderer->renderFrame();
          gameUpdate();
     }

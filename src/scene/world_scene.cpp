@@ -92,7 +92,7 @@ void WorldScene::loadSceneJson(const std::string& sceneFilepath) {
                 pEntity = std::make_shared<Entity>(entity["sprites"], entityIndex);
                 break;
             case 1: // pokemon
-                pEntity = std::make_shared<Pokemon>(entity["spcname"], entity["sprites"], entityIndex);
+                // TODO
                 break;
             case 2: // trainer
                 pEntity = std::make_shared<Trainer>(entity["sprites"], entityIndex);

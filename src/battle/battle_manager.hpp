@@ -12,13 +12,21 @@ public:
     ~BattleManager();
 
     // prepare the stage with both players' pokemon (not done on init, as this requires the scene to be set in the renderer to work)
+    // this should be called every time any pokemon is changed, the reason it takes the Pokemon objects as parameters instead of using
+    // the class members is because this also needs to be used by triggerBattleStart()
     void prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::shared_ptr<Pokemon> opponentPkmn);
 
+    void setupMoves();
+
 private:
+
+    std::shared_ptr<Pokemon> m_playerPkmn;
+    std::shared_ptr<Pokemon> m_opponentPkmn;
 
     std::shared_ptr<Trainer> m_player;
     std::shared_ptr<Trainer> m_opponent;
     BattleScene* m_scene;
 };
 
+// used by game event system
 void triggerBattleStart();

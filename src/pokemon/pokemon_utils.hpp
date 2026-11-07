@@ -1,7 +1,6 @@
 #pragma once
 
 #include "pokemon.hpp"
-#include "pokemon_common.h"
 
 // descriptor for a Pokemon object, used because creating an actual Pokemon object will immediately
 // cause the renderer to display it, and the game should only display the two Pokemon actively battling,
@@ -20,6 +19,8 @@ struct PokemonDesc {
 
 Ability strToAbility(const std::string& str);
 Nature strToNature(const std::string& str);
-// may also need reverse funcs
+Type strToType(const std::string& str);
+// may also need reverse funcs (for saves)
 
 std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const int& index);
+std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moveset);

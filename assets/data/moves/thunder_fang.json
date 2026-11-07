@@ -1,0 +1,8 @@
+{
+    "name": "Thunder Fang",
+    "type": "ELECTRIC",
+    "category": "PHYSICAL",
+    "pp": 15,
+    "power": 65,
+    "accuracy": 95
+}

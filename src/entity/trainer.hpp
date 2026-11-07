@@ -1,7 +1,7 @@
 #pragma once
 
 #include "entity.hpp"
-#include "../pokemon/pokemon_common.h"
+#include "../pokemon/pokemon_common.hpp"
 #include "../pokemon/pokemon_utils.hpp"
 
 class Trainer : public Entity {

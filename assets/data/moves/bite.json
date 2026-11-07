@@ -1,0 +1,8 @@
+{
+    "name": "Bite",
+    "type": "DARK",
+    "category": "PHYSICAL",
+    "pp": 25,
+    "power": 60,
+    "accuracy": 100
+}

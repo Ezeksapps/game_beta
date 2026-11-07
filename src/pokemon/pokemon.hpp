@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../entity/entity.hpp"
-#include "pokemon_common.h"
+#include "pokemon_common.hpp"
 #include <array>
 
 #include "json.hpp"
@@ -12,7 +12,9 @@ class Pokemon : public Entity {
 
 public:
 
-    Pokemon(const std::string& spcname, const std::string& animJsonFilepath, const int& index);
+    // NOTE: Pokemon objects are only constructed by Pokemon descriptors, createPokemonFromDesc handles running this constructor
+    Pokemon(const std::string& spcname, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
+            const std::string& animJsonFilepath, const int& index); // TODO: Add IVs and EVs
     ~Pokemon();
 
     void loadEntityJSON(const std::string& filepath) override;
@@ -26,8 +28,8 @@ private:
 
     Nature m_nature;
 
-    // moves limited to 16, because 4 is a stupid limit (this will be configurable in settings)
-    std::array<Move, 16> m_moveset;
+    // move limit will be adjustable later
+    std::array<Move, 4> m_moveset;
 
     std::array<Ability, 2> m_abilities;
     Ability                m_hiddenAbility = ABILITY_NONE;

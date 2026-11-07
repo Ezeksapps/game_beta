@@ -1,0 +1,11 @@
+{
+    "name": "Tail Whip",
+    "type": "NORMAL",
+    "category": "STATUS",
+    "pp": 30,
+    "power": 0,
+    "accuracy": 100,
+    "effects": {
+        "lowerOpponent": [ "defense" ]
+    }
+}

@@ -23,9 +23,6 @@
         },
         {
             "keycode": [65, 83]
-        },
-        {
-            "keycode": 257
         }
     ],
     "commands": [

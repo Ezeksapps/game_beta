@@ -1,0 +1,8 @@
+{
+    "name": "Discharge",
+    "type": "ELECTRIC",
+    "category": "SPECIAL",
+    "pp": 15,
+    "power": 80,
+    "accuracy": 100
+}
