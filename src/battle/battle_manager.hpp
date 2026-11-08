@@ -2,6 +2,20 @@
 
 #include "../entity/trainer.hpp"
 #include "../scene/battle_scene.hpp"
+#include "../pokemon/pokemon_common.h"
+
+#include <variant> // type-safe union system
+
+/* NOTE: A 'turn' is the single processing unit that processes the two actions from the player and the opponent */
+
+struct UseMove { int moveIndex; };
+struct SwitchPokemon { int pokemonIndex; /* aka. index of pokemon in team */ };
+
+struct UseItem {
+    // TODO
+};
+
+using Action = std::variant<UseMove, SwitchPokemon, UseItem>;
 
 class BattleManager {
 
@@ -16,9 +30,30 @@ public:
     // the class members is because this also needs to be used by triggerBattleStart()
     void prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::shared_ptr<Pokemon> opponentPkmn);
 
+    // recieved from UI via C interface (move_interface.h)
+    void playerUseMove(const int& index);
+    // this can either be recieved via opponent AI or multiplayer turn packet
+    void opponentUseMove(const int& index);
+
+    // TODO: add funcs for other turn actions (switch Pokemon & use item)
+
     void setupMoves();
 
 private:
+
+    void processTurn();
+
+    // determine if a turn should be processed
+    bool m_hasPlayerSetAction = false, m_hasOpponentSetAction = false;
+
+    Action m_playerAction;
+    Action m_opponentAction;
+
+    // the moveset data packet, and associated data, that will be sent to the move selection menu
+    MoveC m_movesetUI[4];
+    MovesetDataC m_playerMovesetDataUI;
+
+    // TODO: Add UI data packets and views for Pokemon and items
 
     std::shared_ptr<Pokemon> m_playerPkmn;
     std::shared_ptr<Pokemon> m_opponentPkmn;

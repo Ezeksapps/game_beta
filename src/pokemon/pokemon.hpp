@@ -19,6 +19,8 @@ public:
 
     void loadEntityJSON(const std::string& filepath) override;
 
+    std::array<Move, 4>& getMoveset();
+
 private:
 
     std::string m_spcname;

@@ -93,6 +93,8 @@ void parseNonStatusMoveJson(Move& move, const json& moveJson) {
 
 std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moveset) {
 
+    std::cout << "Running moveset creator\n";
+
     std::array<Move, 4> moves;
 
     for (int i = 0; i < moveset.size(); ++i) {
@@ -100,7 +102,9 @@ std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moves
 
         Move move;
 
-        switch (strToMoveTypeMap.at(moveJson["type"])) {
+        std::cout << "Parsing move: " << moveJson["name"] << std::endl;
+
+        switch (strToMoveTypeMap.at(moveJson["category"])) {
             case MOVE_TYPE_PHYSICAL:
                 move.category = MOVE_TYPE_PHYSICAL;
                 parseNonStatusMoveJson(move, moveJson);

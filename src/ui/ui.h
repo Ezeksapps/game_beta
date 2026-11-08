@@ -26,6 +26,7 @@ typedef struct FontAtlasData {
 } FontAtlasData;
 
 typedef void (*UICreatorFunc)();
+typedef void (*MenuCallbackFunc)(void*, int);
 
 const uint8_t* loadStylesheet();
 

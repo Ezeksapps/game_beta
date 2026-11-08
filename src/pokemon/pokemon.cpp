@@ -25,3 +25,5 @@ void Pokemon::loadEntityJSON(const std::string& filepath) {
 }
 
 Pokemon::~Pokemon() {}
+
+std::array<Move, 4>& Pokemon::getMoveset() { return m_moveset; }

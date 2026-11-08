@@ -18,49 +18,6 @@
 #define NUMELEMS(x)  (sizeof(x) / sizeof((x)[0])) // https://stackoverflow.com/questions/37538
 #define MAX_DIALOG_CHARS 255
 
-/* UI Stack */
-
-// NOTE: If external code wants to open a UI window, then it should add its function to the stack, NOT directly run the function
-// EXAMPLE: pushToStack(pauseMenu);
-
-#define MAX_UI_DEPTH 16
-
-typedef struct StackEntry {
-    UICreatorFunc func;
-    bool isInitialised;
-    void* userData;     // optional
-} StackEntry;
-
-int stackPtr = 0;
-StackEntry stack[MAX_UI_DEPTH] = {0}; // UI Stack
-
-void pushToStack(UICreatorFunc func) {
-    if (stackPtr != MAX_UI_DEPTH) {
-        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false };
-        ++stackPtr;
-    }
-}
-
-// used for UI windows that need extra data recieved from an external system to be created
-void pushToStackWithData(UICreatorFunc func, void* userData) {
-    if (stackPtr != MAX_UI_DEPTH) {
-        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false, .userData = userData };
-        ++stackPtr;
-    }
-}
-
-void popFromStack() {
-    if (stackPtr != 0) {
-        --stackPtr;
-        // technically, there's no reason to clear the data, as it won't be read anyway
-    }
-}
-
-// return top-most func in stack
-UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1].func : NULL; }
-
-void* getCurrentUserData() { return stack[stackPtr - 1].userData; }
-
 /* Nuklear globals */
 
 struct nk_context ctx;
@@ -109,6 +66,53 @@ bool handleBtnClick = false;
 #define WND_PADDING 4
 #define WND_BORDER 3
 #define MENU_ELEM_HEIGHT 20
+
+/* UI Stack */
+
+// NOTE: If external code wants to open a UI window, then it should add its function to the stack, NOT directly run the function
+// EXAMPLE: pushToStack(pauseMenu);
+
+#define MAX_UI_DEPTH 16
+
+typedef struct StackEntry {
+    UICreatorFunc func;
+    bool isInitialised;
+    void* userData;     // optional
+} StackEntry;
+
+int stackPtr = 0;
+StackEntry stack[MAX_UI_DEPTH] = {0}; // UI Stack
+
+void pushToStack(UICreatorFunc func) {
+    if (stackPtr != MAX_UI_DEPTH) {
+        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false };
+        ++stackPtr;
+    }
+}
+
+// used for UI windows that need extra data recieved from an external system to be created
+void pushToStackWithData(UICreatorFunc func, void* userData) {
+    if (stackPtr != MAX_UI_DEPTH) {
+        stack[stackPtr] = (StackEntry) { .func = func, .isInitialised = false, .userData = userData };
+        ++stackPtr;
+    }
+}
+
+void popFromStack() {
+    if (stackPtr != 0) {
+        --stackPtr;
+        // technically, there's no reason to clear the data, as it won't be read anyway
+    }
+    /* reset window type to none if no more windows in stack
+     * (fixes bug where exiting a menu then attempting to talk to an entity doesn't start dialogue because progressUi() still thinks
+     * the focused window is a menu) */
+    if (stackPtr == 0) g_curWndType = WND_TYPE_NONE;
+}
+
+// return top-most func in stack
+UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1].func : NULL; }
+
+void* getCurrentUserData() { return stack[stackPtr - 1].userData; }
 
 /* Convenience function
  * makes setting the colour shorter and avoids needing to manually specify the exact index
@@ -196,6 +200,9 @@ void initUi(void* _this, int32_t (*loadSkinTex)(void* _this, const char* skinFil
     }
 
     nk_init_default(&ctx, &font->handle); // init context with font
+
+    // TODO: separate skinning out to another function
+
     {
 
         // UI Skin is not a priority, add back later, basic styling is fine for now
@@ -325,8 +332,6 @@ void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rec
     nk_clear(&ctx);
 }
 
-
-
 const char* genWindowID(char* buffer, int* counter) {
     ++*counter;
     sprintf(buffer, "wnd%d", *counter);
@@ -336,15 +341,20 @@ const char* genWindowID(char* buffer, int* counter) {
 // nk_begin creates window w/ no header (title is only for in-code ID), nk_begin_titles created window with header
 // For now, I'm not going to use header, might be done in future, UI is currently in early stage
 
-
 /* --- BASE UI ELEM TYPES --- */
 
-// https://stackoverflow.com/questions/37538
-void createMenu(struct nk_rect dimensions, const int numColumns, const UICreatorFunc creatorFunc, int* UIElemCounter,
-                const int numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
+/* The base widget/UI window types are:
+ * - menu, type 1 (populated with buttons whose on click blocks navigate to another window)
+ * - menu, type 2 (populated with buttons whose on click blocks are linked to external callbacks)
+ * --------------
+ * TODO: Unify the menus so that a menu can have both nav buttons and callback-linked buttons
+ * --------------
+ * - dialogue display (NOT a dialogue box, displays text or entity dialogue)
+ */
 
-    if (!stack[stackPtr].isInitialised) {
-        g_curWndType = WND_TYPE_MENU;
+// to avoid repeating this block twice, again todo is to unify the menu functions
+void createMenuCommon(struct nk_rect dimensions, const int numColumns, const int numLabels) {
+    if (!stack[stackPtr - 1].isInitialised) {
         // initialise menu state
         g_curMenuState = (MenuState) {
             .selectedUIElem = 0,
@@ -359,8 +369,15 @@ void createMenu(struct nk_rect dimensions, const int numColumns, const UICreator
         };
         // set initial cursor position (will be reflected next frame)
         g_mousePos = (vec2) { .x = g_curMenuState.initX, .y = g_curMenuState.initY };
-        stack[stackPtr].isInitialised = true;
+        stack[stackPtr - 1].isInitialised = true;
     }
+}
+
+// https://stackoverflow.com/questions/37538
+void createMenu(struct nk_rect dimensions, const int numColumns, int* UIElemCounter,
+                const int numLabels, const char* labels[], const UICreatorFunc itemFuncs[]) {
+
+    createMenuCommon(dimensions, numColumns, numLabels);
 
     char windowID[16] = {};
     if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
@@ -373,9 +390,30 @@ void createMenu(struct nk_rect dimensions, const int numColumns, const UICreator
                 int index = col * g_curMenuState.numRows + row;
 
                 if (index >= g_curMenuState.numItems) continue;
-                if (nk_button_label(&ctx, labels[index])) {
-                    pushToStack(itemFuncs[index]);
-                }
+                if (nk_button_label(&ctx, labels[index])) pushToStack(itemFuncs[index]);
+            }
+        }
+    }
+    nk_end(&ctx);
+}
+
+void createCallbackMenu(struct nk_rect dimensions, const int numColumns, int* UIElemCounter,
+                       const int numLabels, const char* labels[], const MenuCallbackFunc itemCallbacks[], void* userData) {
+
+    createMenuCommon(dimensions, numColumns, numLabels);
+
+    char windowID[16] = {};
+    if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
+        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+        nk_layout_row_dynamic(&ctx, 20, numColumns);
+
+        for (int row = 0; row < g_curMenuState.numRows; ++row) { // for each row
+            for (int col = 0; col < numColumns; ++col) { // for each column in this row
+                int index = col * g_curMenuState.numRows + row;
+
+                if (index >= g_curMenuState.numItems) continue;
+                if (nk_button_label(&ctx, labels[index])) itemCallbacks[index](userData, index);
             }
         }
     }
@@ -387,8 +425,6 @@ void setDialogText(char* text) { strcpy(g_curDialogText, text); }
 // TODO: adapt text wrap
 void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
 
-    g_curWndType = WND_TYPE_DIALOG;
-
     char windowID[16] = {};
     if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -399,14 +435,16 @@ void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
     nk_end(&ctx);
 }
 
-// END ---
+// END BASIC UI WIDGETS/ELEMS & BASE UI SYSTEM //
 
 
-/* TODO: IMPLEMENT ALL NECESSARY UI MENUS/VIEWS */
+/* --- GAME-SPECIFIC WINDOWS --- */
+// TODO: Separate this out into a separate C source file + header
 
 void pokemonView() {}
 
 void bagView() {
+    g_curWndType = WND_TYPE_DIALOG;
     int counter = 0;
     char* testText = "This is the bag view";
     setDialogText(testText);
@@ -421,12 +459,13 @@ void mapView() {}
 
 // in-game pause menu
 void pauseMenu() {
+    g_curWndType = WND_TYPE_MENU;
 
     const char* itemLabels[] = {"Pokemon", "Bag", "Profile", "Options", "Multiplayer", "Save", "Map"};
     const UICreatorFunc itemFuncs[] = {pokemonView, bagView, profileView, optionsMenu, multiplayerView, saveMenu, mapView};
 
     int counter = 0;
-    createMenu(nk_rect(0, 0, 140, 240), 1, pauseMenu, &counter, NUMELEMS(itemLabels), itemLabels, itemFuncs);
+    createMenu(nk_rect(0, 0, 140, 240), 1, &counter, NUMELEMS(itemLabels), itemLabels, itemFuncs);
 }
 
 void progressUI() {
@@ -437,12 +476,18 @@ void progressUI() {
 }
 
 void entityDialogBox() {
+    g_curWndType = WND_TYPE_DIALOG;
     int counter = 0;
     dialogBox(nk_rect(0, 210, 480, 60), &counter);
 }
 
+#include "../pokemon/pokemon_common.h" // seriously, these game-specific UI funcs NEED to go into a separate file
+#include "../battle/move_interface.h"
+
 // run is disabled for now, it will serve a purpose later
 void battleDashboard() {
+
+    g_curWndType = WND_TYPE_MENU; // focus the callback menu over the text output box
 
     int counter = 0;
     char* text = "What will TEST ENTITY do?"; // TEMP
@@ -450,11 +495,22 @@ void battleDashboard() {
     dialogBox(nk_rect(0, 210, 240, 60), &counter);
 
     const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
-    const UICreatorFunc itemFuncs[] = {moveSelector, NULL, NULL, NULL};
+    const MenuCallbackFunc itemCallbacks[] = {prepareMoveSelector, NULL, NULL, NULL};
 
-    createMenu(nk_rect(240, 210, 240, 60), 2, battleDashboard, &counter, NUMELEMS(labels), labels, itemFuncs);
+    createCallbackMenu(nk_rect(240, 210, 240, 60), 2, &counter, NUMELEMS(labels), labels, itemCallbacks, getCurrentUserData());
 }
 
 void moveSelector() {
-    void* moveData = getCurrentUserData();
+    g_curWndType = WND_TYPE_MENU;
+
+    MovesetDataC* movesetData = (MovesetDataC*)getCurrentUserData();
+
+    MoveC* moveset = movesetData->moveset;
+
+    int counter = 0;
+    const char* labels[] = {moveset[0].name, moveset[1].name, moveset[2].name, moveset[3].name};
+
+    const MenuCallbackFunc itemCallbacks[4] = {useMove, useMove, useMove, useMove};
+
+    createCallbackMenu(nk_rect(240, 210, 240, 60), 2, &counter, NUMELEMS(itemCallbacks), labels, itemCallbacks, movesetData->battleManager);
 }

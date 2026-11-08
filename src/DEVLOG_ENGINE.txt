@@ -960,7 +960,7 @@ I'll call this the Pokemon's descriptor (I'm stealing Vulkan's naming convention
 
 A similar problem exists with the fact that the Trainer class holds data that is relevant to the battle scene and battle manager
 Because of this, the constructor takes the player and opponent entities (which are Trainer objects)
-Same problem, the renderer adds them to the scene for dislay unconciditionally, and there isn't really an engineered way to
+Same problem, the renderer adds them to the scene for dislay unconditionally, and there isn't really an engineered way to
 have the renderer ignore any entities in the scene.
 The desired behaviour is that only the player's pokemon and the opponent's pokemon are rendered
 
@@ -977,3 +977,14 @@ Now it's time to determine how to proceed, right now I need:
 - ignoring items for now, the battle manager should be able to process a turn (in which a move is used) input from the UI and a pre-set move
   from the opponent (to later be replaced with battle AI)
 
+
+move selector needs to be linked to its callbacks. The battle manager needs to receive the index of the selection from the UI system.
+This means that in C I need:
+void* this (battle manager instance)
+MoveC* (start of moveset array)
+then the UI callback needs to be executed with the index of the selection as a parameter
+
+Turn is being re-defined as the entire processing unit made up of the player and the opponent's actions
+Because the three possible actions are quite different, STL variant might be used to differentiate struct properties only used by one of the types
+(it seems to work like a union but with more convenient syntax)
+processTurn() will run when both the player action and opponent action have been obtained
