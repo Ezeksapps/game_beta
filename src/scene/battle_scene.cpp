@@ -86,4 +86,4 @@ void BattleScene::removePokemonFromScene(std::shared_ptr<Pokemon>& entity) {
     // that update only looks at entities in the entity vec, which the removed Pokemon is no longer inside of
 }
 
-void BattleScene::update() {}
+void BattleScene::update() { m_battleManager->update(); }

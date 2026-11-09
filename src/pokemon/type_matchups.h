@@ -12,7 +12,7 @@
 #define NEUTRAL EFFECTIVENESS_NEUTRAL
 #define SUPER EFFECTIVENESS_SUPER_EFFECTIVE
 
-const Effectiveness matchups[TYPE_COUNT][TYPE_COUNT] {
+static const Effectiveness matchups[TYPE_COUNT][TYPE_COUNT] {
 
     //                TOP ROW (Defending type)
     //                NORMAL    FIGHTING  FLYING   POISON   GROUND   ROCK     BUG      GHOST    STEEL    FIRE     WATER    GRASS    ELECTRIC PSYCHIC  ICE      DRAGON   DARK     FAIRY

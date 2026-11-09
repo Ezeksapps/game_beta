@@ -6,6 +6,7 @@ typedef enum Ability { // list kept short for now, only holds abilities of place
     #define X(name) ABILITY_##name,
     #include "abilities.xvals"
     #undef X
+    ABILITY_COUNT
 } Ability;
 
 // TODO: Map to affected stats and flavours
@@ -41,10 +42,10 @@ typedef enum Type {
 } Type;
 
 typedef enum Effectiveness {
-    EFFECTIVENESS_IMMUNE,
-    EFFECTIVENESS_MILDLY_EFFECTIVE,
-    EFFECTIVENESS_NEUTRAL,
-    EFFECTIVENESS_SUPER_EFFECTIVE
+    EFFECTIVENESS_IMMUNE             = 0,
+    EFFECTIVENESS_MILDLY_EFFECTIVE   = 1,
+    EFFECTIVENESS_NEUTRAL            = 2,
+    EFFECTIVENESS_SUPER_EFFECTIVE    = 3
 } Effectiveness;
 
 typedef enum MoveCategory {

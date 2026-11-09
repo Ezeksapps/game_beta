@@ -508,8 +508,10 @@ void moveSelector() {
     MoveC* moveset = movesetData->moveset;
 
     int counter = 0;
-    const char* labels[] = {moveset[0].name, moveset[1].name, moveset[2].name, moveset[3].name};
 
+    // TODO: Add a structured display showing move type, PP, power and accuracy
+
+    const char* labels[] = {moveset[0].name, moveset[1].name, moveset[2].name, moveset[3].name};
     const MenuCallbackFunc itemCallbacks[4] = {useMove, useMove, useMove, useMove};
 
     createCallbackMenu(nk_rect(240, 210, 240, 60), 2, &counter, NUMELEMS(itemCallbacks), labels, itemCallbacks, movesetData->battleManager);

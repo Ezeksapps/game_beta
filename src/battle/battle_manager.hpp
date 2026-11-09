@@ -17,6 +17,13 @@ struct UseItem {
 
 using Action = std::variant<UseMove, SwitchPokemon, UseItem>;
 
+enum BattleState { // to avoid ridiculous numbers of boolean checks
+    STATE_AWAITING_PLAYER_ACTION,
+    STATE_AWAITING_OPPONENT_ACTION,
+    STATE_ACTIONS_SET,
+    STATE_PROCESSING_TURN
+};
+
 class BattleManager {
 
 public:
@@ -36,15 +43,16 @@ public:
     void opponentUseMove(const int& index);
 
     // TODO: add funcs for other turn actions (switch Pokemon & use item)
-
     void setupMoves();
+
+    void update(); // checks if the manager should begin to process a turn, called by battle scene's update()
 
 private:
 
     void processTurn();
+    int calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon>& user, std::shared_ptr<Pokemon>& target);
 
-    // determine if a turn should be processed
-    bool m_hasPlayerSetAction = false, m_hasOpponentSetAction = false;
+    BattleState m_state;
 
     Action m_playerAction;
     Action m_opponentAction;

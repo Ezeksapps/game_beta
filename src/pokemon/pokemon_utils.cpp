@@ -3,9 +3,9 @@
 
 #include "json.hpp"
 #include "../fileio.hpp"
+#include "pokemon_common.h"
 #include "pokemon_common.hpp"
-
-#include <iostream>
+#include "type_matchups.h"
 
 using json = nlohmann::json;
 
@@ -29,7 +29,6 @@ static const std::unordered_map<std::string, Type> strToTypeMap = {
     #include "types.xvals"
     #undef X
 };
-
 
 static const std::unordered_map<std::string, MoveCategory> strToMoveTypeMap = {
     #define X(name) {#name, MoveCategory::MOVE_TYPE_##name},
@@ -93,16 +92,12 @@ void parseNonStatusMoveJson(Move& move, const json& moveJson) {
 
 std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moveset) {
 
-    std::cout << "Running moveset creator\n";
-
     std::array<Move, 4> moves;
 
     for (int i = 0; i < moveset.size(); ++i) {
         json moveJson = json::parse(readJsonAsset(std::string("assets/data/moves/" + moveset[i] + ".json").c_str()));
 
         Move move;
-
-        std::cout << "Parsing move: " << moveJson["name"] << std::endl;
 
         switch (strToMoveTypeMap.at(moveJson["category"])) {
             case MOVE_TYPE_PHYSICAL:
@@ -122,4 +117,15 @@ std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moves
     }
 
     return moves;
+}
+
+Effectiveness getMoveEffectiveness(const Type& moveType, const std::array<Type, 2>& targetTypes) {
+    Effectiveness effectType1 = matchups[moveType][targetTypes[0]];
+    // only consider the second type slot if the target is dual-typed
+    if (targetTypes[1] != TYPE_COUNT) {
+        Effectiveness effectType2 = matchups[moveType][targetTypes[1]];
+        // shold return whichever of the two is numerically greater (since enumerators are in order of effectiveness)
+        return (effectType2 > effectType1) ? effectType2 : effectType1;
+    }
+    return effectType1;
 }
