@@ -4,6 +4,8 @@
 #include "pokemon_common.hpp"
 #include "pokemon_utils.hpp"
 
+#include <iostream>
+
 Pokemon::Pokemon(const std::string& spcname, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
                 const std::string& animJsonFilepath, const int& index) : Entity(animJsonFilepath, index) {
 
@@ -11,19 +13,27 @@ Pokemon::Pokemon(const std::string& spcname, const Nature& nature, const std::ar
     m_nature = nature;
     m_moveset = moveset;
 
-    std::string spcDataFilepath = "/assets/data/pokemon/" + spcname + ".json";
+    std::string spcDataFilepath = "assets/data/pokemon/" + spcname + ".json";
+
+    std::cout << "Attempting to parse species data\n";
+
     json spcDataJson = json::parse(readJsonAsset(spcDataFilepath.c_str()));
 
-    bool isSingleType = (spcDataJson["types"].is_array()) ? true : false;
-    bool hasSingleAbility = (spcDataJson["abilities"].is_array()) ? true : false;
+    std::cout << "parsed\n";
+
+    bool isSingleType = spcDataJson["types"].is_array();
+    bool hasSingleAbility = spcDataJson["abilities"].is_array();
+
+    // [json.exception.type_error.305] cannot use operator[] with a numeric argument with string
+    // ? operator being used for array indexing?
 
     std::array<Type, 2> types;
     if (isSingleType) types = { strToType(spcDataJson["types"].get<std::string>()), TYPE_COUNT };
-    else types = { strToType(spcDataJson["types"][0].get<std::string>()), strToType(spcDataJson["types"][1].get<std::string>()) };
+    else types = { strToType(spcDataJson["types"][0]), strToType(spcDataJson["types"][1]) };
 
     std::array<Ability, 2> abilities;
     if (hasSingleAbility) abilities = { strToAbility(spcDataJson["abilities"].get<std::string>()), ABILITY_COUNT };
-    else abilities = { strToAbility(spcDataJson["abilities"][0].get<std::string>()), strToAbility(spcDataJson["abilities"][1].get<std::string>()) };
+    else abilities = { strToAbility(spcDataJson["abilities"][0]), strToAbility(spcDataJson["abilities"][1]) };
 
     m_spcData = SpcData {
         .name = spcDataJson["name"],

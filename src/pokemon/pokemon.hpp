@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../entity/entity.hpp"
+#include "pokemon_common.h"
 #include "pokemon_common.hpp"
 #include <array>
 
@@ -25,12 +26,15 @@ public:
     int m_level;
     Stats m_stats;
 
+    // status conditions will persist outside of battle
+    StatusCondition m_statusCondition;
+
 private:
 
     SpcData m_spcData;
     std::string m_spcname;
 
-    IVs   m_IVs;
+    IVs    m_IVs;
     Nature m_nature;
 
     // move limit will be adjustable later

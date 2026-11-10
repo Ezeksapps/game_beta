@@ -4,24 +4,37 @@
 #include "../scene/battle_scene.hpp"
 #include "../pokemon/pokemon_common.h"
 
-#include <variant> // type-safe union system
+#include <random>  // RNG
 
 /* NOTE: A 'turn' is the single processing unit that processes the two actions from the player and the opponent */
 
-struct UseMove { int moveIndex; };
-struct SwitchPokemon { int pokemonIndex; /* aka. index of pokemon in team */ };
-
-struct UseItem {
-    // TODO
+enum ActionType {
+    ACTION_TYPE_USE_MOVE,
+    ACTION_TYPE_USE_ITEM,
+    ACTION_TYPE_SWITCH_POKEMON
 };
 
-using Action = std::variant<UseMove, SwitchPokemon, UseItem>;
+// for every action, the only needed information is an index
+// For using a move, that's the index of the move in the moveset. For using an item, it's the item's index in the bag
+// For switching pokemon, it's the index of the pokemon to be brought out in the team
+// NOTE: If any additional data is later needed by a type and exclusive to a type, then switch this to use std::variant
+// (Example: a target field for non-single battles)
+struct Action {
+    ActionType type;
+    int index;
+};
 
 enum BattleState { // to avoid ridiculous numbers of boolean checks
     STATE_AWAITING_PLAYER_ACTION,
     STATE_AWAITING_OPPONENT_ACTION,
     STATE_ACTIONS_SET,
     STATE_PROCESSING_TURN
+};
+
+enum TurnState {
+    STATE_PROCESSING,
+    STATE_EXECUTING_PLAYER_TURN,
+    STATE_EXECUTING_OPPONENT_TURN
 };
 
 class BattleManager {
@@ -52,7 +65,13 @@ private:
     void processTurn();
     int calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon>& user, std::shared_ptr<Pokemon>& target);
 
+    std::array<Action, 2> sortActionsByPriority();
+    std::array<Action, 2> sortActions(const bool playerUsesMove, const bool& opponentUsesMove);
+
     BattleState m_state;
+
+    // seeded with the current system time when manager is created
+    std::mt19937 m_rng;
 
     Action m_playerAction;
     Action m_opponentAction;

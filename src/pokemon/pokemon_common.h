@@ -41,6 +41,12 @@ typedef enum Type {
     TYPE_COUNT // number of enumerators
 } Type;
 
+typedef enum StatusCondition {
+    #define X(name) STATUS_CONDITION_##name,
+    #include "status_conditions.xvals"
+    #undef X
+} StatusCondition;
+
 typedef enum Effectiveness {
     EFFECTIVENESS_IMMUNE             = 0,
     EFFECTIVENESS_MILDLY_EFFECTIVE   = 1,
