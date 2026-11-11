@@ -1,6 +1,7 @@
 {
     "dexno": 37,
     "exprate": "MEDIUM_FAST",
+    "name": "vulpix",
     "sprites": "assets/data/sprites/vulpix_fire.json",
     "stats": {
         "hp": 38,
@@ -10,8 +11,8 @@
         "spDefense": 65,
         "speed": 65
     },
-    "type": "FIRE",
-    "abilities": ["FLASH_FIRE"],
+    "types": "FIRE",
+    "abilities": "FLASH_FIRE",
     "hiddenAbility": "DROUGHT",
     "evolutions": [
         {

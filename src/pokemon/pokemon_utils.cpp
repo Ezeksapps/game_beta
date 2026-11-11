@@ -48,6 +48,17 @@ Type strToType(const std::string& str) {
     return strToTypeMap.at(str);
 }
 
+Stats parseStatsJson(const json& json) {
+    return Stats {
+        .attack    = json["attack"],
+        .defense   = json["defense"],
+        .spAttack  = json["spAttack"],
+        .spDefense = json["spDefense"],
+        .speed     = json["speed"],
+        .hp        = json["hp"]
+    };
+}
+
 std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const int& index) {
     /* there is a single JSON database which contains the basic data for all pokemon species
      * which will be located at assets/data/pokemon/, this is separated out so that there is one JSON file
@@ -55,7 +66,7 @@ std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const in
      */
     json pokemonJson = json::parse(readJsonAsset(std::string("assets/data/pokemon/" + desc.spcname + ".json").c_str()));
 
-    std::shared_ptr<Pokemon> pokemon = std::make_shared<Pokemon>(desc.spcname, desc.nature, createMovesetFromIDs(desc.moveset),
+    std::shared_ptr<Pokemon> pokemon = std::make_shared<Pokemon>(desc.spcname, desc.level, desc.stats, desc.nature, createMovesetFromIDs(desc.moveset),
                                                                  desc.hasHiddenAbility, pokemonJson["sprites"], index);
     return pokemon;
 }
@@ -119,13 +130,28 @@ std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moves
     return moves;
 }
 
-Effectiveness getMoveEffectiveness(const Type& moveType, const std::array<Type, 2>& targetTypes) {
-    Effectiveness effectType1 = matchups[moveType][targetTypes[0]];
-    // only consider the second type slot if the target is dual-typed
-    if (targetTypes[1] != TYPE_COUNT) {
-        Effectiveness effectType2 = matchups[moveType][targetTypes[1]];
-        // shold return whichever of the two is numerically greater (since enumerators are in order of effectiveness)
-        return (effectType2 > effectType1) ? effectType2 : effectType1;
-    }
-    return effectType1;
+/* If a move is super effective against the both target's types (assuming target is dual-type), then move does 4x damage                        (2 * 2)
+ * If a move is not very effective against both of the target's types, then the move does 0.25x damage                                          (0.5 * 0.5)
+ * If a move is super effective against one of the target's types, but not very effective against the other, then the move deals regular damage (0.5 * 2)
+ * If a move is completely ineffective against one of the target's types, then damage is nullified regardless of the effect on the other type   (0 * x)
+ */
+float getMoveEffectivenessMultiplier(const Type& moveType, const std::array<Type, 2>& targetTypes) {
+
+    auto getMultiplier = [&moveType](const Type& targetType) -> float {
+        switch (matchups[moveType][targetType]) {
+            case EFFECTIVENESS_SUPER_EFFECTIVE:
+                return 2.0f;
+            case EFFECTIVENESS_NEUTRAL:
+                return 1.0f;
+            case EFFECTIVENESS_MILDLY_EFFECTIVE:
+                return 0.5f;
+            case EFFECTIVENESS_IMMUNE:
+                return 0.0f;
+        }
+    };
+
+    float multiplier = getMultiplier(targetTypes[0]);
+    if (targetTypes[1] != TYPE_COUNT) multiplier *= getMultiplier(targetTypes[1]);
+
+    return multiplier;
 }

@@ -8,6 +8,14 @@
         {
             "spcname": "shinx",
             "name": "Shinx",
+            "stats": {
+                "hp": 55,
+                "attack": 55,
+                "defense": 50,
+                "spAttack": 45,
+                "spDefense": 65,
+                "speed": 55
+            },
             "level": 45,
             "moveset": [
                 "tackle", "thunder_fang", "charge", "discharge"
@@ -20,6 +28,14 @@
         {
             "spcname": "umbreon",
             "name": "Umbreon",
+            "stats": {
+                "hp": 55,
+                "attack": 55,
+                "defense": 50,
+                "spAttack": 45,
+                "spDefense": 65,
+                "speed": 55
+            },
             "level": 50,
             "moveset": [
                 "tackle", "quick_attack", "crunch", "torment"

@@ -1,5 +1,6 @@
 {
     "dexno": 133,
+    "name": "Eevee",
     "exprate": "MEDIUM_FAST",
     "sprites": "assets/data/sprites/eevee.json",
     "stats": {
@@ -10,7 +11,7 @@
         "spDefense": 65,
         "speed": 55
     },
-    "type": "NORMAL",
+    "types": "NORMAL",
     "abilities": ["RUN_AWAY", "ADAPTABILITY"],
     "hiddenAbility": "ANTICIPATION",
     "evolutions": [

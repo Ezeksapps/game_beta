@@ -25,6 +25,7 @@ void Trainer::loadTeamJSON(const json& teamJson) {
             .spcname          = pokemon["spcname"],
             .name             = pokemon["name"],
             .nature           = strToNature(pokemon["nature"]),
+            .stats            = parseStatsJson(pokemon["stats"]),
             .moveset          = pokemon["moveset"],
             .level            = pokemon["level"],
             .exp              = pokemon["exp"],

@@ -6,26 +6,23 @@
 
 #include <iostream>
 
-Pokemon::Pokemon(const std::string& spcname, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
-                const std::string& animJsonFilepath, const int& index) : Entity(animJsonFilepath, index) {
+Pokemon::Pokemon(const std::string& spcname, const int& level, const Stats& stats, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
+                 const std::string& animJsonFilepath, const int& index) : Entity(animJsonFilepath, index) {
 
     m_spcname = spcname;
     m_nature = nature;
     m_moveset = moveset;
+    m_stats = stats;
+    m_level = level;
+
+    // Load species data
 
     std::string spcDataFilepath = "assets/data/pokemon/" + spcname + ".json";
 
-    std::cout << "Attempting to parse species data\n";
-
     json spcDataJson = json::parse(readJsonAsset(spcDataFilepath.c_str()));
 
-    std::cout << "parsed\n";
-
-    bool isSingleType = spcDataJson["types"].is_array();
-    bool hasSingleAbility = spcDataJson["abilities"].is_array();
-
-    // [json.exception.type_error.305] cannot use operator[] with a numeric argument with string
-    // ? operator being used for array indexing?
+    bool isSingleType = !spcDataJson["types"].is_array();
+    bool hasSingleAbility = !spcDataJson["abilities"].is_array();
 
     std::array<Type, 2> types;
     if (isSingleType) types = { strToType(spcDataJson["types"].get<std::string>()), TYPE_COUNT };

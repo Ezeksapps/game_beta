@@ -10,6 +10,7 @@ struct PokemonDesc {
     std::string spcname;
     std::string name;
     Nature nature;
+    Stats stats;
     std::array<std::string, 4> moveset; // the Move structures are loaded as needed, just store their str IDs
     int level;
     int exp;
@@ -23,6 +24,9 @@ Nature strToNature(const std::string& str);
 Type strToType(const std::string& str);
 // may also need reverse funcs (for saves)
 
+Stats parseStatsJson(const json& json);
+
 std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const int& index);
 std::array<Move, 4> createMovesetFromIDs(const std::array<std::string, 4>& moveset);
-Effectiveness getMoveEffectiveness(const Type& moveType, const std::array<Type, 2>& targetTypes);
+// used for damage calculation
+float getMoveEffectivenessMultiplier(const Type& moveType, const std::array<Type, 2>& targetTypes);

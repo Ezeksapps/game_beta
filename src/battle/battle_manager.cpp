@@ -62,12 +62,12 @@ void BattleManager::setupMoves() {
 }
 
 void BattleManager::playerUseMove(const int& index) {
-    m_playerAction = Action { ACTION_TYPE_USE_MOVE, index };
+    m_turn.playerAction = Action { ACTION_TYPE_USE_MOVE, index };
     m_state = STATE_AWAITING_OPPONENT_ACTION;
 }
 
 void BattleManager::opponentUseMove(const int& index) {
-    m_opponentAction = Action { ACTION_TYPE_USE_MOVE, index };
+    m_turn.opponentAction = Action { ACTION_TYPE_USE_MOVE, index };
     m_state = STATE_ACTIONS_SET;
 }
 
@@ -77,12 +77,13 @@ void BattleManager::update() {
             break;
         case STATE_AWAITING_OPPONENT_ACTION:
             // TEMP -------
-            m_opponentAction = Action { ACTION_TYPE_USE_MOVE, 0 };
+            m_turn.opponentAction = Action { ACTION_TYPE_USE_MOVE, 0 };
             m_state = STATE_ACTIONS_SET;
             // END TEMP ---
             break;
         case STATE_ACTIONS_SET:
             processTurn();
+            m_state = STATE_PROCESSING_TURN;
             break;
         case STATE_PROCESSING_TURN:
             // nothing to update
@@ -99,31 +100,14 @@ int BattleManager::calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon
     SpcData userSpcData = user->getSpcData();
     SpcData targetSpcData = target->getSpcData();
 
-    float typeEffect;
-    // typeEffect is type effectiveness of the move, check this before anything else,
-    // because if effectiveness is immune, then func should immediately return 0
-    Effectiveness effectiveness = getMoveEffectiveness(move.type, targetSpcData.types);
-    switch (effectiveness) {
-        case EFFECTIVENESS_IMMUNE:
-            return 0;
-        case EFFECTIVENESS_MILDLY_EFFECTIVE:
-            typeEffect = 0.5f;
-            break;
-        case EFFECTIVENESS_NEUTRAL:
-            typeEffect = 1.0f;
-            break;
-        case EFFECTIVENESS_SUPER_EFFECTIVE:
-            typeEffect = 2.0f;
-            break;
-    }
-    // NOTE: There is an additional case where a mildly effective move could be 0.125, 0.25 or 0.5
-    // and a super effective move 2.0, 4.0 or 8.0 depending on other factors. TODO: Handle this
+    float typeEffect = getMoveEffectivenessMultiplier(move.type, targetSpcData.types);
+    if (typeEffect == 0.0f) return typeEffect; // because performing the rest of the calculation is pointless if this is zero
 
     int a, d;
 
-    if (move.category == MOVE_TYPE_PHYSICAL) a = user->m_stats.attack, d = user->m_stats.defense;
+    if (move.category == MOVE_TYPE_PHYSICAL) a = user->m_stats.attack, d = target->m_stats.defense;
     // MOVE_TYPE_STATUS not handled, because this func shouldn't be called for status moves (since they don't inflict damage)
-    else a = user->m_stats.spAttack, d = user->m_stats.spDefense;
+    else a = user->m_stats.spAttack, d = target->m_stats.spDefense;
 
     float num = (((2.0f * user->m_level) / 5.0f) + 2) * move.power * ( static_cast<float>(a) / static_cast<float>(d) );
     float frac = (num / 50.0f) + 2;
@@ -131,8 +115,9 @@ int BattleManager::calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon
     float crit, rand, STAB, burn;
 
     // https://bulbapedia.bulbagarden.net/wiki/Critical_hit, 'stages' not implemented
-    bool moveIsCritical = (m_rng() % 100) < (1 / 24.0f);
-    if (moveIsCritical) crit = 1.25f;
+    std::uniform_int_distribution<int> critDist(1, 24);
+    bool moveIsCritical = critDist(m_rng) == 1;
+    if (moveIsCritical) crit = 1.5f;
     else crit = 1.0f;
 
     // STAB is same-type attack bonus
@@ -148,43 +133,48 @@ int BattleManager::calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon
 
     else burn = 1.0f;
 
+
     static constexpr int RAND_BOUND_LOWER = 85;
     static constexpr int RAND_BOUND_UPPER = 100;
 
-    std::uniform_int_distribution<> distr(RAND_BOUND_LOWER, RAND_BOUND_UPPER);
-    rand = std::floor(distr(m_rng) / 100.0f);
+    std::uniform_int_distribution<int> distr(RAND_BOUND_LOWER, RAND_BOUND_UPPER);
+    rand = distr(m_rng) / 100.0f;
 
     // TODO: an 'other' float val is also needed to process the effects of some abilities
 
-    float result = frac * crit * rand * STAB * typeEffect;
+    float result = frac * crit * rand * burn * STAB * typeEffect;
 
     return std::floor(result);
 }
 
-std::array<Action, 2> BattleManager::sortActionsByPriority() {
-
-    std::array<Action, 2> actions;
+void BattleManager::sortActionsByPriority() {
 
     // NOTE: The large majority of moves have a priority of 0 and thus who goes first will be decided by the speed stat
     // an example of a move with a non-zero priority is quick attack
 
-    int& priorityPlayer = m_playerPkmn->getMoveset()[m_playerAction.index].priority;
-    int& priorityOpponent = m_opponentPkmn->getMoveset()[m_opponentAction.index].priority;
+    const int& priorityPlayer = m_playerPkmn->getMoveset()[m_turn.playerAction.index].priority;
+    const int& priorityOpponent = m_opponentPkmn->getMoveset()[m_turn.opponentAction.index].priority;
 
-    if (priorityPlayer != priorityOpponent) {
-        if (priorityPlayer > priorityOpponent) actions = { m_playerAction, m_opponentAction };
-        else actions = { m_opponentAction, m_playerAction };
+    if (priorityPlayer != priorityOpponent) { // if priorities differ
+        if (priorityPlayer > priorityOpponent) m_turn.priority = PRIORITISE_PLAYER; // if player's priority is greater
+        else m_turn.priority = PRIORITISE_OPPONENT; // else opponent's must be greater
     }
     else {
         // if priorities are equal, whoever has the highest speed stat goes first
-        if (m_playerPkmn->m_stats.speed > m_opponentPkmn->m_stats.speed) actions = { m_playerAction, m_opponentAction };
-        else actions = { m_opponentAction, m_playerAction };
+        if (m_playerPkmn->m_stats.speed > m_opponentPkmn->m_stats.speed) m_turn.priority = PRIORITISE_PLAYER;
+        else if (m_playerPkmn->m_stats.speed < m_opponentPkmn->m_stats.speed) m_turn.priority = PRIORITISE_OPPONENT;
+        // if speed stat is equal, then who goes first is up to RNG
+        else {
+            std::uniform_int_distribution<int> dist(0, 1);
+            switch (dist(m_rng)) {
+                case 0: m_turn.priority = PRIORITISE_PLAYER; break;
+                case 1: m_turn.priority = PRIORITISE_OPPONENT; break;
+            }
+        }
     }
-
-    return actions;
 }
 
-std::array<Action, 2> BattleManager::sortActions(const bool playerUsesMove, const bool& opponentUsesMove) {
+void BattleManager::sortActions(const bool playerUsesMove, const bool& opponentUsesMove) {
     /* This is called if both parties are not simultaneously using a move
      * Using an item is always given priority over moves
      * Switching out pokemon is also always given priority over a move UNLESS that move is pursuit
@@ -193,39 +183,71 @@ std::array<Action, 2> BattleManager::sortActions(const bool playerUsesMove, cons
      * a Pokemon is subjected to embargo are performed after sorting actions
      */
 
-    std::array<Action, 2> actions;
-
-    if (playerUsesMove || opponentUsesMove) { // a move must be considered
-        if (playerUsesMove) {
-            // TODO: should check against a strID instead of the display name, strIDs are all lower case
-            if (m_playerPkmn->getMoveset()[m_playerAction.index].name == "Pursuit") actions = { m_playerAction, m_opponentAction };
-            else actions = { m_opponentAction, m_playerAction };
-        }
-        if (opponentUsesMove) {
-            if (m_opponentPkmn->getMoveset()[m_opponentAction.index].name == "Pursuit") actions = { m_opponentAction, m_playerAction };
-            else actions = { m_playerAction, m_opponentAction };
-        }
+    if (playerUsesMove) {
+        // NOTE: should check internal move ID, NOT display name
+        if (m_playerPkmn->getMoveset()[m_turn.playerAction.index].name == "Pursuit") m_turn.priority = PRIORITISE_PLAYER;
+        else m_turn.priority = PRIORITISE_OPPONENT;
+    }
+    else if (opponentUsesMove) {
+        if (m_playerPkmn->getMoveset()[m_turn.opponentAction.index].name == "Pursuit") m_turn.priority = PRIORITISE_OPPONENT;
+        else m_turn.priority = PRIORITISE_OPPONENT;
     }
     else { // nobody is using a move, which means the order is technically irrelevant, so just return the same order every time
-        actions = { m_playerAction, m_opponentAction };
+        m_turn.priority = PRIORITISE_PLAYER;
+    }
+}
+
+// NEXT TODO: Make UI components and apply damage visually
+
+void BattleManager::execPlayerAction() {
+    switch (m_turn.playerAction.type) {
+        case ACTION_TYPE_USE_MOVE:
+            std::cout << "Executing player action, which is using a move that deals "
+            << calculateMoveDamage(m_playerPkmn->getMoveset()[m_turn.playerAction.index], m_playerPkmn, m_opponentPkmn)
+            << " HP of damage\n";
+            // apply damage, also when HP display is created, inform UI
+            break;
+            // TODO: Make exhaustive
     }
 
-    return actions;
+}
+
+void BattleManager::execOpponentAction() {
+    switch (m_turn.playerAction.type) {
+        case ACTION_TYPE_USE_MOVE:
+            std::cout << "Executing opponent action, which is using a move that deals "
+            << calculateMoveDamage(m_opponentPkmn->getMoveset()[m_turn.opponentAction.index], m_opponentPkmn, m_playerPkmn)
+            << " HP of damage\n";
+            break;
+            // TODO: Make exhaustive
+    }
 }
 
 void BattleManager::processTurn() {
 
-    std::array<Action, 2> actions; // temp array, used to determine order of actions
-
-    const bool playerUsesMove = m_playerAction.type == ACTION_TYPE_USE_MOVE;
-    const bool opponentUsesMove = m_opponentAction.type == ACTION_TYPE_USE_MOVE;
+    const bool playerUsesMove = m_turn.playerAction.type == ACTION_TYPE_USE_MOVE;
+    const bool opponentUsesMove = m_turn.opponentAction.type == ACTION_TYPE_USE_MOVE;
 
     // Both parties use a move: priority determines execution order.
-    if (playerUsesMove && opponentUsesMove) actions = sortActionsByPriority();
+    if (playerUsesMove && opponentUsesMove) sortActionsByPriority();
     // Only one party uses a move, no need to consider move priority/speed
-    else actions = sortActions(playerUsesMove, opponentUsesMove);
+    else sortActions(playerUsesMove, opponentUsesMove);
 
-    // TODO: The order of execution is now determined, run the actions
+    switch (m_turn.priority) {
+        case PRIORITISE_PLAYER:
+            execPlayerAction();
+            execOpponentAction();
+            // reset state
+            break;
+        case PRIORITISE_OPPONENT:
+            execOpponentAction();
+            execPlayerAction();
+            // reset state
+            break;
+        case PRIORITISE_NONE:
+            throw std::runtime_error("Action sorting has failed and turn processing cannot continue");
+            break;
+    }
 }
 
 BattleManager::~BattleManager() {}

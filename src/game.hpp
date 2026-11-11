@@ -22,7 +22,10 @@
 // Collision detection between entities through a spatial hash system
 // Entity dialogue system
 // Battle scene loading
+// Battle scene UI, with ability to select moves (but still not use items or switch pokemon)
+// Battle manager which process player and opponent's actions (IN PROGRESS)
 
+// TODO: Replace the PMD idle sprites with B/W animated sprites when in battle (new anim events ANIM_EVENT_BATTLE_IDLE_FRONT and ANIM_EVENT_BATTLE_IDLE_BACK)
 // TODO: Alpha transparency for entities doesn't consider other entities (low pri)
 // TODO: Decide on global game res and set diligent to use those dimensions (For consistent pixelated look), also use framebuffer resize callback
 // TODO: Need to develop exit handling for Scenes

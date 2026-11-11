@@ -988,3 +988,37 @@ Turn is being re-defined as the entire processing unit made up of the player and
 Because the three possible actions are quite different, STL variant might be used to differentiate struct properties only used by one of the types
 (it seems to work like a union but with more convenient syntax)
 processTurn() will run when both the player action and opponent action have been obtained
+
+Output of damage calc prior to fixes:
+
+Executing player action, which is using a move that deals Type effect: 1
+a/d is: 0
+Move power: 65
+first level cal: 6.63522e+06
+Numerator: 0
+Frac: 2
+Crit: 1
+STAB: 1.5
+Burn: 0.5
+Rand: 0.89
+1 HP of damage
+
+and after:
+
+Executing player action, which is using a move that deals Type effect: 1
+Attack: 45
+Defense: 65
+Level: 45
+a/d is: 0.692308
+Move power: 80
+first level cal: 20
+Numerator: 1107.69
+Frac: 24.1538
+Crit: 1.5
+STAB: 1.5
+Burn: 1
+Rand: 0.88
+47 HP of damage
+
+TODO: Tidy up Pokemon's constructor and review the descriptor dependency
+TODO: Make placeholder Pokemon have realistic stats, instead of copy-pastes of Eevee's base stats (aka level 1 stats)

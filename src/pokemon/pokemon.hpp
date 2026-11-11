@@ -14,7 +14,8 @@ class Pokemon : public Entity {
 public:
 
     // NOTE: Pokemon objects are only constructed by Pokemon descriptors, createPokemonFromDesc handles running this constructor
-    Pokemon(const std::string& spcname, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
+    // TODO: Maybe pass all this information as a convenient struct?
+    Pokemon(const std::string& spcname, const int& level, const Stats& stats, const Nature& nature, const std::array<Move, 4>& moveset, const bool& hasHiddenAbility,
             const std::string& animJsonFilepath, const int& index); // TODO: Add IVs and EVs, level and stats
     ~Pokemon();
 

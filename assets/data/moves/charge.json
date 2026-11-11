@@ -3,6 +3,7 @@
     "type": "ELECTRIC",
     "category": "STATUS",
     "pp": 20,
+    "accuracy": 0,
     "effects": {
         "raiseSelf": [ "POWER_ELECTRIC", "spDefense" ]
     }

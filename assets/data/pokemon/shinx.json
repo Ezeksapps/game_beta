@@ -1,6 +1,7 @@
 {
     "dexno": 403,
     "exprate": "MEDIUM_SLOW",
+    "name": "Shinx",
     "sprites": "assets/data/sprites/shinx.json",
     "stats": {
         "hp": 45,
@@ -10,7 +11,7 @@
         "spDefense": 34,
         "speed": 45
     },
-    "type": "ELECTRIC",
+    "types": "ELECTRIC",
     "abilities": ["RIVALRY", "INTIMIDATE"],
     "hiddenAbility": "GUTS",
     "evolutions": [

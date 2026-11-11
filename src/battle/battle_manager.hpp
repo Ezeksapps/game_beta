@@ -24,15 +24,23 @@ struct Action {
     int index;
 };
 
+enum ActionPriority {
+    PRIORITISE_PLAYER,
+    PRIORITISE_OPPONENT,
+    PRIORITISE_NONE
+};
+
+struct Turn {
+    Action playerAction;
+    Action opponentAction;
+    ActionPriority priority; // prioritise player or opponent?
+};
+
 enum BattleState { // to avoid ridiculous numbers of boolean checks
     STATE_AWAITING_PLAYER_ACTION,
     STATE_AWAITING_OPPONENT_ACTION,
     STATE_ACTIONS_SET,
-    STATE_PROCESSING_TURN
-};
-
-enum TurnState {
-    STATE_PROCESSING,
+    STATE_PROCESSING_TURN,
     STATE_EXECUTING_PLAYER_TURN,
     STATE_EXECUTING_OPPONENT_TURN
 };
@@ -65,16 +73,18 @@ private:
     void processTurn();
     int calculateMoveDamage(const Move& move, std::shared_ptr<Pokemon>& user, std::shared_ptr<Pokemon>& target);
 
-    std::array<Action, 2> sortActionsByPriority();
-    std::array<Action, 2> sortActions(const bool playerUsesMove, const bool& opponentUsesMove);
+    void sortActionsByPriority();
+    void sortActions(const bool playerUsesMove, const bool& opponentUsesMove);
+
+    void execPlayerAction();
+    void execOpponentAction();
 
     BattleState m_state;
 
     // seeded with the current system time when manager is created
     std::mt19937 m_rng;
 
-    Action m_playerAction;
-    Action m_opponentAction;
+    Turn m_turn;
 
     // the moveset data packet, and associated data, that will be sent to the move selection menu
     MoveC m_movesetUI[4];
