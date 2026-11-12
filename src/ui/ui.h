@@ -65,7 +65,7 @@ void advanceDialog();
 void initiateDialog();
 
 // for dialog.cpp to communicate a final output char* to the UI
-void setDialogText(char* text);
+void setDisplayText(char* text);
 
 /* UI WINDOWS, NOTE: Do not directly execute these functions */
 

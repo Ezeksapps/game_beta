@@ -1,10 +1,11 @@
 #include "battle_manager.hpp"
 
 #include "move_interface.h"
-#include <cstdio>
+#include "../ui/ui.h"
 
 void useMove(void* _this, int index) {
     static_cast<BattleManager*>(_this)->playerUseMove(index);
+    popFromStack(); // return to battle dashboard
 }
 
 void prepareMoveSelector(void* _this, int index) {
@@ -15,7 +16,6 @@ void prepareMoveSelector(void* _this, int index) {
 #include "../pokemon/pokemon.hpp"
 #include "../entity/entity.hpp"
 #include "../ui/dialog.hpp"
-#include "../ui/ui.h"
 #include "../game.hpp"
 
 BattleManager::BattleManager(std::shared_ptr<Trainer> player, std::shared_ptr<Trainer> opponent, BattleScene* scene) : m_rng(std::time(0)) {

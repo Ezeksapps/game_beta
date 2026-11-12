@@ -3,6 +3,7 @@
 #include "../entity/trainer.hpp"
 #include "../scene/battle_scene.hpp"
 #include "../pokemon/pokemon_common.h"
+#include "move_interface.h"
 
 #include <random>  // RNG
 
@@ -86,7 +87,10 @@ private:
 
     Turn m_turn;
 
-    // the moveset data packet, and associated data, that will be sent to the move selection menu
+    /* C UI data packets */
+
+    DashboardDataC m_battleDashboardDataUI;
+
     MoveC m_movesetUI[4];
     MovesetDataC m_playerMovesetDataUI;
 

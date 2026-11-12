@@ -51,7 +51,7 @@ typedef struct MenuState {
 enum   WndType   g_curWndType = WND_TYPE_NONE;
 
 // UI elem type states
-char g_curDialogText[MAX_DIALOG_CHARS] = "";
+char g_curDisplayText[MAX_DIALOG_CHARS] = "";
 struct MenuState g_curMenuState = {0};
 
 // global 'mouse' state (this mouse being a cursor controlled by keyboard input)
@@ -420,17 +420,17 @@ void createCallbackMenu(struct nk_rect dimensions, const int numColumns, int* UI
     nk_end(&ctx);
 }
 
-void setDialogText(char* text) { strcpy(g_curDialogText, text); }
+void setDisplayText(char* text) { strcpy(g_curDisplayText, text); }
 
 // TODO: adapt text wrap
-void dialogBox(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
+void textDisplay(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
 
     char windowID[16] = {};
     if (nk_begin(&ctx, genWindowID(windowID, UIElemCounter), dimensions,
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
         nk_layout_row_dynamic(&ctx, 20, 1);
-        nk_text(&ctx, g_curDialogText, strlen(g_curDialogText), NK_TEXT_ALIGN_LEFT);
+        nk_text(&ctx, g_curDisplayText, strlen(g_curDisplayText), NK_TEXT_ALIGN_LEFT);
     }
     nk_end(&ctx);
 }
@@ -447,8 +447,8 @@ void bagView() {
     g_curWndType = WND_TYPE_DIALOG;
     int counter = 0;
     char* testText = "This is the bag view";
-    setDialogText(testText);
-    dialogBox(nk_rect(0, 210, 480, 60), &counter);
+    setDisplayText(testText);
+    textDisplay(nk_rect(0, 210, 480, 60), &counter);
 }
 
 void profileView() {}
@@ -478,7 +478,7 @@ void progressUI() {
 void entityDialogBox() {
     g_curWndType = WND_TYPE_DIALOG;
     int counter = 0;
-    dialogBox(nk_rect(0, 210, 480, 60), &counter);
+    textDisplay(nk_rect(0, 210, 480, 60), &counter);
 }
 
 #include "../pokemon/pokemon_common.h" // seriously, these game-specific UI funcs NEED to go into a separate file
@@ -491,8 +491,8 @@ void battleDashboard() {
 
     int counter = 0;
     char* text = "What will TEST ENTITY do?"; // TEMP
-    setDialogText(text); // battle manager should call this function
-    dialogBox(nk_rect(0, 210, 240, 60), &counter);
+    setDisplayText(text); // battle manager should call this function
+    textDisplay(nk_rect(0, 210, 240, 60), &counter);
 
     const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
     const MenuCallbackFunc itemCallbacks[] = {prepareMoveSelector, NULL, NULL, NULL};

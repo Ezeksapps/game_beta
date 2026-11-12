@@ -1022,3 +1022,22 @@ Rand: 0.88
 
 TODO: Tidy up Pokemon's constructor and review the descriptor dependency
 TODO: Make placeholder Pokemon have realistic stats, instead of copy-pastes of Eevee's base stats (aka level 1 stats)
+
+Need to make the text display system to show information during battle, the text to display is sent to the UI
+When awaiting player action: What will <Pokemon name> do?
+When awaiting opponent action: nothing, remove window
+
+when executing player action:
+MOVE:
+<Pokemon name> used <move name>
+if effectiveness differs from normal then:
+It's super effective!
+It's not very effective...
+But <Opponent name> took no damage
+ITEM:
+<Player name> Used the <item name>
+
+Dialogue might need to be changed to a generic text display system. dialog.cpp -> text_display.cpp
+the file will keep any function specific to dialogue labeled as such. The components I need are:
+- global word mappings
+- the traversal/parsing functions

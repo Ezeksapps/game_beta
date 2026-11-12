@@ -59,22 +59,3 @@ typedef enum MoveCategory {
     #include "move_types.xvals"
     #undef X
 } MoveCategory;
-
-/* --- C Data packets --- */
-
-// A version of the C++-side Move structure for the UI system
-typedef struct MoveC {
-    const char*  name;
-    Type         type;
-    MoveCategory category;
-    int          pp;
-    int          power;
-    int          accuracy;
-    int          priority;
-} MoveC;
-
-// user data for move selection screen
-typedef struct MovesetDataC {
-    MoveC* moveset;
-    void* battleManager;
-} MovesetDataC;
