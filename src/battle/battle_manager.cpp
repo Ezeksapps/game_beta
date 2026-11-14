@@ -1,11 +1,12 @@
 #include "battle_manager.hpp"
 
+#include "battle_strings.hpp"
 #include "move_interface.h"
 #include "../ui/ui.h"
 
 void useMove(void* _this, int index) {
     static_cast<BattleManager*>(_this)->playerUseMove(index);
-    popFromStack(); // return to battle dashboard
+    clearStack();
 }
 
 void prepareMoveSelector(void* _this, int index) {
@@ -15,6 +16,7 @@ void prepareMoveSelector(void* _this, int index) {
 #include "../scene/battle_scene.hpp"
 #include "../pokemon/pokemon.hpp"
 #include "../entity/entity.hpp"
+#include "../ui/text_display.hpp"
 #include "../ui/dialog.hpp"
 #include "../game.hpp"
 
@@ -36,6 +38,15 @@ void BattleManager::prepareStage(std::shared_ptr<Pokemon> playerPkmn, std::share
 
     m_scene->pushPokemonToScene(playerPkmn);
     m_scene->pushPokemonToScene(opponentPkmn);
+
+    // update word mappings for pokemon
+    std::unordered_map<std::string, std::string> wordMap = {
+        {"player_pokemon_name", playerPkmn->m_name},
+        {"opponent_pokemon_name", opponentPkmn->m_name}
+    };
+    supplyExternalWordMap(wordMap);
+
+    setSourceString(battleStrings.at(STR_AWAIT_ACTION));
 
     m_playerPkmn = playerPkmn, m_opponentPkmn = opponentPkmn;
 }
@@ -202,10 +213,12 @@ void BattleManager::sortActions(const bool playerUsesMove, const bool& opponentU
 void BattleManager::execPlayerAction() {
     switch (m_turn.playerAction.type) {
         case ACTION_TYPE_USE_MOVE:
+
             std::cout << "Executing player action, which is using a move that deals "
             << calculateMoveDamage(m_playerPkmn->getMoveset()[m_turn.playerAction.index], m_playerPkmn, m_opponentPkmn)
             << " HP of damage\n";
-            // apply damage, also when HP display is created, inform UI
+
+            setSourceStringf(battleStrings.at(STR_PLAYER_USE_MOVE), std::vector<std::string>{m_playerPkmn->getMoveset()[m_turn.playerAction.index].name});
             break;
             // TODO: Make exhaustive
     }
@@ -215,9 +228,12 @@ void BattleManager::execPlayerAction() {
 void BattleManager::execOpponentAction() {
     switch (m_turn.playerAction.type) {
         case ACTION_TYPE_USE_MOVE:
+
             std::cout << "Executing opponent action, which is using a move that deals "
             << calculateMoveDamage(m_opponentPkmn->getMoveset()[m_turn.opponentAction.index], m_opponentPkmn, m_playerPkmn)
             << " HP of damage\n";
+
+            setSourceStringf(battleStrings.at(STR_OPPONENT_USE_MOVE), std::vector<std::string>{m_opponentPkmn->getMoveset()[m_turn.playerAction.index].name});
             break;
             // TODO: Make exhaustive
     }
@@ -232,6 +248,8 @@ void BattleManager::processTurn() {
     if (playerUsesMove && opponentUsesMove) sortActionsByPriority();
     // Only one party uses a move, no need to consider move priority/speed
     else sortActions(playerUsesMove, opponentUsesMove);
+
+    pushToStack(textDisplay1); // prepare the text display for action info
 
     switch (m_turn.priority) {
         case PRIORITISE_PLAYER:

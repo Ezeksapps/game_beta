@@ -54,7 +54,7 @@ void Entity::loadEntityJSON(const std::string& filepath) {
 
 bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.contains(key); }
 
-std::string_view Entity::getDialogString(const std::string& key) { return m_dialogStrings[key]; }
+std::string Entity::getDialogString(const std::string& key) { return m_dialogStrings[key]; }
 
 void Entity::update(const float& deltaTime) {
 

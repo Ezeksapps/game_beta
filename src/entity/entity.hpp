@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <memory>
 
@@ -89,7 +88,7 @@ public:
     AABB getAABB();
 
     bool hasDialogString(const std::string& key);
-    std::string_view getDialogString(const std::string& key);
+    std::string getDialogString(const std::string& key);
 
 protected:
 

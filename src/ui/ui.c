@@ -109,6 +109,8 @@ void popFromStack() {
     if (stackPtr == 0) g_curWndType = WND_TYPE_NONE;
 }
 
+void clearStack() { stackPtr = 0; }
+
 // return top-most func in stack
 UICreatorFunc getCurrentUICreatorFunc() { return (stackPtr > 0) ? stack[stackPtr - 1].func : NULL; }
 
@@ -430,7 +432,7 @@ void textDisplay(struct nk_rect dimensions, int* UIElemCounter) { // 270 * 480
         NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 
         nk_layout_row_dynamic(&ctx, 20, 1);
-        nk_text(&ctx, g_curDisplayText, strlen(g_curDisplayText), NK_TEXT_ALIGN_LEFT);
+        nk_text_wrap(&ctx, g_curDisplayText, strlen(g_curDisplayText));
     }
     nk_end(&ctx);
 }
@@ -471,11 +473,11 @@ void pauseMenu() {
 void progressUI() {
     // may need to become a switch statement if more window/widget types are added
     if (g_curWndType == WND_TYPE_NONE) initiateDialog();
-    else if (g_curWndType == WND_TYPE_DIALOG) advanceDialog();
+    else if (g_curWndType == WND_TYPE_DIALOG) advanceText();
     else isBtnClicked = true;
 }
 
-void entityDialogBox() {
+void textDisplay1() {
     g_curWndType = WND_TYPE_DIALOG;
     int counter = 0;
     textDisplay(nk_rect(0, 210, 480, 60), &counter);
@@ -490,8 +492,6 @@ void battleDashboard() {
     g_curWndType = WND_TYPE_MENU; // focus the callback menu over the text output box
 
     int counter = 0;
-    char* text = "What will TEST ENTITY do?"; // TEMP
-    setDisplayText(text); // battle manager should call this function
     textDisplay(nk_rect(0, 210, 240, 60), &counter);
 
     const char* labels[] = {"Fight", "Pokemon", "Bag", "Run"};
@@ -509,7 +509,31 @@ void moveSelector() {
 
     int counter = 0;
 
-    // TODO: Add a structured display showing move type, PP, power and accuracy
+    // move info display
+
+    char windowID[16] = {};
+    if (nk_begin(&ctx, genWindowID(windowID, &counter), nk_rect(0, 210, 240, 60),
+        NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+
+        nk_layout_row_dynamic(&ctx, 20, 2);
+        // TODO: also need displays for type and move category, these will be implemented as icons
+        nk_text_wrap(&ctx, "Power:", strlen("Power:"));
+
+        char pwrBuf[3];
+        sprintf(pwrBuf, "%d", moveset[g_curMenuState.selectedUIElem].power);
+        nk_text_wrap(&ctx, pwrBuf, sizeof(pwrBuf));
+
+        nk_layout_row_dynamic(&ctx, 20, 2);
+
+        nk_text_wrap(&ctx, "Accuracy:", strlen("Accuracy:"));
+
+        char accBuf[3];
+        sprintf(accBuf, "%d", moveset[g_curMenuState.selectedUIElem].accuracy);
+        nk_text_wrap(&ctx, accBuf, sizeof(accBuf));
+    }
+    nk_end(&ctx);
+
+    // selection menu
 
     const char* labels[] = {moveset[0].name, moveset[1].name, moveset[2].name, moveset[3].name};
     const MenuCallbackFunc itemCallbacks[4] = {useMove, useMove, useMove, useMove};

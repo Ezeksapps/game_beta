@@ -2,6 +2,7 @@
 
 #include "common.hpp"
 #include "entity/trainer.hpp"
+#include "ui/text_display.hpp"
 #include "game.hpp"
 
 #include "fileio.hpp"
@@ -92,6 +93,8 @@ void gameInit() {
     // load player/save data (will later be relocated to separate func in dedicated save/load system):
 
     json playerData = json::parse(readJsonAsset("savedata/playerinfo.json"));
+
+    initWordGlobalMappings(playerData);
 
     std::shared_ptr<Trainer> player = std::make_shared<Trainer>(playerData["sprites"], 0);
     // because player is a trainer type entity, data on a pokemon team is required, this is normally stored as part

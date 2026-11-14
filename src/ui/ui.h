@@ -38,6 +38,8 @@ void pushToStackWithData(UICreatorFunc func, void* userData);
 
 void popFromStack();
 
+void clearStack();
+
 void up();
 void down();
 
@@ -59,9 +61,12 @@ void drawCmdsForEach(void* _this, void (*execDrawCmd)(void* _this, struct nk_rec
 
 void progressUI();
 
+/* Text display */
+
+void advanceText();
+
 /* Dialogue */
 
-void advanceDialog();
 void initiateDialog();
 
 // for dialog.cpp to communicate a final output char* to the UI
@@ -69,7 +74,7 @@ void setDisplayText(char* text);
 
 /* UI WINDOWS, NOTE: Do not directly execute these functions */
 
-void entityDialogBox();
+void textDisplay1(); // the generic text display for dilaogue
 void optionBox();
 
 void battleDashboard();

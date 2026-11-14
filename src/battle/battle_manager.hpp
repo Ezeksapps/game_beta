@@ -4,8 +4,10 @@
 #include "../scene/battle_scene.hpp"
 #include "../pokemon/pokemon_common.h"
 #include "move_interface.h"
+#include "battle_strings.hpp"
 
 #include <random>  // RNG
+#include <unordered_map>
 
 /* NOTE: A 'turn' is the single processing unit that processes the two actions from the player and the opponent */
 
@@ -43,7 +45,8 @@ enum BattleState { // to avoid ridiculous numbers of boolean checks
     STATE_ACTIONS_SET,
     STATE_PROCESSING_TURN,
     STATE_EXECUTING_PLAYER_TURN,
-    STATE_EXECUTING_OPPONENT_TURN
+    STATE_EXECUTING_OPPONENT_TURN,
+    STATE_NONE
 };
 
 class BattleManager {
@@ -80,7 +83,7 @@ private:
     void execPlayerAction();
     void execOpponentAction();
 
-    BattleState m_state;
+    BattleState m_state = STATE_NONE;
 
     // seeded with the current system time when manager is created
     std::mt19937 m_rng;
@@ -88,8 +91,6 @@ private:
     Turn m_turn;
 
     /* C UI data packets */
-
-    DashboardDataC m_battleDashboardDataUI;
 
     MoveC m_movesetUI[4];
     MovesetDataC m_playerMovesetDataUI;

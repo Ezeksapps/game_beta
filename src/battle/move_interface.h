@@ -28,11 +28,6 @@ typedef struct MovesetDataC {
     void* battleManager;
 } MovesetDataC;
 
-typedef struct DashboardDataC {
-    void* battleManager;
-    const char* displayText;
-} DashboardDataC;
-
 #ifdef __cplusplus
 }
 #endif

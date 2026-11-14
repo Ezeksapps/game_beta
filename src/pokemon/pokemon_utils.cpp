@@ -66,7 +66,7 @@ std::shared_ptr<Pokemon> createPokemonFromDesc(const PokemonDesc& desc, const in
      */
     json pokemonJson = json::parse(readJsonAsset(std::string("assets/data/pokemon/" + desc.spcname + ".json").c_str()));
 
-    std::shared_ptr<Pokemon> pokemon = std::make_shared<Pokemon>(desc.spcname, desc.level, desc.stats, desc.nature, createMovesetFromIDs(desc.moveset),
+    std::shared_ptr<Pokemon> pokemon = std::make_shared<Pokemon>(desc.spcname, desc.name, desc.level, desc.stats, desc.nature, createMovesetFromIDs(desc.moveset),
                                                                  desc.hasHiddenAbility, pokemonJson["sprites"], index);
     return pokemon;
 }
