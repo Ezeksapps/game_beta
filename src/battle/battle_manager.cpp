@@ -19,6 +19,7 @@ void prepareMoveSelector(void* _this, int index) {
 #include "../ui/text_display.hpp"
 #include "../ui/dialog.hpp"
 #include "../game.hpp"
+#include "../graphics/overlay.hpp"
 
 BattleManager::BattleManager(std::shared_ptr<Trainer> player, std::shared_ptr<Trainer> opponent, BattleScene* scene) : m_rng(std::time(0)) {
     m_player = player;
@@ -219,6 +220,9 @@ void BattleManager::execPlayerAction() {
             << " HP of damage\n";
 
             setSourceStringf(battleStrings.at(STR_PLAYER_USE_MOVE), std::vector<std::string>{m_playerPkmn->getMoveset()[m_turn.playerAction.index].name});
+            // TODO: effect should only play after text progressed
+            // play the damage effect, TODO: must await effect completion before continuing
+            m_player->setOverlay(getOverlay("damage"));
             break;
             // TODO: Make exhaustive
     }
@@ -233,7 +237,7 @@ void BattleManager::execOpponentAction() {
             << calculateMoveDamage(m_opponentPkmn->getMoveset()[m_turn.opponentAction.index], m_opponentPkmn, m_playerPkmn)
             << " HP of damage\n";
 
-            setSourceStringf(battleStrings.at(STR_OPPONENT_USE_MOVE), std::vector<std::string>{m_opponentPkmn->getMoveset()[m_turn.playerAction.index].name});
+            setSourceStringf(battleStrings.at(STR_OPPONENT_USE_MOVE), std::vector<std::string>{m_opponentPkmn->getMoveset()[m_turn.opponentAction.index].name});
             break;
             // TODO: Make exhaustive
     }

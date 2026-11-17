@@ -107,12 +107,14 @@ void Renderer::createSpritePipelineState() {
      * Set shader variables that can be set in this code
      */
     Diligent::ShaderResourceVariableDesc shaderVars[] = {
-        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
+        {Diligent::SHADER_TYPE_PIXEL, "g_texture", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC},
+        {Diligent::SHADER_TYPE_PIXEL, "g_overlay", Diligent::SHADER_RESOURCE_VARIABLE_TYPE_DYNAMIC}
     };
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.Variables    = shaderVars;
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.NumVariables = _countof(shaderVars);
 
-    /* Texture sampler definition for g_texture var */
+    // NOTE: samplers contain no actual texture data, they just define how data is read from a texture
+    // these are therefore immutable
 
     Diligent::SamplerDesc samplerLinearClampDesc {
         Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR, Diligent::FILTER_TYPE_LINEAR,
@@ -120,11 +122,14 @@ void Renderer::createSpritePipelineState() {
     };
 
     Diligent::ImmutableSamplerDesc immutableSamplers[] = {
-        {Diligent::SHADER_TYPE_PIXEL, "g_texture", samplerLinearClampDesc}
+        {Diligent::SHADER_TYPE_PIXEL, "g_texture", samplerLinearClampDesc},
+        // give overlay an identical sampler to the main texture's
+        {Diligent::SHADER_TYPE_PIXEL, "g_overlay", samplerLinearClampDesc}
     };
 
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.ImmutableSamplers    = immutableSamplers;
     PipelineStateObjCreateInfo.PSODesc.ResourceLayout.NumImmutableSamplers = _countof(immutableSamplers);
+
 
     /* Create pipeline with obj create info */
     m_pDevice->CreateGraphicsPipelineState(PipelineStateObjCreateInfo, &m_pSpritePipelineStateObj);

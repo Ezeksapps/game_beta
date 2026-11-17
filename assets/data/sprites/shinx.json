@@ -4,7 +4,7 @@
             "type": 0,
             "frameWidth": 40,
             "frameHeight": 48,
-            "filepath": "assets/sprites/shinx/idle.png",
+            "filepath": "assets/sprites/pokemon/shinx/idle.png",
             "durations": [
                 30,
                 2,
@@ -19,7 +19,7 @@
             "type": 1,
             "frameWidth": 40,
             "frameHeight": 48,
-            "filepath": "assets/sprites/shinx/walk.png",
+            "filepath": "assets/sprites/pokemon/shinx/walk.png",
             "durations": [
                 6,
                 4,

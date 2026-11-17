@@ -1,0 +1,9 @@
+{
+    "sprite": "assets/sprites/overlays/damage.json",
+    "frameWidth": 24,
+    "frameHeight": 32,
+    "hasPeriodicFlash": true,
+    "startAlpha": 1.0,
+    "endAlpha": 0.25,
+    "timePeriod": 5
+}

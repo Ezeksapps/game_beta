@@ -1032,3 +1032,17 @@ is reset to OP_CONTINUE_PRINT, meaning that the display will never close unless 
 
 FIX: only set a continue print op if reaching a symbol that requires it. Then early-return
 The end of the func outside the while loop should simply assume no string was found to parse and exit the display
+
+For visual turn execution, need a system where you can overlay sprites on top of each other
+A sprite belonging to an entity can have an overlay applied to it, which can be either a solid colour with a periodic effect
+or an animated sprite (which can also have a periodic effect)
+This effect is an optional member of the entity, if it is present then the texture will be uploaded as a uniform to the frag shader
+the periodic effect is an alpha blend, so the alpha channel will be a separate varying input
+The overlay will also have its own texArrayIndex param if it is animated
+
+The animation system will need to be moved to another util system so that both the entity class and the overlays can share the logic
+OR: because these overlays are always applied to an entity (but they might not be in future), update the frame with the entity's update()
+
+In battle manager, execution of functions should be able to be blocked until an animation overlaying a sprite has completed (excluding game loop and renderer updates)
+
+The overlay texture's alpha channel and the periodic effect's alpha value should be multiplied together for the final alpha value

@@ -4,7 +4,7 @@
             "type": 0,
             "frameWidth": 32,
             "frameHeight": 32,
-            "filepath": "assets/sprites/vulpix_fire/idle.png",
+            "filepath": "assets/sprites/pokemon/vulpix_fire/idle.png",
             "durations": [
                 40,
                 12,
@@ -16,7 +16,7 @@
             "type": 1,
             "frameWidth": 32,
             "frameHeight": 40,
-            "filepath": "assets/sprites/vulpix_fire/walk.png",
+            "filepath": "assets/sprites/pokemon/vulpix_fire/walk.png",
             "durations": [
                 6,
                 4,

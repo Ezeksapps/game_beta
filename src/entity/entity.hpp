@@ -3,10 +3,13 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <optional>
 
-#include "sprite.hpp"
-#include "../common.hpp"
+#include "../graphics/sprite.hpp"
 #include "../collison_common.hpp"
+#include "../graphics/overlay.hpp"
+#include "../common.hpp"
+
 
 using namespace glm;
 
@@ -47,6 +50,9 @@ public:
     /* General Setters */
 
     void doAnimEvent(const AnimEvent& event);
+    void setOverlay(const Overlay& overlay);
+    // remove the current overlay if one is set
+    void removeOverlay();
 
     /* Sprite-related funcs */
 
