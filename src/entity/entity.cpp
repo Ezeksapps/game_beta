@@ -1,7 +1,6 @@
 #include "entity.hpp"
 #include "../fileio.hpp"
-#include "glm/ext/scalar_uint_sized.hpp"
-#include <iostream>
+#include "../graphics/sprite.hpp"
 #include <json.hpp>
 
 using json = nlohmann::json;
@@ -52,23 +51,43 @@ void Entity::loadEntityJSON(const std::string& filepath) {
     }
 }
 
+void Entity::setOverlay(const std::shared_ptr<Overlay> overlay, const uint16_t& numCycles, const uint16_t& numFlashes) {
+    // TODO: check use of optional in struct and see if there is a better way to do this than with excessive bools
+    m_hasOverlay = true;
+    if (numCycles != 0) m_overlayAnimated = true;
+    if (numFlashes != 0) m_overlayFlashing = true;
+    m_overlay = overlay;
+}
+
+// remove the current overlay if one is set
+void Entity::removeOverlay() {}
+
 bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.contains(key); }
 
 std::string Entity::getDialogString(const std::string& key) { return m_dialogStrings[key]; }
 
-void Entity::update(const float& deltaTime) {
-
-    m_frameTimer += deltaTime;
+void updateAnim(std::shared_ptr<Sprite>& sprite, float& timer, const float& deltaTime) {
+    timer += deltaTime;
 
     // intended duration of current frame of sprite sheet in frames
-    float duration = m_pActiveSprite->frameDurations[m_pActiveSprite->frame];
+    float duration = sprite->frameDurations[sprite->frame];
 
     // if the timer shows that the currently rendered frame has been rendered for a time exceeding the intended duration,
     // reset the timer and advance to next frame
-    if (m_frameTimer >= duration) {
-        m_frameTimer           = 0.0f;
-        m_pActiveSprite->frame = (m_pActiveSprite->frame + 1) % m_pActiveSprite->framesPerRow;
+    if (timer >= duration) {
+        timer         = 0.0f;
+        sprite->frame = (sprite->frame + 1) % sprite->framesPerRow;
     }
+}
+
+void Entity::update(const float& deltaTime) { // called every time a new frame is drawn
+
+    updateAnim(m_pActiveSprite, m_frameTimer, deltaTime);
+    if (m_hasOverlay) {
+        if (m_overlayAnimated) updateAnim(m_overlay->sprite, m_overlay->frameTimer, deltaTime);
+        //if (m_overlayFlashing) TODO: find best way to update this
+    }
+
 }
 
 void Entity::doAnimEvent(const AnimEvent& event) {

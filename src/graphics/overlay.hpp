@@ -2,6 +2,7 @@
 
 #include "sprite.hpp"
 #include <optional>
+#include <memory>
 
 struct Flash {
     float startAlpha;
@@ -12,7 +13,7 @@ struct Flash {
 struct Overlay {
     // NOTE: The overlay animation doesn't need to sync to anything, it can be played as-is
     // overlays are defined through JSON and loaded when needed
-    Sprite sprite;
+    std::shared_ptr<Sprite> sprite;
     float frameTimer;
     std::optional<Flash> flash;
 };

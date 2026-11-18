@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../common.hpp"
-#include "../entity/sprite.hpp"
+#include "sprite.hpp"
 #include "../scene/scene.hpp"
 #include "../asset_loader.hpp"
 #include "../scene/world_scene.hpp"
@@ -122,6 +122,9 @@ private:
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
+
+    /* ---- Sprite overlay data ---- */
+    Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pOverlayTexture;
 
     /* ---- UI pipeline buffers & textures ---- */
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pUiVertexBuffer;

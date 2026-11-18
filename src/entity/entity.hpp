@@ -50,7 +50,10 @@ public:
     /* General Setters */
 
     void doAnimEvent(const AnimEvent& event);
-    void setOverlay(const Overlay& overlay);
+    /* numCycles is the number of times the animation should loop, set to 0 if overlay is not animated
+     * numFlashes is the number of times the periodic flash should loop, set to 0 if no flash is used
+     */
+    void setOverlay(const std::shared_ptr<Overlay> overlay, const uint16_t& numCycles, const uint16_t& numFlashes);
     // remove the current overlay if one is set
     void removeOverlay();
 
@@ -127,4 +130,9 @@ private:
      * This member is not used for any sprite sheet animation that does not correspond to movement
      */
     int m_animFrames;
+
+    bool m_hasOverlay = false; // is there an active overlay?
+    bool m_overlayAnimated = false;
+    bool m_overlayFlashing = false;
+    std::shared_ptr<Overlay> m_overlay;
 };

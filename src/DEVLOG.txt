@@ -1046,3 +1046,6 @@ OR: because these overlays are always applied to an entity (but they might not b
 In battle manager, execution of functions should be able to be blocked until an animation overlaying a sprite has completed (excluding game loop and renderer updates)
 
 The overlay texture's alpha channel and the periodic effect's alpha value should be multiplied together for the final alpha value
+
+Overlays are used to display effects such as stat changes or damage, they are short animations and the progression of the code should be tied to the completion of the animation
+of the overlay.
