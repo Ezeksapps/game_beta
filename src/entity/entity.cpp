@@ -52,15 +52,26 @@ void Entity::loadEntityJSON(const std::string& filepath) {
 }
 
 void Entity::setOverlay(const std::shared_ptr<Overlay> overlay, const uint16_t& numCycles, const uint16_t& numFlashes) {
-    // TODO: check use of optional in struct and see if there is a better way to do this than with excessive bools
-    m_hasOverlay = true;
-    if (numCycles != 0) m_overlayAnimated = true;
-    if (numFlashes != 0) m_overlayFlashing = true;
     m_overlay = overlay;
+
+    // Note: must be cast to enum type explicitly to convert from int
+    m_overlayType = static_cast<OverlayType>((numFlashes != 0 ? OVERLAY_TYPE_FLASHING : 0) | (numCycles != 0 ? OVERLAY_TYPE_ANIMATED : 0));
+
+    /* Because flashing effects have a constant, unchanging time period, the amount by which the alpha should be increased or decreased
+     * per frame is constant. So, to avoid repeating calculations unecessarily, compute the alpha step per frame once, like what is
+     * done with movement translation vectors. This could technically be made smoother with a sine-wave behaviour but that isn't really
+     * needed right now
+     */
+    if ((m_overlayType & OVERLAY_TYPE_FLASHING) == 0x01) {
+        // NOTE: start alpha must be > end alpha
+        m_deltaAlpha = (overlay->flash.startAlpha - overlay->flash.endAlpha) / overlay->flash.timePeriod;
+        // TODO: attempt a sinusoidal system instead
+    }
 }
 
 // remove the current overlay if one is set
-void Entity::removeOverlay() {}
+// the overlay doesn't actually need to be removed, resetting the enum value is enough for the system to ignore its existence
+void Entity::removeOverlay() { m_overlayType = OVERLAY_TYPE_NONE; }
 
 bool Entity::hasDialogString(const std::string& key) { return m_dialogStrings.contains(key); }
 
@@ -82,12 +93,19 @@ void updateAnim(std::shared_ptr<Sprite>& sprite, float& timer, const float& delt
 
 void Entity::update(const float& deltaTime) { // called every time a new frame is drawn
 
-    updateAnim(m_pActiveSprite, m_frameTimer, deltaTime);
-    if (m_hasOverlay) {
-        if (m_overlayAnimated) updateAnim(m_overlay->sprite, m_overlay->frameTimer, deltaTime);
-        //if (m_overlayFlashing) TODO: find best way to update this
-    }
+    updateAnim(m_pActiveSprite, m_frameTimer, deltaTime); // update main sprite animation
 
+    switch (m_overlayType) {
+        case OVERLAY_TYPE_NONE: // there is no overlay to update
+            return;
+        case OVERLAY_TYPE_FLASHING:
+            break;
+        case OVERLAY_TYPE_ANIMATED:
+            updateAnim(m_overlay->sprite, m_overlay->frameTimer, deltaTime);
+            break;
+        case OVERLAY_TYPE_FLASH_AND_ANIM:
+            break;
+    }
 }
 
 void Entity::doAnimEvent(const AnimEvent& event) {
@@ -128,7 +146,6 @@ const std::unordered_map<AnimEvent, std::shared_ptr<Sprite>>& Entity::getSpriteM
 }
 
 AABB Entity::getAABB() {
-
     return AABB {
         .min = vec3(m_pos.x - m_dxHalf, m_pos.y - m_dyHalf, 0.0f),
         .max = vec3(m_pos.x + m_dxHalf, m_pos.y + m_dyHalf, 0.0f)

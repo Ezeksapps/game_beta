@@ -131,8 +131,10 @@ private:
      */
     int m_animFrames;
 
-    bool m_hasOverlay = false; // is there an active overlay?
-    bool m_overlayAnimated = false;
-    bool m_overlayFlashing = false;
+    // if the type is none, then no overlay is set
+    OverlayType m_overlayType = OVERLAY_TYPE_NONE;
+    uint16_t m_flashCounter;
+    float m_deltaAlpha; // change in alpha per frame
+    uint16_t m_numCycles;
     std::shared_ptr<Overlay> m_overlay;
 };

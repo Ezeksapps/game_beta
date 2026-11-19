@@ -1049,3 +1049,27 @@ The overlay texture's alpha channel and the periodic effect's alpha value should
 
 Overlays are used to display effects such as stat changes or damage, they are short animations and the progression of the code should be tied to the completion of the animation
 of the overlay.
+
+NOTE/UPDATE:
+The winAPI might be an ugly mess, but it did introduce me to bitmasks (though I din't know they were called that till I looked it up just now)
+Nuklear does the same thing for its window creators
+TODO: Because these significantly help reduce the number of expensive if..else checks in some code blocks (e.g. the overlay type setting),
+see if they would be good applied retroactively to other parts of the code
+
+Flash effect in overlays could be simplified to increase/decrease the alpha value by a constant delta every frame
+which is calculated as (startAlpha - endAlpha) / timePeriod, assuming startAlpha > endAlpha
+HOWEVER, that results in a rough-looking fade animation, since the resultant 'wave' looks like this: /\/\/\/\
+What I really want is a smooth effect, that means a sinusoidal wave
+TODO: find how to determine, at runtime when the frame is being drawn, the delta that should be applied to the alpha,
+given the current alpha, the start and end alphas (peak and trough positions) and the fact that the effect should be sinusoidal
+
+IDEA: maybe, instead of calculating deltas at frame draw time, I can pre-calculate them
+Basically, simulate 3/4 of a full wavelength, starting at a peak and ending at a trough, then find the intermediate steps
+based on the number of frames the animation runs for (time period). This gives the deltas for when dy/dx is negative,
+when the animation reverses and goes back up to the start alpha value, the deltas can be reversed. Although, this requires a flag
+to check the current direction of the animation
+
+(this is probably overcomplicating things)
+
+https://stackoverflow.com/questions/20727620 this looks like it could help
+
