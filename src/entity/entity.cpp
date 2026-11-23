@@ -56,18 +56,11 @@ void Entity::setOverlay(const std::shared_ptr<Overlay> overlay, const uint16_t& 
 
     // Note: must be cast to enum type explicitly to convert from int
     m_overlayType = static_cast<OverlayType>((numFlashes != 0 ? OVERLAY_TYPE_FLASHING : 0) | (numCycles != 0 ? OVERLAY_TYPE_ANIMATED : 0));
-
-    /* Because flashing effects have a constant, unchanging time period, the amount by which the alpha should be increased or decreased
-     * per frame is constant. So, to avoid repeating calculations unecessarily, compute the alpha step per frame once, like what is
-     * done with movement translation vectors. This could technically be made smoother with a sine-wave behaviour but that isn't really
-     * needed right now
-     */
-    if ((m_overlayType & OVERLAY_TYPE_FLASHING) == 0x01) {
-        // NOTE: start alpha must be > end alpha
-        m_deltaAlpha = (overlay->flash.startAlpha - overlay->flash.endAlpha) / overlay->flash.timePeriod;
-        // TODO: attempt a sinusoidal system instead
-    }
 }
+
+std::shared_ptr<Overlay> Entity::getOverlay() { return m_overlay; }
+
+bool Entity::hasOverlay() { return m_overlayType != OVERLAY_TYPE_NONE; }
 
 // remove the current overlay if one is set
 // the overlay doesn't actually need to be removed, resetting the enum value is enough for the system to ignore its existence
@@ -91,6 +84,11 @@ void updateAnim(std::shared_ptr<Sprite>& sprite, float& timer, const float& delt
     }
 }
 
+void updateFlash(Flash& flash, const float& deltaTime) {
+    flash.x += flash.perFrameDx;
+    flash.alpha = (flash.startAlpha - flash.amplitude) + flash.amplitude * cos(flash.x);
+}
+
 void Entity::update(const float& deltaTime) { // called every time a new frame is drawn
 
     updateAnim(m_pActiveSprite, m_frameTimer, deltaTime); // update main sprite animation
@@ -99,11 +97,14 @@ void Entity::update(const float& deltaTime) { // called every time a new frame i
         case OVERLAY_TYPE_NONE: // there is no overlay to update
             return;
         case OVERLAY_TYPE_FLASHING:
+            updateFlash(m_overlay->flash, deltaTime);
             break;
         case OVERLAY_TYPE_ANIMATED:
             updateAnim(m_overlay->sprite, m_overlay->frameTimer, deltaTime);
             break;
         case OVERLAY_TYPE_FLASH_AND_ANIM:
+            updateFlash(m_overlay->flash, deltaTime);
+            updateAnim(m_overlay->sprite, m_overlay->frameTimer, deltaTime);
             break;
     }
 }
@@ -123,6 +124,10 @@ const std::shared_ptr<Sprite>& Entity::getActiveSprite() {
 
 void Entity::setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback) {
     m_spriteChangeCallback = callback;
+}
+
+void Entity::setOverlayCallback(std::function<void(const Overlay& overlay)> callback) {
+    m_setOverlayCallback = callback;
 }
 
 void Entity::setStartMovementCallback(std::function<void(const int& index, vec3 translVec)> callback) {

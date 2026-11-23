@@ -1073,3 +1073,41 @@ to check the current direction of the animation
 
 https://stackoverflow.com/questions/20727620 this looks like it could help
 
+
+ALPHA CHANNEL FADE ANIMATION:
+
+start at max alpha end at min alpha
+so model as cosine wave
+to transform y = cos x to peak at a given start alpha and have troughs at a given end elpha:
+
+to first transform up y to correct position:
+y = (start - [(start - end) / 2]) + cos x
+
+the original graph crosses x-axis at x = 0 so increase this middle value (middle between start and end) by the required dy
+if start = 85 and end = 75 then middle = 80
+
+to move peaks and troughs to correct loaction, stretch in y direction by a factor of (start - end) / 2
+
+so: y = (start - [(start - end) / 2]) + [(start - end) / 2][cos x]
+
+this gives the function that can be used to obtain aplha vals for animation
+
+// pseudo-impl:
+
+/* these values should be set when a new flashing overlay is set */
+
+// dx of input x to f(x) per frame
+const float dx = (2.0f * std::numbers::pi_v<float>) / flash.timePeriod;
+// the scale factor by which the graph should be stretched parallel to the y-axis
+const float stretchScaleFactor = (start - end) / 2.0f;
+// init x to 0
+float x = 0;
+
+// then, on update():
+
+float amplitude = (start - end) / 2.0f;
+
+x += dx;
+curAlpha = (start - amplitude) + amplitude * cos(x);
+
+Apparently, you can't use a bool as a shader input/ouput. Use an integer or float type instead

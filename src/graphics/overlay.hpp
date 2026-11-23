@@ -11,16 +11,15 @@ enum OverlayType : uint8_t { // used to avoid excessive bool flags an if checks 
     OVERLAY_TYPE_NONE            = 0
 };
 
-
-enum FlashState {
-    FLASH_STATE_PEAK,
-    FLASH_STATE_TROUGH
-};
-
 struct Flash {
     float startAlpha;
     float endAlpha;
-    int timePeriod;
+    // originally, timePeriod was stored here, but better to keep computed dx in here, since timePeriod is only used to compute this
+    float perFrameDx;
+    float stretchScaleFactor;
+    float amplitude;
+    float x; // current x value
+    float alpha; // current alpha value
 };
 
 struct Overlay {

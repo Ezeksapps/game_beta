@@ -43,6 +43,7 @@ public:
     /* Callback Setters */
 
     void setSpriteChangeCallback(std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> callback);
+    void setOverlayCallback(std::function<void(const Overlay& overlay)> callback);
     void setStartMovementCallback(std::function<void(const int& index, vec3 translVec)> callback);
     void setChangeMovementDirectionCallback(std::function<void(const int& index, vec3 translVec)> callback);
     void setEndMovementCallback(std::function<void(const int& index)> callback);
@@ -56,6 +57,8 @@ public:
     void setOverlay(const std::shared_ptr<Overlay> overlay, const uint16_t& numCycles, const uint16_t& numFlashes);
     // remove the current overlay if one is set
     void removeOverlay();
+    std::shared_ptr<Overlay> getOverlay();
+    bool hasOverlay();
 
     /* Sprite-related funcs */
 
@@ -110,6 +113,7 @@ private:
 
     /* Callbacks */
     std::function<void(const int& oldSpriteIndex, std::shared_ptr<Sprite> newSprite)> m_spriteChangeCallback;
+    std::function<void(const Overlay& overlay)> m_setOverlayCallback;
     std::function<void(const int& index, vec3 translVec)> m_startMovementCallback;
     std::function<void(const int& index, vec3 translVec)> m_changeMovementDirectionCallback;
     std::function<void(const int& index)> m_endMovementCallback;
@@ -133,8 +137,5 @@ private:
 
     // if the type is none, then no overlay is set
     OverlayType m_overlayType = OVERLAY_TYPE_NONE;
-    uint16_t m_flashCounter;
-    float m_deltaAlpha; // change in alpha per frame
-    uint16_t m_numCycles;
     std::shared_ptr<Overlay> m_overlay;
 };

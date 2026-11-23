@@ -237,6 +237,10 @@ void Renderer::registerEntity(const std::shared_ptr<Entity>& entity) {
         this->swapSprite(oldSpriteIndex, newSprite, entity->getCacheKey(), entity->m_event);
     });
 
+    entity->setOverlayCallback([this, entity](const Overlay& overlay) {
+        this->setOverlay(overlay, entity->m_index);
+    });
+
     // movement callbacks moved to WorldScene, this is a generic scene setter and movement handling is only needed in a WorldScene
 }
 

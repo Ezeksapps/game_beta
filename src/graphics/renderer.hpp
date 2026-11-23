@@ -67,10 +67,12 @@ private:
     };
 
     struct InstanceData {
-        mat4 modelMatrix;
-        float texArrayIndex;
-        float width;
-        float height;
+        mat4     modelMatrix;
+        float    texArrayIndex;
+        float    overlayArrayIndex = 0.0f;
+        uint32_t usingOverlay; // technically bool, uint8 since GLSL doesn't allow shader inputs to be bool
+        float    width;
+        float    height;
     };
 
     std::vector<MeshData> m_sceneMeshes;
@@ -121,7 +123,9 @@ private:
     Diligent::RefCntAutoPtr<Diligent::IBuffer>        m_pSpriteInstanceBuffer;
 
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pSpriteTextureArray;
+    Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pOverlayTextureArray;
     Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pSpriteShaderResourceView;
+    Diligent::RefCntAutoPtr<Diligent::ITextureView>   m_pOverlayShaderResourceView;
 
     /* ---- Sprite overlay data ---- */
     Diligent::RefCntAutoPtr<Diligent::ITexture>       m_pOverlayTexture;
@@ -135,6 +139,7 @@ private:
     /* Pipeline SRBs */
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSceneShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSpriteShaderResourceBinding;
+    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pOverlayShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pUiShaderResourceBinding;
 
     /* Matrices */
@@ -148,6 +153,8 @@ private:
     int m_numSprites = 0;
     /* Max number of sprites (aka. Entities that can use this renderer at one time) */
     static const int m_maxInstances = 255;
+    /* Max number of overlays on sprites */
+    static const int m_maxOverlays = 32;
     /* the maximum dimensions of a sprite sheet */
     static constexpr int m_maxSpriteDimensions = 8 * 10;
 
@@ -169,6 +176,12 @@ private:
 
     /* Stores all pre-loaded sprite sheets for the current scene's entities */
     std::unordered_map<std::string, Diligent::RefCntAutoPtr<Diligent::ITexture>> m_entitySpriteCache;
+
+    /* Because not all sprites will use overlays, the overlay tex array is smaller than the entities' tex array
+     * Since this means that an index in the sprite tex array is not the same as one in the overlay tex array, a mapping
+     * is needed to map an entity's index to the index of its corresponding overlay
+     */
+    std::unordered_map<int, int> m_overlayMap;
 
     void createSharedUniformBuffer();
 
@@ -195,6 +208,8 @@ private:
     void renderScene();
     void renderSprites();
 
+    void setOverlay(const Overlay& overlay, const int& entityIndex);
+
     // draw all UI
     void renderUi();
     // execute current draw command recieved from Nuklear
@@ -217,6 +232,7 @@ private:
     // creates a texture array to function as a sprite sheet cache for one entity and returns it
     Diligent::RefCntAutoPtr<Diligent::ITexture> createEntitySpriteCache(const int& entityIndex);
     void createSpriteTextureArray();
+    void createOverlayTextureArray();
 
     void update();
 };

@@ -1,5 +1,6 @@
 #include "overlay.hpp"
 #include "../fileio.hpp"
+#include <numbers>
 
 #include "json.hpp"
 
@@ -17,16 +18,26 @@ std::unordered_map<std::string, Overlay> overlayMap;
 Overlay loadOverlay(const std::string& name) {
     json overlayJson = readJsonAsset(std::string(OVERLAYS_DIR + name + ".json").c_str());
 
-    Sprite sprite;
-    sprite.filepath = overlayJson["sprite"], sprite.frameWidth = overlayJson["frameWidth"], sprite.frameHeight = overlayJson["frameHeight"];
+    std::shared_ptr<Sprite> sprite;
+    sprite->filepath = overlayJson["sprite"], sprite->frameWidth = overlayJson["frameWidth"], sprite->frameHeight = overlayJson["frameHeight"];
 
     if (overlayJson["hasPeriodicFlash"].get<bool>()) {
+
+        float startAlpha = overlayJson["startAlpha"], endAlpha = overlayJson["endAlpha"];
+        float perFrameDx = (2.0f * std::numbers::pi_v<float>) / overlayJson["timePeriod"].get<float>();
+        float stretchScaleFactor = (startAlpha - endAlpha) / 2.0f;
+        float amplitude = (startAlpha - endAlpha) /2.0f;
+
         return Overlay {
             .sprite = sprite, .frameTimer = 0.0f,
             .flash = Flash {
-                .startAlpha = overlayJson["startAlpha"],
-                .endAlpha   = overlayJson["endAlpha"],
-                .timePeriod = overlayJson["timePeriod"]
+                .startAlpha         = startAlpha,
+                .endAlpha           = endAlpha,
+                .perFrameDx         = perFrameDx,
+                .stretchScaleFactor = stretchScaleFactor,
+                .amplitude          = amplitude,
+                .x                  = 0.0f,
+                .alpha              = startAlpha
             }
         };
     }

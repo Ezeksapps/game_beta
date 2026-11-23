@@ -222,7 +222,7 @@ void BattleManager::execPlayerAction() {
             setSourceStringf(battleStrings.at(STR_PLAYER_USE_MOVE), std::vector<std::string>{m_playerPkmn->getMoveset()[m_turn.playerAction.index].name});
             // TODO: effect should only play after text progressed
             // play the damage effect, TODO: must await effect completion before continuing
-            m_player->setOverlay(std::make_shared<Overlay>(getOverlay("damage")));
+            m_player->setOverlay(std::make_shared<Overlay>(getOverlay("damage")), 0, 2);
             break;
             // TODO: Make exhaustive
     }

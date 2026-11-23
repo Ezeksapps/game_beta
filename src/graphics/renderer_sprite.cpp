@@ -1,3 +1,4 @@
+#include "DiligentCore/Graphics/GraphicsEngine/interface/GraphicsTypes.h"
 #include "DiligentCore/Graphics/GraphicsEngine/interface/ShaderResourceVariable.h"
 #include "renderer.hpp"
 #include "../asset_loader.hpp"
@@ -82,13 +83,17 @@ void Renderer::createSpritePipelineState() {
         /* LayoutElement(<inputIndex>, <bufferSlot>, <numComponents>, <valueType>, <isNormalised>, <relativeOffset>, <stride>, <frequency>);
          */
 
+        // model matrix
         {0, 0, 4, Diligent::VT_FLOAT32, false,  0, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         {1, 0, 4, Diligent::VT_FLOAT32, false, 16, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         {2, 0, 4, Diligent::VT_FLOAT32, false, 32, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         {3, 0, 4, Diligent::VT_FLOAT32, false, 48, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // other params
         {4, 0, 1, Diligent::VT_FLOAT32, false, 64, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
-        {5, 0, 1, Diligent::VT_FLOAT32, false, 68, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        // NOTE: GLSL doesn't allow shader inputs/outputs to be boolean. Using an integer type to represent the bool instead
+        {5, 0, 1, Diligent::VT_UINT32,  false,  68, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
         {6, 0, 1, Diligent::VT_FLOAT32, false, 72, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
+        {7, 0, 1, Diligent::VT_FLOAT32, false, 76, sizeof(InstanceData), Diligent::INPUT_ELEMENT_FREQUENCY_PER_INSTANCE},
     };
 
     /* Create pipeline state */
@@ -198,7 +203,14 @@ void Renderer::populateInstanceBuffer() {
         int texArrayIndex = (activeSprite->index * m_maxSpriteDimensions) + ((uint8_t)entity->m_direction * activeSprite->framesPerRow) + activeSprite->frame;
         mat4 transform = translate(mat4(1.0f), entity->m_pos);
 
-        m_instanceData.push_back(InstanceData(transform, texArrayIndex, activeSprite->frameWidth, activeSprite->frameHeight));
+        uint32_t hasOverlay = entity->hasOverlay(); // Additional note: GLSL treats all inputs as 32-bit
+        if (hasOverlay == 1) {
+            int overlayIndex = m_overlayMap.at(entity->m_index);
+            // NOTE: direction not taken into account because overlays are directionless
+            int overlaySliceIndex = (overlayIndex * m_maxSpriteDimensions) + entity->getOverlay()->sprite->frame;
+        }
+
+        m_instanceData.push_back(InstanceData(transform, texArrayIndex, hasOverlay, activeSprite->frameWidth, activeSprite->frameHeight));
         ++i;
     }
 
@@ -237,6 +249,30 @@ void Renderer::createSpriteTextureArray() {
     m_pSpriteShaderResourceView = m_pSpriteTextureArray->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
 
     m_pSpriteShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_texture")->Set(m_pSpriteShaderResourceView);
+}
+
+void Renderer::createOverlayTextureArray() {
+    Diligent::TextureDesc textureArrayDesc;
+    textureArrayDesc.ArraySize = m_maxOverlays * m_maxSpriteDimensions;
+    // 2D array
+    textureArrayDesc.Type = Diligent::RESOURCE_DIM_TEX_2D_ARRAY;
+    textureArrayDesc.Width  = m_maxSpriteFrameWidth;
+    textureArrayDesc.Height = m_maxSpriteFrameHeight;
+    textureArrayDesc.MipLevels = 1;
+    textureArrayDesc.Format    = Diligent::TEX_FORMAT_RGBA8_UNORM_SRGB; // TODO: Set to swap chain's format instead
+    textureArrayDesc.Usage     = Diligent::USAGE_DEFAULT;
+    textureArrayDesc.BindFlags = Diligent::BIND_SHADER_RESOURCE;
+
+    m_pDevice->CreateTexture(textureArrayDesc, nullptr /* No initial data */, &m_pOverlayTextureArray);
+
+    m_pOverlayShaderResourceView = m_pOverlayTextureArray->GetDefaultView(Diligent::TEXTURE_VIEW_SHADER_RESOURCE);
+    m_pOverlayShaderResourceBinding->GetVariableByName(Diligent::SHADER_TYPE_PIXEL, "g_overlay")->Set(m_pOverlayShaderResourceView);
+}
+
+/* --- OVERLAYS --- */
+
+void Renderer::setOverlay(const Overlay& overlay, const int& entityIndex) {
+
 }
 
 /* --- LOADERS --- */
