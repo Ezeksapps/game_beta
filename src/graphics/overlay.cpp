@@ -4,6 +4,8 @@
 
 #include "json.hpp"
 
+#include <iostream>
+
 using json = nlohmann::json;
 
 static constexpr char OVERLAYS_DIR[] = "assets/data/overlays/";
@@ -16,9 +18,9 @@ std::unordered_map<std::string, Overlay> overlayMap;
 
 // load and create an overlay from JSON
 Overlay loadOverlay(const std::string& name) {
-    json overlayJson = readJsonAsset(std::string(OVERLAYS_DIR + name + ".json").c_str());
+    json overlayJson = json::parse(readJsonAsset(std::string(OVERLAYS_DIR + name + ".json").c_str()));
 
-    std::shared_ptr<Sprite> sprite;
+    std::shared_ptr<Sprite> sprite = std::make_shared<Sprite>(); // << why does it segfault here?
     sprite->filepath = overlayJson["sprite"], sprite->frameWidth = overlayJson["frameWidth"], sprite->frameHeight = overlayJson["frameHeight"];
 
     if (overlayJson["hasPeriodicFlash"].get<bool>()) {

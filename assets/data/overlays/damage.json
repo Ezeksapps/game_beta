@@ -1,5 +1,5 @@
 {
-    "sprite": "assets/sprites/overlays/damage.json",
+    "sprite": "assets/sprites/overlays/damage.png",
     "frameWidth": 24,
     "frameHeight": 32,
     "hasPeriodicFlash": true,

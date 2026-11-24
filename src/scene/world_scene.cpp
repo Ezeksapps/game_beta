@@ -10,7 +10,7 @@
 #include "../fileio.hpp"
 
 #include "../entity/entity.hpp"
-#include "../entity//trainer.hpp"
+#include "../entity/trainer.hpp"
 #include "../pokemon/pokemon.hpp"
 
 using json = nlohmann::json;

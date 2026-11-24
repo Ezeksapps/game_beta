@@ -1111,3 +1111,21 @@ x += dx;
 curAlpha = (start - amplitude) + amplitude * cos(x);
 
 Apparently, you can't use a bool as a shader input/ouput. Use an integer or float type instead
+
+cacheSprite is technically just a function that loads a given sprite into a texture array at a given arbitrary index
+rename to loadToTextureArray(), can then be used to load overlays whenever setOverlay() is called
+
+Sprites completely stop drawing on first test of frag shader w/ overlays?
+
+leaving the uniform in has no effect, overlay being null or not changes nothing, adding overlay-specific inputs back in, specifically
+'usingOverlay' will cause disappearance of sprites
+Assertion that the size of the InstanceData struct w/ the new properties is as expected passed, meaning C++-side there are no issues
+problem possibly from how vars are passed down the pipeline in VS/GS
+also todo: figure out a cleaner way to pass variables down (maybe have the input/outputs as structs?)
+given that only the addition of usingOverlay triggers this, maybe the value is invalid or wrong?
+
+issue was fixed when re-ordering the inputs to the frag shader, most likely since no explicit layout was declared,
+GLSL assumes input layout is in order of appearence, GS outputs in order: uv, texArrayIndex, overlayArrayIndex, hasOverlay
+FS declared inputs as hasOverlay, uv, texArrayIndex, overlayArrayIndex
+
+TODOS: text progression fix, finalise/test overlays

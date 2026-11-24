@@ -70,7 +70,7 @@ private:
         mat4     modelMatrix;
         float    texArrayIndex;
         float    overlayArrayIndex = 0.0f;
-        uint32_t usingOverlay; // technically bool, uint8 since GLSL doesn't allow shader inputs to be bool
+        float    usingOverlay; // technically bool, float since GLSL doesn't allow shader inputs to be bool
         float    width;
         float    height;
     };
@@ -139,7 +139,6 @@ private:
     /* Pipeline SRBs */
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSceneShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pSpriteShaderResourceBinding;
-    Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pOverlayShaderResourceBinding;
     Diligent::RefCntAutoPtr<Diligent::IShaderResourceBinding>  m_pUiShaderResourceBinding;
 
     /* Matrices */
@@ -225,7 +224,7 @@ private:
     void swapSprite(const int& oldSpriteIndex, const std::shared_ptr<Sprite>& newSprite, const std::string& cacheKey, const AnimEvent& event);
 
     // loads a Sprite into a given texture array at the specified index
-    void cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);
+    void loadToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index);
     // gets sprite sheet texture data from an entity texture array in the cache and copies it to the main texture array
     void retrieveSprite(const std::shared_ptr<Sprite>& sprite, const std::string& cacheKey, const AnimEvent& event);
 

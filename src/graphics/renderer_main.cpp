@@ -130,8 +130,7 @@ void Renderer::pushSceneMesh(const MeshData& meshData) {
 
 /* --------------------------- */
 
-// CHECK: Maybe rename index to event?
-void Renderer::cacheSprite(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
+void Renderer::loadToTextureArray(Diligent::RefCntAutoPtr<Diligent::ITexture>& texArray, const std::shared_ptr<Sprite>& sprite, const int& index) {
 
     Diligent::RefCntAutoPtr<Diligent::ITextureLoader> textureLoader;
     Diligent::TextureLoadInfo loadInfo;
@@ -216,7 +215,7 @@ Diligent::RefCntAutoPtr<Diligent::ITexture> Renderer::createEntitySpriteCache(co
 
     /* Loop through entity sprite map and load all Sprite objects into tex array */
     for (const auto& entry : spriteMap) {
-        cacheSprite(texArray /* Tex array */, entry.second /* Sprite */, entry.first  /* load to index */);
+        loadToTextureArray(texArray /* Tex array */, entry.second /* Sprite */, entry.first  /* load to index */);
     }
 
     return texArray;

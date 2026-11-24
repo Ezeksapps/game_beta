@@ -9,19 +9,35 @@ layout(binding = 1) uniform SpriteConstants {
     float g_pxToCoordRatio;
 };
 
+
+/* Refs for implementation:
+ * https://gamedev.stackexchange.com/questions/113147/rotate-billboard-towards-camera
+ * https://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/billboards/
+ * https://ogldev.org/www/tutorial27/tutorial27.html
+ */
+
+// for sprites, geometry shader calculates and creates the billboard quad
+
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 // NOTE: All inputs to a geometry shader must be arrays, even if they have only one element
 in mat4 modelMatrix[];
 in flat float texArrayIndx[];
+in flat float ovrlArrayIndx[];
+in flat float usingOverl[];
 in flat float width[];
 in flat float height[];
 
 out vec2 uv;
 out flat float texArrayIndex;
+out flat float overlayArrayIndex;
+out flat float hasOverlay;
 
 void main() {
+
+    hasOverlay = usingOverl[0];
+    overlayArrayIndex = ovrlArrayIndx[0];
 
     // The data for this point is at index 0 because there's only one vertex
     mat4 model = modelMatrix[0];
