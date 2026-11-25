@@ -1129,3 +1129,13 @@ GLSL assumes input layout is in order of appearence, GS outputs in order: uv, te
 FS declared inputs as hasOverlay, uv, texArrayIndex, overlayArrayIndex
 
 TODOS: text progression fix, finalise/test overlays
+
+current status: overlay logic is done, no overlay visible when expected
+
+Multiple entities can use the same overlay, since the current system has all overlays in the same map, and the overlay structs given
+to external code are references to the instances inside of the map, that means if two entities are meant to be on different frames
+or alpha values of the same overlay, one will win, because only one instance exists
+There should therefore be a separation between constant data about an overlay and the per-entity data on the overlay an entity is using
+
+I'll do this by having all the constants be loaded as OverlayDesc, they are descriptors because they contain the data used to init an Overlay
+inst given to an entity and the data is immutable post-creation

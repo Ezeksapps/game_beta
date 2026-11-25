@@ -22,28 +22,33 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 // NOTE: All inputs to a geometry shader must be arrays, even if they have only one element
-in mat4 modelMatrix[];
-in flat float texArrayIndx[];
-in flat float ovrlArrayIndx[];
-in flat float usingOverl[];
-in flat float width[];
-in flat float height[];
+in VertexData {
+    mat4 modelMatrix;
+    flat float texArrayIndex;
+    flat float overlayArrayIndex;
+    flat float hasOverlay;
+    flat float width;
+    flat float height;
+} GS_in[];
 
-out vec2 uv;
-out flat float texArrayIndex;
-out flat float overlayArrayIndex;
-out flat float hasOverlay;
+out DrawData {
+    vec2 uv;
+    flat float texArrayIndex;
+    flat float overlayArrayIndex;
+    flat float hasOverlay;
+} GS_out;
 
 void main() {
 
-    hasOverlay = usingOverl[0];
-    overlayArrayIndex = ovrlArrayIndx[0];
+    GS_out.hasOverlay        = GS_in[0].hasOverlay;
+    GS_out.overlayArrayIndex = GS_in[0].overlayArrayIndex;
+    GS_out.texArrayIndex     = GS_in[0].texArrayIndex;
 
     // The data for this point is at index 0 because there's only one vertex
-    mat4 model = modelMatrix[0];
-    float spriteWidth  = width[0];
-    float spriteHeight = height[0];
-    texArrayIndex = texArrayIndx[0];
+    mat4  model         = GS_in[0].modelMatrix;
+    float spriteWidth   = GS_in[0].width;
+    float spriteHeight  = GS_in[0].height;
+    float texArrayIndex = GS_in[0].texArrayIndex;
 
     // World-space position from the model matrix
     vec3 pos = (model * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
@@ -61,19 +66,19 @@ void main() {
     float maxVVal = spriteHeight / g_maxHeight;
 
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * halfW - cameraUp * halfH, 1.0);
-    uv = vec2(0.0, maxVVal);
+    GS_out.uv = vec2(0.0, maxVVal);
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos - cameraRight * halfW + cameraUp * halfH, 1.0);
-    uv = vec2(0.0, 0.0);
+    GS_out.uv = vec2(0.0, 0.0);
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * halfW - cameraUp * halfH, 1.0);
-    uv = vec2(maxUVal, maxVVal);
+    GS_out.uv = vec2(maxUVal, maxVVal);
     EmitVertex();
 
     gl_Position = viewProjMatrix * vec4(pos + cameraRight * halfW + cameraUp * halfH, 1.0);
-    uv = vec2(maxUVal, 0.0);
+    GS_out.uv = vec2(maxUVal, 0.0);
     EmitVertex();
 
     EndPrimitive();

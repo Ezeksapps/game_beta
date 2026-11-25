@@ -4,6 +4,8 @@
 #include "move_interface.h"
 #include "../ui/ui.h"
 
+#include <iostream>
+
 void useMove(void* _this, int index) {
     static_cast<BattleManager*>(_this)->playerUseMove(index);
     clearStack();
@@ -220,9 +222,10 @@ void BattleManager::execPlayerAction() {
             << " HP of damage\n";
 
             setSourceStringf(battleStrings.at(STR_PLAYER_USE_MOVE), std::vector<std::string>{m_playerPkmn->getMoveset()[m_turn.playerAction.index].name});
+
             // TODO: effect should only play after text progressed
             // play the damage effect, TODO: must await effect completion before continuing
-            m_player->setOverlay(std::make_shared<Overlay>(getOverlay("damage")), 0, 2);
+            //m_player->setOverlay(std::make_shared<Overlay>(getOverlay("damage")), 0, 2);
             break;
             // TODO: Make exhaustive
     }
@@ -258,13 +261,11 @@ void BattleManager::processTurn() {
     switch (m_turn.priority) {
         case PRIORITISE_PLAYER:
             execPlayerAction();
-            execOpponentAction();
-            // reset state
+            setOnStringEndCallback([this]() { this->execOpponentAction(); });
             break;
         case PRIORITISE_OPPONENT:
             execOpponentAction();
-            execPlayerAction();
-            // reset state
+            setOnStringEndCallback([this]() { this->execPlayerAction(); });
             break;
         case PRIORITISE_NONE:
             throw std::runtime_error("Action sorting has failed and turn processing cannot continue");

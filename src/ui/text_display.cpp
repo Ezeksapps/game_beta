@@ -7,14 +7,16 @@
 enum PendingPrintOp {
     OP_NONE,
     OP_EXEC_BATTLE_START,
-    OP_CONTINUE_PRINT
+    OP_CONTINUE_PRINT,
+    OP_END_STRING
 };
 
 struct TextState {
-    std::string sourceStr;
-    size_t           pos = 0;
-    std::string      outStr;
-    PendingPrintOp   pendingOp = OP_NONE;
+    std::string           sourceStr;
+    size_t                pos = 0;
+    std::string           outStr;
+    PendingPrintOp        pendingOp = OP_NONE;
+    std::function<void()> onStrEndCallback = nullptr;
 };
 
 TextState state;
@@ -79,7 +81,8 @@ void setSourceString(const std::string& str) { // reset state with new string
         .sourceStr = str,
         .pos = 0,
         .outStr = "",
-        .pendingOp = OP_NONE
+        .pendingOp = OP_NONE,
+        .onStrEndCallback = nullptr
     };
 
     advanceText(); // print initial piece of text
@@ -95,7 +98,8 @@ void setSourceStringf(const std::string& str, std::vector<std::string> replaceme
         .sourceStr = "",
         .pos = 0,
         .outStr = "",
-        .pendingOp = OP_NONE
+        .pendingOp = OP_NONE,
+        .onStrEndCallback = nullptr
     };
 
     // generate source string
@@ -111,6 +115,10 @@ void setSourceStringf(const std::string& str, std::vector<std::string> replaceme
     advanceText(); // print initial piece of text
 }
 
+void setOnStringEndCallback(const std::function<void()>& callback) {
+    state.onStrEndCallback = callback;
+}
+
 void advanceText() { // aka execute the pending print op
 
     /* First execute the pending op from last string */
@@ -121,21 +129,25 @@ void advanceText() { // aka execute the pending print op
         case OP_CONTINUE_PRINT:
             state.outStr.clear();
             break;
+        case OP_END_STRING:
+
+            popFromStack();
+            // run the callback if one was attached
+            if (state.onStrEndCallback != nullptr) state.onStrEndCallback();
+
+            state = TextState { // reset state
+                .sourceStr = "",
+                .pos       = 0,
+                .outStr    = "",
+                .pendingOp = OP_NONE,
+                .onStrEndCallback = nullptr
+            };
+
+            break;
         case OP_NONE:
             break;
     }
     state.pendingOp = OP_NONE; // reset
-
-    /*if (state.pos == state.sourceStr.size()) { // Works for overworld entity dialogue, doesn't work when displaying battle strings?
-        popFromStack();
-
-        state = TextState { // reset state
-            .sourceStr = "",
-            .pos = 0,
-            .outStr = "",
-            .pendingOp = OP_NONE
-        };
-    }*/
 
     // TODO: tidy this a bit
     while (state.pos < state.sourceStr.size() && state.outStr.size() < TEXT_DISPLAY_MAX_CHARS) {
@@ -153,8 +165,7 @@ void advanceText() { // aka execute the pending print op
             case '<':
                 // TODO, this should also bypass OP_CONTINUE_PRINT. Any additional text after a dialogue option tag will be ignored
                 break;
-            //case '\n':
-                // Test showed Nuklear does not autmatically handle newline chars TODO: Add proper handling!
+            //case '\n': // Test showed Nuklear does not autmatically handle newline chars TODO: Add proper handling!
                 //break;
             default: // any other char
                 state.outStr += c;
@@ -163,8 +174,8 @@ void advanceText() { // aka execute the pending print op
         }
     }
 
-    // TODO: add way to identify when all text has been printed and therefore when to close the display
+    // TODO: this while loop cannot stay, OP_END_STRING (actually reach str end) and OP_CONTINUE_PRINT (\n or overflow) must be distinct!
 
     setDisplayText(state.outStr.data());
-    state.pendingOp = OP_CONTINUE_PRINT; // when loop has terminated, await a UI_PROGRESS cmd
+    state.pendingOp = OP_END_STRING; // when loop has terminated, await a UI_PROGRESS cmd
 }

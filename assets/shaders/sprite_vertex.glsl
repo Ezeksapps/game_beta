@@ -1,22 +1,25 @@
-in layout(location = 0) mat4 mdlMatrix;
-in layout(location = 4) float texArrayIdx;
-in layout(location = 5) float ovrlArrayIdx;
-in layout(location = 6) float usingOverlay;
-in layout(location = 7) float wdth;
-in layout(location = 8) float hght;
+layout(location = 0) in mat4 modelMatrix;
+layout(location = 4) in float texArrayIndex;
+layout(location = 5) in float overlayArrayIndex;
+layout(location = 6) in float hasOverlay;
+layout(location = 7) in float width;
+layout(location = 8) in float height;
 
-out mat4 modelMatrix;
-out flat float texArrayIndx;
-out flat float ovrlArrayIndx;
-out flat float usingOverl;
-out flat float width;
-out flat float height;
+out VertexData {
+    mat4 modelMatrix;
+    flat float texArrayIndex;
+    flat float overlayArrayIndex;
+    flat float hasOverlay;
+    flat float width;
+    flat float height;
+} VS_out;
 
 void main() {
-    modelMatrix = mdlMatrix;
-    texArrayIndx = texArrayIdx;
-    ovrlArrayIndx = ovrlArrayIdx;
-    usingOverl = usingOverlay;
-    width  = wdth;
-    height = hght;
+    VS_out.modelMatrix = modelMatrix;
+    VS_out.texArrayIndex = texArrayIndex;
+    VS_out.overlayArrayIndex = overlayArrayIndex;
+    VS_out.hasOverlay = hasOverlay;
+    VS_out.width = width;
+    VS_out.height = height;
 }
+
