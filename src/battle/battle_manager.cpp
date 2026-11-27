@@ -261,11 +261,19 @@ void BattleManager::processTurn() {
     switch (m_turn.priority) {
         case PRIORITISE_PLAYER:
             execPlayerAction();
-            setOnStringEndCallback([this]() { this->execOpponentAction(); });
+            setOnStringEndCallback([this]() {
+                pushToStack(textDisplay1); // NOTE: OP_END_STRING will destroy the current window, so re-push the text display
+                this->execOpponentAction();
+                setOnStringEndCallback([this]() { /* some func to go back to await input */});
+            });
             break;
         case PRIORITISE_OPPONENT:
             execOpponentAction();
-            setOnStringEndCallback([this]() { this->execPlayerAction(); });
+            setOnStringEndCallback([this]() {
+                pushToStack(textDisplay1); // NOTE: OP_END_STRING will destroy the current window, so re-push the text display
+                this->execPlayerAction();
+                setOnStringEndCallback([this]() { /* some func to go back to await input */});
+            });
             break;
         case PRIORITISE_NONE:
             throw std::runtime_error("Action sorting has failed and turn processing cannot continue");

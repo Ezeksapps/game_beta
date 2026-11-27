@@ -1139,3 +1139,14 @@ There should therefore be a separation between constant data about an overlay an
 
 I'll do this by having all the constants be loaded as OverlayDesc, they are descriptors because they contain the data used to init an Overlay
 inst given to an entity and the data is immutable post-creation
+
+About to set display text
+About to set display text
+Executing opponent action, which is using a move that deals 26 HP of damage
+NEW SOURCE STR: [opponent_pokemon_name] used Bite
+About to set display text
+op end string recieved
+EXE CALLBACK
+Executing player action, which is using a move that deals 8 HP of damage
+NEW SOURCE STR: [player_pokemon_name] used Tackle
+About to set display text

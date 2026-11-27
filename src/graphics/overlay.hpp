@@ -1,5 +1,7 @@
 #pragma once
 
+/* Reverted changes to test text display, will re-organise after that's done */
+
 #include "sprite.hpp"
 #include <memory>
 
@@ -22,27 +24,18 @@ struct Flash {
     float alpha; // current alpha value
 };
 
-struct OverlayDesc {
-    // used to init a Sprite instance
-    std::string PngFilepath;
-    int         frameWidth;
-    int         frameHeight;
-
-    bool hasPeriodicFlash;
-    // data used to init flash if present
-    float startAlpha;
-    float endAlpha;
-    float perFrameDx;
-    float stretchScaleFactor;
-    float amplitude;
-};
-
 struct Overlay {
+    // NOTE: The overlay animation doesn't need to sync to anything, it can be played as-is
+    // overlays are defined through JSON and loaded when needed
     std::shared_ptr<Sprite> sprite;
     float frameTimer;
+    /* NOTE: This would be set as an optional value with STL optional, however, the bit mask system already
+     * deals with cases that do not use any flash data. Given that STL optional will still allocate memory for this field
+     * even if no data is actually written, there isn't really a point keeping this as an optional property, even
+     * if it does help readability slightly
+     */
     Flash flash;
 };
 
 // gets overlay from map, or pushes it to the map if it isn't already present
-Overlay getOverlay(const std::string& name);
-
+Overlay& getOverlay(const std::string& name);

@@ -455,7 +455,17 @@ void bagView() {
 
 void profileView() {}
 void optionsMenu() {}
-void multiplayerView() {}
+
+void multiplayerView() {
+    g_curWndType = WND_TYPE_MENU;
+    int counter = 0;
+
+    const char* labels[] = {"Host Match", "Join Match"};
+    const MenuCallbackFunc itemCallbacks[] = {NULL, NULL};
+
+    createCallbackMenu(nk_rect(0, 0, 140, 60), 1, &counter, NUMELEMS(labels), labels, itemCallbacks, getCurrentUserData());
+}
+
 void saveMenu() {}
 void mapView() {}
 

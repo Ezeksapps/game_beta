@@ -119,9 +119,22 @@ void setOnStringEndCallback(const std::function<void()>& callback) {
     state.onStrEndCallback = callback;
 }
 
-void advanceText() { // aka execute the pending print op
+void handleEndString() {
+    std::function<void()> callback = state.onStrEndCallback; // need to grab callback before resetting string state
 
-    /* First execute the pending op from last string */
+    state = TextState { // reset state
+        .sourceStr = "",
+        .pos       = 0,
+        .outStr    = "",
+        .pendingOp = OP_NONE,
+        .onStrEndCallback = nullptr
+    };
+
+    // run the callback if one was attached
+    if (callback != nullptr) callback();
+}
+
+void advanceText() {
     switch (state.pendingOp) {
         case OP_EXEC_BATTLE_START:
             triggerEvent(GAME_EVENT_BATTLE_START);
@@ -130,52 +143,43 @@ void advanceText() { // aka execute the pending print op
             state.outStr.clear();
             break;
         case OP_END_STRING:
-
             popFromStack();
-            // run the callback if one was attached
-            if (state.onStrEndCallback != nullptr) state.onStrEndCallback();
-
-            state = TextState { // reset state
-                .sourceStr = "",
-                .pos       = 0,
-                .outStr    = "",
-                .pendingOp = OP_NONE,
-                .onStrEndCallback = nullptr
-            };
-
-            break;
+            handleEndString();
+            return;
         case OP_NONE:
             break;
     }
     state.pendingOp = OP_NONE; // reset
 
-    // TODO: tidy this a bit
-    while (state.pos < state.sourceStr.size() && state.outStr.size() < TEXT_DISPLAY_MAX_CHARS) {
+    bool overflow  = false;
+
+    while (state.pos < state.sourceStr.size()) {
         char c = state.sourceStr[state.pos];
-        switch(c) {
+        if (state.outStr.size() >= TEXT_DISPLAY_MAX_CHARS) { overflow = true; break; }
+
+        switch (c) {
             case '$':
                 handleCmdToken();
-                /* early return, or the final line outside the loop will overwrite
-                 * the pending op to OP_CONTINUE_PRINT instead of the correct one */
                 setDisplayText(state.outStr.data());
                 return;
             case '[':
                 handleWordToken();
                 break;
             case '<':
-                // TODO, this should also bypass OP_CONTINUE_PRINT. Any additional text after a dialogue option tag will be ignored
+                ++state.pos;
                 break;
-            //case '\n': // Test showed Nuklear does not autmatically handle newline chars TODO: Add proper handling!
-                //break;
-            default: // any other char
+                // NOTE: need '\n' handling, where it actually creates a visible newline. Alternatively, implement this in the C-side of the codebase
+            default:
                 state.outStr += c;
                 ++state.pos;
                 break;
         }
     }
 
-    // TODO: this while loop cannot stay, OP_END_STRING (actually reach str end) and OP_CONTINUE_PRINT (\n or overflow) must be distinct!
-
     setDisplayText(state.outStr.data());
-    state.pendingOp = OP_END_STRING; // when loop has terminated, await a UI_PROGRESS cmd
+
+    if (overflow) { state.pendingOp = OP_CONTINUE_PRINT; return; }
+    // reached end of source string
+    state.pendingOp = OP_END_STRING;
 }
+

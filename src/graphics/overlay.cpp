@@ -8,17 +8,17 @@ using json = nlohmann::json;
 
 static constexpr char OVERLAYS_DIR[] = "assets/data/overlays/";
 
-std::unordered_map<std::string, OverlayDesc> overlayMap;
+std::unordered_map<std::string, Overlay> overlayMap;
 
 /*
- Overlays are not cached by the renderer (as only one sprite sheet exists), the entire array is uploaded when required
+ * Overlays are not cached by the renderer (as only one sprite sheet exists), the entire array is uploaded when required
  */
 
 // load and create an overlay from JSON
 Overlay loadOverlay(const std::string& name) {
-    json overlayJson = json::parse(readJsonAsset(std::string(OVERLAYS_DIR + name + ".json").c_str()));
+    json overlayJson = readJsonAsset(std::string(OVERLAYS_DIR + name + ".json").c_str());
 
-    std::shared_ptr<Sprite> sprite = std::make_shared<Sprite>();
+    std::shared_ptr<Sprite> sprite;
     sprite->filepath = overlayJson["sprite"], sprite->frameWidth = overlayJson["frameWidth"], sprite->frameHeight = overlayJson["frameHeight"];
 
     if (overlayJson["hasPeriodicFlash"].get<bool>()) {
